@@ -14,10 +14,6 @@ from utils.log_actions import *
 log_demo()
 
 # %%
-from utils.log_actions import *
-log_demo()
-
-# %%
 from utils.math_utils import *
 math_utils = MathUtils()
 math_utils.demo()
@@ -31,3 +27,17 @@ sel.demo()
 from utils.widget_utils import *
 widget = Widgets()
 widget.demo()
+
+# %%
+# this does not work anymore
+import sys
+sys.path.append(R'C:\path\to\lib-utils\utils')
+
+# from utilities import *
+# utils = UtilityFunctions()
+# utils.list_to_csv(['a','b','c'])
+
+from clipboard_utils import *
+cb = Clipboard()
+cb.copy('test')
+cb.paste()

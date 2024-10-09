@@ -1,4 +1,4 @@
-from .utilities import UtilityFunctions
+from utils.utilities import UtilityFunctions
 utils = UtilityFunctions()
 utils.exit_if_module_missing('selenium')
 utils.exit_if_module_missing('webdriver_manager')
