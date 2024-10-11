@@ -760,7 +760,8 @@ class UtilityFunctions:
     def bytes_to_hex_str(self, bytes, prefix='', delim=''):
         return delim.join([f'{prefix}{x:02X}' for x in bytes])
 
-    def hex_str_to_bytes(self, hex_string):
+    def hex_str_to_bytes(self, hex_string, delim=''):
+        hex_string = hex_string.replace(delim, '')
         return bytes.fromhex(hex_string)
 
     def string_to_bytes(self, string):
