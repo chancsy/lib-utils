@@ -20,6 +20,7 @@ import socket
 import base64
 # TODO import non-standard lib: requests, python-git-info
 
+import pandas as pd
 # from utilities import UtilityFunctions
 # from utilities import * # to include all functions
 # utils = UtilityFunctions()
@@ -481,6 +482,47 @@ class UtilityFunctions:
             if d.get(lookup_key) == lookup_value:
                 return d.get(return_key)
         return None
+
+    ############################################################################
+    # data, dataframe related
+    ############################################################################
+    # Check for duplicate column names and rename them to ensure uniqueness
+    def unique_names(self, names):
+        names = list(names)
+        seen = {}
+        for i, col in enumerate(names):
+            if col in seen:
+                seen[col] += 1
+                names[i] = f"{col}_{seen[col]}"
+            else:
+                seen[col] = 0
+        return names
+
+    def array_to_df(self, array, has_header=True):
+        if has_header:
+            df = pd.DataFrame(array[1:], columns=array[0])
+        else:
+            df = pd.DataFrame(array)
+        return df
+
+    def df_unique_columns(self, df):
+        # df = df_orig.copy()
+        unique_header = self.unique_names(df.columns)
+        # df.rename(columns=dict(zip(df.columns, unique_header)), inplace=True)
+        df.columns = unique_header
+        return df
+
+    def df_to_numeric(self, df):
+        # Create new header with unique column names
+        df = self.df_unique_columns(df)
+
+        # Convert columns to numeric types where possible
+        for col in df.columns:
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (TypeError, ValueError) as e:
+                print(f"Error converting column '{col}' to numeric: {e}")
+        return df
 
     ############################################################################
     # Web related
