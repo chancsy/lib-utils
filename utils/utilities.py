@@ -9,7 +9,7 @@ import re
 import struct
 import time
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timedelta
 import calendar
 from concurrent.futures import ThreadPoolExecutor
 import urllib.request
@@ -168,8 +168,9 @@ class UtilityFunctions:
         if show_ms:
             milliseconds = round(time_now.microsecond / 1000)
             if milliseconds == 1000:
-                time_now = time_now.replace(second=time_now.second + 1, microsecond=0)
+                time_now = time_now.replace(microsecond=0)
                 milliseconds = 0
+                time_now += timedelta(seconds=1) # Add 1 second if milliseconds is 1000
             milliseconds_str = str(milliseconds).zfill(ms_digits)
             return time_now.strftime(f'%H{time_delim}%M{time_delim}%S{ms_delim}{milliseconds_str}')
         return time_now.strftime(f'%H{time_delim}%M{time_delim}%S')
