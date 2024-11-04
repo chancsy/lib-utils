@@ -70,7 +70,7 @@ class UtilityFunctions:
 
     def run_powershell_command(self, command):
         process=subprocess.Popen(["powershell","& {" + command+ "}"], stdout=subprocess.PIPE)
-        stdout_value = process.communicate()[0].decode("utf-8").strip()
+        stdout_value = process.communicate()[0].decode("utf-8", errors='replace').strip()
         return stdout_value
 
     def wait_user_enter_key(self, msg=None):
@@ -288,7 +288,7 @@ class UtilityFunctions:
             boot_time_output = self.run_powershell_command('Get-CimInstance Win32_OperatingSystem | select -ExpandProperty LastBootUpTime') # Get PC boot time by running PowerShell command
             boot_time = datetime.strptime(boot_time_output, '%A, %B %d, %Y %I:%M:%S %p') # Parse the boot time
         else: # Unix/Linux
-            uptime_output = subprocess.check_output(['uptime', '-s']).decode().strip() # Get system boot time
+            uptime_output = subprocess.check_output(['uptime', '-s']).decode(errors='replace').strip() # Get system boot time
             boot_time = datetime.strptime(uptime_output, '%Y-%m-%d %H:%M:%S') # Parse the boot time
 
         current_time = datetime.now() # Get the current time
@@ -547,7 +547,7 @@ class UtilityFunctions:
 
     def fetch_content(self, url):
         with urllib.request.urlopen(url) as response:
-            return response.read().decode()
+            return response.read().decode(errors='replace')
 
     def extract_urls(self, url, ext='', params={}):
         query_string = urllib.parse.urlencode(params)
@@ -811,7 +811,7 @@ class UtilityFunctions:
         return string.encode()
 
     def bytes_to_string(self, bytes):
-        return bytes.decode()
+        return bytes.decode(errors='replace')
 
     def crc32_jamcrc(self,data_bytes):
         import zlib
