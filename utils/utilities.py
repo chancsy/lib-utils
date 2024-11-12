@@ -829,6 +829,20 @@ class UtilityFunctions:
         format_string = "{:." + str(sf) + "g}"
         return format_string.format(num)
 
+    def is_integer(s):
+        try:
+            int(s)
+            return True
+        except ValueError:
+            return False
+
+    def is_float(self, s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
+
     ############################################################################
     # Image related
     ############################################################################
