@@ -76,6 +76,25 @@ class UtilityFunctions:
     def wait_user_enter_key(self, msg=None):
         input(msg or 'Press enter to continue...')
 
+    # get user input int/float/str, display 'default_val' if provided.
+    # if 'default_val' is provided and user entered blank, 'default_val' will be returned
+    def get_user_input(self, msg, data_type, default_val=None, show_default_value=True):
+        default_string = ''
+        if default_val != None and show_default_value:
+            default_string = f', default={str(default_val)}'
+        user_input = input(f'{msg} ({data_type.__name__}{default_string}): ')
+
+        if not user_input:
+            val = default_val
+        else:
+            val = user_input
+
+        try:
+            return data_type(val)
+        except (ValueError, TypeError):
+            print(f'Invalid input, expected {data_type.__name__}')
+            return None
+
     ############################################################################
     # IPython related
     ############################################################################
