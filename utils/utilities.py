@@ -729,7 +729,9 @@ class UtilityFunctions:
         'int8': (-128, 127, int, 1),
         'int16': (-32768, 32767, int, 2),
         'int32': (-2147483648, 2147483647, int, 4),
-        'float': (None, None, float, 4)
+        'float': (None, None, float, 4),
+        'bytearray': (None, None, bytearray, 4),
+        'bytes': (None, None, bytes, 4),
     }
 
     def is_data_type_valid(self, data_type, value):
@@ -738,8 +740,9 @@ class UtilityFunctions:
         min_val, max_val, expected_type, _ = self.data_type_properties[data_type]
         if not isinstance(value, expected_type):
             return False
-        if min_val is not None and (value < min_val or value > max_val):
-            return False
+        if not (expected_type==bytes or expected_type==bytearray):
+            if min_val is not None and (value < min_val or value > max_val):
+                return False
         return True
 
     def get_data_type_length(self, data_type):
