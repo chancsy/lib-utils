@@ -142,6 +142,10 @@ class UtilityFunctions:
         else:
             sys.exit(1)
 
+    def clear_output(self):
+        if self.in_ipython():
+            clear_output()
+
     ############################################################################
     # time/date related functions
     ############################################################################
