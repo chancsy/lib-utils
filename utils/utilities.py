@@ -18,6 +18,7 @@ from html.parser import HTMLParser
 import threading
 import socket
 import base64
+import logging
 # TODO import non-standard lib: requests, python-git-info
 
 import pandas as pd
@@ -895,6 +896,67 @@ class UtilityFunctions:
 
         def stop_flag(self):
             return self._stop_event.is_set()
+
+    ############################################################################
+    # Logging related
+    # ############################################################################
+    class Logger:
+        def __init__(self, logfile_directory_path, add_datetimestamp=True):
+            self.utils = UtilityFunctions()
+            self.logfile_directory_path = logfile_directory_path
+            self.add_datetimestamp = add_datetimestamp
+            self.logger = logging.getLogger('CustomLogger')
+            self.logger.setLevel(logging.DEBUG)  # Set default logging level to DEBUG
+
+            # Create a formatter to define the log format
+            longest_levelname = max(logging.getLevelName(level).strip() for level in range(logging.CRITICAL, logging.NOTSET, -1))
+            message_format = f'%(levelname)-{len(longest_levelname)+1}s|%(message)s'
+            if add_datetimestamp:
+                # formatter = logging.Formatter(utils.get_datetimestamp(style=1) + '|' + level_message)
+                message_format = self.utils.get_datetimestamp(style=1) + '|' + message_format
+            formatter = logging.Formatter(message_format)
+
+            # Create a file handler to write logs to a file
+            # file_handler = logging.FileHandler(f"{logfile_directory_path}/logfile.log")
+            file_handler = logging.FileHandler(os.path.join(logfile_directory_path, 'logfile.log'), mode='a', delay=True)
+            file_handler.setLevel(logging.DEBUG) # Set the desired log level for file loggine, usually we want to have everything logged
+            file_handler.setFormatter(formatter)
+
+            # Create a stream handler to print logs to the console
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO) # Set the desired log level for console output
+            console_handler.setFormatter(formatter)
+
+            # what is this for? is it for use with jupyter cell with limited buffer?
+            # # Create a custom Jupyter handler to display logs in the current cell
+            # jupyter_handler = JupyterHandler()
+            # jupyter_handler.setLevel(logging.INFO)
+            # jupyter_handler.setFormatter(formatter)
+
+            # Add the handlers to the logger
+            self.logger.addHandler(file_handler)
+            self.logger.addHandler(console_handler)
+            # self.logger.addHandler(jupyter_handler)
+
+        def log(self, message, level=logging.INFO):
+            if message.strip():  # Ignore empty messages
+                if level == logging.DEBUG:
+                    self.logger.debug(message.strip())
+                elif level == logging.INFO:
+                    self.logger.info(message.strip())
+                elif level == logging.WARNING:
+                    self.logger.warning(message.strip())
+                elif level == logging.ERROR:
+                    self.logger.error(message.strip())
+                elif level == logging.CRITICAL:
+                    self.logger.critical(message.strip())
+
+        def stop(self):
+            handlers = self.logger.handlers[:]
+            for handler in handlers:
+                handler.close()
+                self.logger.removeHandler(handler)
+            logging.shutdown()
 
     ############################################################################
     # Test related
