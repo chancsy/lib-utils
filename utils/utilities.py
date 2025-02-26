@@ -901,9 +901,9 @@ class UtilityFunctions:
     # Logging related
     # ############################################################################
     class Logger:
-        def __init__(self, logfile_directory_path, add_datetimestamp=True):
+        def __init__(self, log_path_dir='.', log_prefix='', log_filename_with_seconds=False, add_datetimestamp=True, file_level=logging.DEBUG, console_level=logging.INFO):
             self.utils = UtilityFunctions()
-            self.logfile_directory_path = logfile_directory_path
+            self.logfile_directory_path = log_path_dir
             self.add_datetimestamp = add_datetimestamp
             self.logger = logging.getLogger('CustomLogger')
             self.logger.setLevel(logging.DEBUG)  # Set default logging level to DEBUG
@@ -917,25 +917,29 @@ class UtilityFunctions:
             formatter = logging.Formatter(message_format)
 
             # Create a file handler to write logs to a file
-            # file_handler = logging.FileHandler(f"{logfile_directory_path}/logfile.log")
-            file_handler = logging.FileHandler(os.path.join(logfile_directory_path, 'logfile.log'), mode='a', delay=True)
-            file_handler.setLevel(logging.DEBUG) # Set the desired log level for file loggine, usually we want to have everything logged
+            # file_handler = logging.FileHandler(f"{log_path_dir}/logfile.log")
+            log_filename = f'{log_prefix}_' if log_prefix else ''
+            log_filename += self.utils.get_datetimestamp(date_time_delim='_') if log_filename_with_seconds else self.utils.get_datestamp()
+            log_filename += '.log'
+            file_handler = logging.FileHandler(os.path.join(log_path_dir, log_filename), mode='a', delay=True)
+            file_handler.setLevel(file_level) # Set the desired log level for file loggine, usually we want to have everything logged
             file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
 
             # Create a stream handler to print logs to the console
             console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO) # Set the desired log level for console output
+            console_handler.setLevel(console_level) # Set the desired log level for console output
             console_handler.setFormatter(formatter)
+            self.logger.addHandler(console_handler)
 
-            # what is this for? is it for use with jupyter cell with limited buffer?
             # # Create a custom Jupyter handler to display logs in the current cell
+            # class JupyterHandler(logging.Handler):
+            #     def emit(self, record):
+            #         log_entry = self.format(record)
+            #         display(HTML(f"<pre>{log_entry}</pre>"))
             # jupyter_handler = JupyterHandler()
             # jupyter_handler.setLevel(logging.INFO)
             # jupyter_handler.setFormatter(formatter)
-
-            # Add the handlers to the logger
-            self.logger.addHandler(file_handler)
-            self.logger.addHandler(console_handler)
             # self.logger.addHandler(jupyter_handler)
 
         def log(self, message, level=logging.INFO):
