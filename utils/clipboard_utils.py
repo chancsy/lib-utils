@@ -13,3 +13,13 @@ class Clipboard:
 
     def paste(self):
         return clipboard.paste()
+
+    def lib_demo(self):
+        print('Clipboard demo - Copy any text to clipboard and press enter')
+        utils.wait_user_enter_key()
+        cb = self.paste()
+        print(f'Clipboard is: {cb}')
+
+        self.copy('test')
+        print(f'Clipboard demo - "test" copied to clipboard, paste to see if it works')
+        utils.wait_user_enter_key()
