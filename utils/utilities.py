@@ -46,10 +46,9 @@ except ImportError:
 class UtilityFunctions:
     def __init__(self):
         # binary data utils init
-        self._generate_convertion_functions()
-
-        if self.in_ipython():
-            self.ipython = get_ipython()
+        self._generate_conversion_functions()
+        self.override_sys_exit_in_ipython()
+        self.ipython = get_ipython() if self.in_ipython() else None
 
     def do_nothing(self, *args, **kwargs):
         pass
@@ -66,18 +65,31 @@ class UtilityFunctions:
     def wait_user_enter_key(self, msg=None):
         input(msg or 'Press enter to continue...')
 
-    # get user input int/float/str, display 'default_val' if provided.
+    # get user input int/float/str, display 'default_val' if show_default_value is True
     # if 'default_val' is provided and user entered blank, 'default_val' will be returned
-    def get_user_input(self, msg, data_type, default_val=None, show_default_value=True):
+    # if 'allow_empty' is True, user can enter blank, function will return default_val
+    def get_user_input(self, msg, data_type, default_val=None, show_default_value=True, allow_empty=False):
         default_string = ''
         if default_val != None and show_default_value:
             default_string = f', default={str(default_val)}'
         user_input = input(f'{msg} ({data_type.__name__}{default_string}): ')
 
-        if not user_input:
-            val = default_val
-        else:
-            val = user_input
+        # str data type
+        if data_type == str:
+            if user_input:
+                return user_input
+            if default_val is not None:
+                return default_val
+            if not allow_empty:
+                print('Invalid input, expected non-empty input')
+            return None
+
+        # other data types
+        val = default_val if not user_input else user_input
+
+        if val is None and not allow_empty:
+            print('Invalid input, expected non-empty input')
+            return None
 
         try:
             return data_type(val)
@@ -128,12 +140,20 @@ class UtilityFunctions:
         class StopExecution(Exception):
             def _render_traceback_(self):
                 pass
-        if message:
-            print(message)
         if self.in_ipython():
+            if message:
+                print(message)
             raise StopExecution
         else:
-            sys.exit(1)
+            sys.exit(message)
+
+    def override_sys_exit_in_ipython(self):
+        if self.in_ipython():
+            sys.exit = self.exit_silent
+            print('sys.exit() is overridden to exit silently in IPython environment.')
+
+    def display_filelink(self, link, prefix=''):
+        display(FileLink(link, result_html_prefix=prefix))
 
     def clear_output(self):
         if self.in_ipython():
@@ -779,7 +799,7 @@ class UtilityFunctions:
         if len(num_bytes) != expected_length:
             raise ValueError(f'Requires a buffer of {expected_length} bytes, buffer is {len(num_bytes)} bytes long.')
 
-    def _generate_convertion_functions(self):
+    def _generate_conversion_functions(self):
         data_types = {
             'double': 8,
             'float': 4,
@@ -906,6 +926,88 @@ class UtilityFunctions:
 
         def stop_flag(self):
             return self._stop_event.is_set()
+
+    ############################################################################
+    # Demo related
+    ############################################################################
+    # print menu by going through the menu_dict. Split into multiple columns if specifed
+    # when combining columns, the first column will list the first half of the menu_dict, next column will list the second half
+    # if the number of entries is odd, the first column will have one more entry than the second column
+    # At least 2 spaces will be added between the columns
+    # The key and name will be separated by a dot and a space
+    # If the maximum length of a line is more than 80, fall back to single column
+    def show_demo_menu(self, menu_dict, max_columns=4, max_width=80):
+        number_len = 4
+        col_widths = []
+        columns = []
+        col_start = 0
+
+        for i in range(max_columns):
+            col_end = col_start + len(menu_dict) // max_columns + (1 if i < len(menu_dict) % max_columns else 0)
+            col = menu_dict[col_start:col_end]
+            col_width = max(len(entry['name']) for entry in col) + number_len if col else 0
+            col_widths.append(col_width)
+            columns.append(col)
+            col_start = col_end
+
+        total_width = sum(col_widths) + 2 * (max_columns - 1)
+
+        while total_width > max_width and max_columns > 1:
+            max_columns -= 1
+            col_widths = []
+            columns = []
+            col_start = 0
+
+            for i in range(max_columns):
+                col_end = col_start + len(menu_dict) // max_columns + (1 if i < len(menu_dict) % max_columns else 0)
+                col = menu_dict[col_start:col_end]
+                col_width = max(len(entry['name']) for entry in col) + number_len if col else 0
+                col_widths.append(col_width)
+                columns.append(col)
+                col_start = col_end
+
+            total_width = sum(col_widths) + 2 * (max_columns - 1)
+
+        for row in zip(*columns):
+            print('  '.join(f"{entry['key']}. {entry['name']}".ljust(col_widths[i]) for i, entry in enumerate(row)))
+
+        for i in range(len(columns[0]) - len(columns[-1])):
+            print(f"{columns[0][len(columns[-1]) + i]['key']}. {columns[0][len(columns[-1]) + i]['name']}")
+        print()
+
+    def get_demo_desc(self, menu_dict, key):
+        return next((entry['name'] for entry in menu_dict if entry['key'] == key), 'Unknown demo')
+
+    def demo(self, _class):
+        instr_has_lib_demo_dict = hasattr(_class, 'lib_demo_dict') # check if demo_dict exist/declared for instrument class
+        instr_has_lib_demo = hasattr(_class, 'lib_demo') # check if lib_demo function exist/declared for instrument class
+
+        # if neither demo_dict nor lib_demo exist, return None
+        if not instr_has_lib_demo_dict and not instr_has_lib_demo:
+            print('This lib has no demo functions.')
+            return None
+
+        # if only lib_demo exist, call lib_demo
+        if not instr_has_lib_demo_dict and instr_has_lib_demo:
+            result = _class.lib_demo()
+            return result
+
+        # if both demo_dict and lib_demo exist, show menu and proceed
+        if instr_has_lib_demo_dict and instr_has_lib_demo:
+            self.show_demo_menu(_class.lib_demo_dict)
+
+        demo_num = input('Enter demo number: ')
+
+        demo_num = demo_num.lower()
+        demo_desc = self.get_demo_desc(_class.lib_demo_dict, demo_num)
+        if demo_desc == 'Unknown demo':
+            print('Unknown demo number entered.')
+            return None
+        try:
+            result = _class.lib_demo(demo_desc)
+            return result
+        finally:
+            pass
 
     ############################################################################
     # Test related

@@ -1,17 +1,16 @@
+from utils.utilities import UtilityFunctions
+utils = UtilityFunctions()
+
+utils.exit_if_module_missing('numpy')
 import numpy as np
+
+utils.exit_if_module_missing('sympy')
+from sympy import symbols, solve, Eq
+from sympy.core.sympify import SympifyError
 
 class MathUtils:
     def __init__(self):
         pass
-
-    def demo(self, func=None):
-        print('random_integer(0, 10):', randint_0_10 := [self.random_integer(0, 10) for x in range(10)])
-        print('random_float(0, 1):', rand_float_0_1 := [self.random_float(0, 1) for x in range(5)])
-        print('clip(x, 5, 8):', f'x={randint_0_10},', 'result=', [self.clip(x, 5, 8) for x in randint_0_10])
-        # print('calc_relative_error(5, 10):', self.calc_relative_error(5, 10)) # to improve
-        llim=5; ulim=8; print(f'is_within_limits(x, {llim}, {ulim}):', f'x={randint_0_10},', 'result=', [self.is_within_limits(x, llim, ulim) for x in randint_0_10])
-        print('interpolate(x, [0, 1], [4, 20]):', [f'{x/10}->{self.interpolate(x/10, [0,1], [4,20])}' for x in range(0, 11)])
-        print('interpolate(x, [0, 20, [0, 1]]):', [f'{x}->{self.interpolate(x, [4,20], [0,1])}' for x in range(4, 21, 4)])
 
     def random_integer(self, start=0, end=100):
         # from random import randrange
@@ -22,6 +21,12 @@ class MathUtils:
         # from random import uniform
         # return uniform(start, end)
         return np.random.uniform(start, end)
+
+    def deg_to_rad(self, degree):
+        return degree * np.pi / 180
+
+    def rad_to_deg(self, rad):
+        return rad * 180 / np.pi
 
     def clip(self, val, clip_low=None, clip_high=None):
         # if clip_low:
@@ -54,3 +59,45 @@ class MathUtils:
         y = np.array(known_y)
         z = np.polyfit(x, y, degree)
         return z
+
+    def lib_demo(self):
+        print('random_integer(0, 10):', randint_0_10 := [self.random_integer(0, 10) for x in range(10)])
+        print('random_float(0, 1):', rand_float_0_1 := [self.random_float(0, 1) for x in range(5)])
+        print('deg_to_rad(90):', rad_90 := self.deg_to_rad(90))
+        print(f'rad_to_deg({rad_90}):', self.rad_to_deg(rad_90))
+        print('clip(x, 5, 8):', f'x={randint_0_10},', 'result=', [self.clip(x, 5, 8) for x in randint_0_10])
+        print('calc_relative_error(1, 0.9):', self.calc_relative_error(1, 0.9)) # to improve
+        llim=5; ulim=8; print(f'is_within_limits(x, {llim}, {ulim}):', f'x={randint_0_10},', 'result=', [self.is_within_limits(x, llim, ulim) for x in randint_0_10])
+        print('interpolate(x, [0, 1], [4, 20]):', [f'{x/10}->{self.interpolate(x/10, [0,1], [4,20])}' for x in range(0, 11)])
+        print('interpolate(x, [0, 20, [0, 1]]):', [f'{x}->{self.interpolate(x, [4,20], [0,1])}' for x in range(4, 21, 4)])
+        print('1st degree polyfit([1,2,3], [4,5,6], 1):', self.polyfit([1,2,3], [4,5,6], 1))
+        print('2nd degree polyfit([1,2,3], [4,5,6], 2):', self.polyfit([1,2,3], [4,5,6], 2))
+        print('3rd degree polyfit([1,2,3], [4,5,6], 3):', self.polyfit([1,2,3], [4,5,6], 3))
+
+# Solve equations with one unknown variable
+class EquationSolver:
+    def __init__(self, equation_str):
+        try:
+            # Extract variable symbols from the equation string
+            self.symbols = {var: symbols(var) for var in self.extract_symbols(equation_str)}
+            # Parse the equation string to create a symbolic equation
+            self.equation = Eq(eval(equation_str, {**self.symbols}), 0)
+        except SympifyError:
+            raise ValueError("Invalid equation string or variable symbols")
+        except Exception as e:
+            raise ValueError(f"Error creating symbolic equation: {e}")
+
+    def extract_symbols(self, equation_str):
+        import re
+        # Find all variable names in the equation string
+        return set(re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*', equation_str))
+
+    def solve(self, **kwargs):
+        knowns = {self.symbols[var]: value for var, value in kwargs.items() if value is not None}
+        unknowns = [self.symbols[var] for var in self.symbols if kwargs.get(var) is None]
+
+        if len(unknowns) != 1:
+            raise ValueError("You must specify the values of all but one variable, leaving one to be calculated")
+
+        result = solve(self.equation.subs(knowns), unknowns[0])
+        return result[0] if result else None
