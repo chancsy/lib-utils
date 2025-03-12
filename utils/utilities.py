@@ -2,8 +2,7 @@ import sys
 import os
 import subprocess
 import platform
-# from importlib.util import find_spec
-import pkg_resources
+from importlib.metadata import PackageNotFoundError, version
 import string
 import re
 import struct
@@ -54,15 +53,6 @@ class UtilityFunctions:
 
     def do_nothing(self, *args, **kwargs):
         pass
-
-    def module_exists(self, module_name, print_error_on_missing=True):
-        try:
-            pkg_resources.get_distribution(module_name)
-            return True
-        except pkg_resources.DistributionNotFound:
-            if print_error_on_missing:
-                print(f'{module_name} is not installed. To install, please run:\n  pip install {module_name}')
-            return False
 
     def exit_if_module_missing(self, module_name):
         if not self.module_exists(module_name):
@@ -120,10 +110,13 @@ class UtilityFunctions:
             self.ipython.run_line_magic(magic_name, line)
 
     def ipython_auto_reload_modules(self, print_warning=True):
+        if not self.in_ipython(print_warning=True):
+            return None
         self.ipython_run_magic_command('reload_ext', 'autoreload')
         self.ipython_run_magic_command('autoreload', '2')
         if print_warning:
             print('Auto reload is enabled. Not recommended for production code. Be careful with side effects.')
+        return True
 
     def exit_if_not_in_ipython(self):
         if not self.in_ipython():
@@ -336,9 +329,17 @@ class UtilityFunctions:
             import platform
             return platform.python_version()
 
+    def module_exists(self, module_name, print_error_on_missing=True):
+        try:
+            version(module_name)
+            return True
+        except PackageNotFoundError:
+            if print_error_on_missing:
+                print(f'{module_name} is not installed. To install, please run:\n  pip install {module_name}')
+            return False
+
     def get_python_pkg_version(self, pkg_name):
         try:
-            from importlib.metadata import version
             return version(pkg_name)
         except ImportError:
             return 'Package not found'
@@ -397,6 +398,8 @@ class UtilityFunctions:
     def print_same_line(self, msg):
         print('\r\033[K'+msg, end='')
 
+    # automatic add 1 to simplify calling at the and of foor loop
+    # to show 0%, pass n=-1
     def print_progress(self, n, total):
         progress = (n+1)/total*100
         if progress >= 100:
@@ -675,7 +678,7 @@ class UtilityFunctions:
             if os.path.isfile(path):
                 raise FileNotFoundError(f"Cannot remove '{path}' because it is a file.")
             if force:
-                self.shutil.rmtree(path)
+                shutil.rmtree(path)
             else:
                 os.rmdir(path)
         else:
@@ -698,18 +701,24 @@ class UtilityFunctions:
             raise FileNotFoundError(f"File '{path}' does not exist.")
 
     # get file content
-    def read_file(self, path):
-        with open(path, 'r') as file:
+    def read_file(self, path, binary=False):
+        mode = 'rb' if binary else 'r'
+        with open(path, mode) as file:
             return file.read()
 
     # write content to file
     def write_file(self, path, content, overwrite=False):
         mode = 'w' if overwrite else 'a'
+
+        # use binary switch if content is bytes
+        if isinstance(content, bytes):
+            mode = mode + 'b'
+
         with open(path, mode) as file:
             file.write(content)
 
     # list files in a directory, with optional filters
-    def list_files(self, directory, ext='', recursive=False):
+    def list_files(self, directory='.', ext='', recursive=False):
         filelist = []
         for root, dirs, files in os.walk(directory):
             for file in files:
@@ -744,6 +753,8 @@ class UtilityFunctions:
         min_val, max_val, expected_type, _ = self.data_type_properties[data_type]
         if not isinstance(value, expected_type):
             return False
+
+        # Only compare non bytes/byte array data
         if not (expected_type==bytes or expected_type==bytearray):
             if min_val is not None and (value < min_val or value > max_val):
                 return False
