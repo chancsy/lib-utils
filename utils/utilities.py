@@ -520,9 +520,12 @@ class UtilityFunctions:
             unique_list.sort()
         return unique_list
 
-    def list_to_csv(self, data, delim=','):
+    def list_to_csv(self, data, delim=',', na_str='nan'):
         # return delim.join([str(x) for x in data])
-        return delim.join(map(str, data))
+        # return delim.join(map(str, data))
+        if na_str == 'nan':
+            return delim.join([na_str if x is None else str(x) for x in data])
+        return delim.join([na_str if (x is None or str(x).lower() == 'nan') else str(x) for x in data])
 
     def dict_lookup(self, dict, lookup_key, lookup_value, return_key):
         for d in dict:
