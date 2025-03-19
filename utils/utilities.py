@@ -87,8 +87,9 @@ class UtilityFunctions:
         # other data types
         val = default_val if not user_input else user_input
 
-        if val is None and not allow_empty:
-            print('Invalid input, expected non-empty input')
+        if val is None:
+            if not allow_empty:
+                print('Invalid input, expected non-empty input')
             return None
 
         try:
