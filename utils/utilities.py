@@ -496,7 +496,9 @@ class UtilityFunctions:
         lines_between = []
         inside_range = False
 
-        with open(file_path, 'r') as file:
+        def extract_lines(file):
+            nonlocal inside_range
+
             for line in file:
                 if string1 in line:
                     inside_range = True
@@ -509,6 +511,20 @@ class UtilityFunctions:
                     break
                 if inside_range:
                     lines_between.append(line)
+
+        # check if given path is http url
+        if file_path.startswith('https://') or file_path.startswith('http://'):
+            data = urllib.request.urlopen(file_path)
+            # read all lines from the response
+            lines = data.readlines()
+            # lines will be a list of bytes, decode to str
+            lines = [line.decode('utf-8') for line in lines]
+            # remove lines ending, can be '\n' or '\r\n'
+            lines = [line.rstrip('\n\r') for line in lines]
+            extract_lines(lines)
+        else:
+            with open(file_path, 'r') as file:
+                extract_lines(file)
 
         return lines_between
 
