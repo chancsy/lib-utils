@@ -44,6 +44,8 @@ except ImportError:
 #     BYTEARRAY = bytearray
 
 class UtilityFunctions:
+    _sys_exit_overridden = False # Class-level flag to track if the message has been shown
+
     def __init__(self):
         # binary data utils init
         self._generate_conversion_functions()
@@ -149,9 +151,10 @@ class UtilityFunctions:
             sys.exit(message)
 
     def override_sys_exit_in_ipython(self):
-        if self.in_ipython():
+        if self.in_ipython() and not UtilityFunctions._sys_exit_overridden:
             sys.exit = self.exit_silent
             print('sys.exit() is overridden to exit silently in IPython environment.')
+            UtilityFunctions._sys_exit_overridden = True
 
     def display_filelink(self, link, prefix=''):
         display(FileLink(link, result_html_prefix=prefix))
