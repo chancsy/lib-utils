@@ -68,8 +68,8 @@ class UtilityFunctions:
         input(msg or 'Press enter to continue...')
 
     # get user input int/float/str, display 'default_val' if show_default_value is True
-    # if 'default_val' is provided and user entered blank, 'default_val' will be returned
-    # if 'allow_empty' is True, user can enter blank, function will return default_val
+    # if 'default_val' is provided and user entered blank, 'default_val' will be returned (default_val must not be None, can be '')
+    # if 'allow_empty' is True, user can enter blank, function will return default_val (default_val can be anything including None)
     def get_user_input(self, msg, data_type, default_val=None, show_default_value=True, allow_empty=False):
         default_string = ''
         if default_val != None and show_default_value:
@@ -131,6 +131,13 @@ class UtilityFunctions:
         self.ipython_run_magic_command('autoreload', '2')
         if print_warning:
             print('Auto reload is enabled. Not recommended for production code. Be careful with side effects.')
+        return True
+
+    def ipython_reset_namespace(self):
+        if not self.in_ipython(print_warning=True):
+            return None
+        self.ipython_run_magic_command('reset', '-f')
+        print('IPython namespace is reset.')
         return True
 
     def exit_if_not_in_ipython(self):
@@ -200,9 +207,9 @@ class UtilityFunctions:
         if time_now is None:
             time_now = self.get_current_datetime()
         style_map = {
-            None: (time_delim, show_ms, ms_delim),
-            0: (':', False, '.'),
-            1: (':', True, '.'),
+            None: (time_delim, show_ms, ms_delim), # 105813
+            0: (':', False, '.'), # 10:58:13
+            1: (':', True, '.'),  # 10:58:13.123
         }
         time_delim, show_ms, ms_delim = style_map.get(style, (time_delim, show_ms, ms_delim))
         if show_ms:
@@ -219,8 +226,8 @@ class UtilityFunctions:
         if time_now is None:
             time_now = self.get_current_datetime()
         style_map = {
-            None: date_delim,
-            0: '-',
+            None: date_delim, # 20250514
+            0: '-', # 2023-10-01
         }
         date_delim = style_map.get(style, date_delim)
         return self.get_date(time_now, date_delim)
@@ -229,9 +236,9 @@ class UtilityFunctions:
         if time_now is None:
             time_now = self.get_current_datetime()
         style_map = {
-            None: (date_delim, date_time_delim, time_delim, show_ms, ms_delim),
-            0: ('-', ' ', ':', False, '.'),
-            1: ('-', ' ', ':', True, '.'),
+            None: (date_delim, date_time_delim, time_delim, show_ms, ms_delim), # 20250514110003
+            0: ('-', ' ', ':', False, '.'), # 2025-05-14 10:59:34
+            1: ('-', ' ', ':', True, '.'),  # 2025-05-14 10:59:34.123
         }
         date_delim, date_time_delim, time_delim, show_ms, ms_delim = style_map.get(style, (date_delim, date_time_delim, time_delim, show_ms, ms_delim))
 
@@ -279,6 +286,11 @@ class UtilityFunctions:
                 return diff.total_seconds() / (24 * 3600)
         return None
 
+    # Usage:
+    # timer = IntervalTimer(1)  # 1 second interval
+    # while True:
+    #     # user codes
+    #     timer.wait()  # Wait for the next interval
     class IntervalTimer:
         def __init__(self, interval_sec, eco_mode=True):
             # eco_mode:
@@ -287,7 +299,7 @@ class UtilityFunctions:
             self.interval_sec = interval_sec
             self.eco_mode = eco_mode
             self.time_start = time.time()
-            self.idx = 0
+            self.idx = 1
 
         def wait(self):
             while (time.time() - self.time_start) < (self.idx * self.interval_sec):
@@ -422,7 +434,7 @@ class UtilityFunctions:
     def print_same_line(self, msg):
         print('\r\033[K'+msg, end='')
 
-    # automatic add 1 to simplify calling at the and of foor loop
+    # automatic add 1 to simplify calling at the and of for loop
     # to show 0%, pass n=-1
     def print_progress(self, n, total):
         progress = (n+1)/total*100
@@ -461,6 +473,12 @@ class UtilityFunctions:
             return f' {text} '.center(length, char)
         return text
 
+    def pad_left(self, text, char=' ', length=80):
+        return text.rjust(length, char)
+
+    def pad_right(self, text, char=' ', length=80):
+        return text.ljust(length, char)
+
     # convert string to float, return None if fail to convert
     def str2float(self, val):
         try:
@@ -476,6 +494,8 @@ class UtilityFunctions:
             return None
 
     # natural sort key for sorting strings with numbers
+    # Usage example:
+    #   sorted_list = sorted(unsorted_list, key=natural_sort_key)
     def natural_sort_key(self, text):
         return [int(s) if s.isdigit() else s.lower() for s in re.split(r'(\d+)', text)]
 
@@ -568,11 +588,17 @@ class UtilityFunctions:
                 seen[col] = 0
         return names
 
-    def array_to_df(self, array, has_header=True):
+    def array_to_df(self, array, has_header=True, column_names=None):
         if has_header:
+            # ignore given column_names if has_header is True
             df = pd.DataFrame(array[1:], columns=array[0])
         else:
-            df = pd.DataFrame(array)
+            if column_names is not None:
+                if len(column_names) != len(array[0]):
+                    raise ValueError("Column names length does not match array length.")
+                df = pd.DataFrame(array, columns=column_names)
+            else:
+                df = pd.DataFrame(array)
         return df
 
     def df_unique_columns(self, df):
@@ -649,10 +675,10 @@ class UtilityFunctions:
             filename = urllib.parse.unquote(url.split('/')[-1])
             file_path = os.path.join(download_dir, filename)
             if os.path.exists(file_path) and not overwrite:
-                print(f"File '{filename}' already exists. Skipping download.")
+                print(f"File '{os.path.abspath(file_path)}' already exists. Skipping download.")
                 return
             urllib.request.urlretrieve(url, file_path)
-            print(f"Downloaded '{filename}'")
+            print(f"Downloaded '{os.path.abspath(file_path)}'")
         except Exception as e:
             print(f"Error downloading {url}: {e}")
 
@@ -750,12 +776,16 @@ class UtilityFunctions:
             return file.read()
 
     # write content to file
-    def write_file(self, path, content, overwrite=False):
+    def write_file(self, path, content, overwrite=False, auto_create_dir=True):
         mode = 'w' if overwrite else 'a'
 
         # use binary switch if content is bytes
         if isinstance(content, bytes):
             mode = mode + 'b'
+
+        # create directory if not exists
+        if auto_create_dir:
+            self.create_directory(os.path.dirname(path))
 
         with open(path, mode) as file:
             file.write(content)
@@ -881,10 +911,14 @@ class UtilityFunctions:
         return value ^ (1 << bit_index)
 
     def bytes_to_hex_str(self, bytes, prefix='', delim=''):
+        if bytes is None:
+            return ''
         return delim.join([f'{prefix}{x:02X}' for x in bytes])
 
     def hex_str_to_bytes(self, hex_string, delim=''):
         hex_string = hex_string.replace(delim, '')
+        # replace '0x' and '0X' with ''
+        hex_string = hex_string.replace('0x', '').replace('0X', '')
         return bytes.fromhex(hex_string)
 
     def string_to_bytes(self, string):
@@ -892,6 +926,37 @@ class UtilityFunctions:
 
     def bytes_to_string(self, bytes):
         return bytes.decode(errors='replace')
+
+    def dec_to_hex_str(self, dec, prefix='', delim='', pad=True, byte_size=None):
+        # 459 => 1CB (without prefix, no delim, no padding)
+        # 459 => 0x1CB (with prefix, no delim, no padding)
+        # 459 => 1,CB (without prefix, with delim ",", no padding)
+        # 459 => 0x1,0xCB (with prefix, with delim ",", no padding)
+
+        # 459 => 01CB (without prefix, no delim, padding=2)
+        # 459 => 0x01CB (with prefix, no delim, padding=2)
+        # 459 => 01,CB (without prefix, with delim ",", padding=2)
+        # 459 => 0x01,0xCB (with prefix, with delim ",", padding=2)
+
+        # convert
+        if byte_size:
+            hex_str = f'{dec:0{byte_size*2}X}'
+
+        # add padding
+        if pad and len(hex_str) % 2:
+            hex_str = '0' + hex_str
+
+        # add delim
+        if delim:
+            hex_str = delim.join([hex_str[max(i-2, 0):i] for i in range(len(hex_str), 0, -2)][::-1])
+
+        # add prefix
+        if prefix:
+            if delim: # add prefix to each delimited part
+                hex_str = delim.join([f'{prefix}{x}' for x in hex_str.split(delim)])
+            else: # add prefix once to the whole string
+                hex_str = f'{prefix}{hex_str}'
+        return hex_str
 
     def crc32_jamcrc(self,data_bytes):
         import zlib
@@ -911,8 +976,8 @@ class UtilityFunctions:
 
     def is_integer(s):
         try:
-            int(s)
-            return True
+            float_val = float(s)
+            return float_val.is_integer()
         except ValueError:
             return False
 
