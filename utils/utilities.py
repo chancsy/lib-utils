@@ -86,6 +86,17 @@ class UtilityFunctions:
                 print('Invalid input, expected non-empty input')
             return None
 
+        if data_type == bool:
+            if user_input.lower() in ['true', '1', 'yes']:
+                return True
+            elif user_input.lower() in ['false', '0', 'no']:
+                return False
+            if default_val is not None:
+                return default_val
+            if not allow_empty:
+                print('Invalid input, expected boolean value (true/false, 1/0, yes/no)')
+            return None
+
         # other data types
         val = default_val if not user_input else user_input
 
