@@ -974,7 +974,7 @@ class UtilityFunctions:
         format_string = "{:." + str(sf) + "g}"
         return format_string.format(num)
 
-    def is_integer(s):
+    def is_integer(self, s):
         try:
             float_val = float(s)
             return float_val.is_integer()
@@ -1024,7 +1024,19 @@ class UtilityFunctions:
     # At least 2 spaces will be added between the columns
     # The key and name will be separated by a dot and a space
     # If the maximum length of a line is more than 80, fall back to single column
-    def show_demo_menu(self, menu_dict, max_columns=4, max_width=80):
+    # Example menu_dict, 4 columns, 80 max width:
+    # menu_dict = [
+    #     {'key': 'a', 'name': 'Beep'},
+    #     {'key': 'b', 'name': 'Get Last Error'},
+    #     {'key': 'c', 'name': 'Set Mode'},
+    #     {'key': 'd', 'name': 'Get Mode'},
+    #     {'key': 'e', 'name': 'Read Voltage DC'},
+    #     {'key': 'f', 'name': 'Read Current DC'},
+    # ]
+    # Will be shown as:
+    # a. Beep             c. Set Mode   e. Read Voltage DC   f. Read Current DC
+    # b. Get Last Error   d. Get Mode
+    def show_demo_menu(self, menu_dict, max_columns=8, max_width=80):
         number_len = 4
         col_widths = []
         columns = []
@@ -1056,11 +1068,17 @@ class UtilityFunctions:
 
             total_width = sum(col_widths) + 2 * (max_columns - 1)
 
-        for row in zip(*columns):
-            print('  '.join(f"{entry['key']}. {entry['name']}".ljust(col_widths[i]) for i, entry in enumerate(row)))
-
-        for i in range(len(columns[0]) - len(columns[-1])):
-            print(f"{columns[0][len(columns[-1]) + i]['key']}. {columns[0][len(columns[-1]) + i]['name']}")
+        # Print all rows, handling missing entries in each column
+        max_rows = max(len(col) for col in columns)
+        for row_idx in range(max_rows):
+            row_entries = []
+            for col_idx, col in enumerate(columns):
+                if row_idx < len(col):
+                    entry = col[row_idx]
+                    row_entries.append(f"{entry['key']}. {entry['name']}".ljust(col_widths[col_idx]))
+                else:
+                    row_entries.append(''.ljust(col_widths[col_idx]))
+            print('  '.join(row_entries).rstrip())
         print()
 
     def get_demo_desc(self, menu_dict, key):
