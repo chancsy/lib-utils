@@ -10,7 +10,7 @@ import time
 from enum import Enum
 from datetime import datetime, timedelta
 import calendar
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib.request
 import urllib.parse
 from html.parser import HTMLParser
@@ -51,6 +51,9 @@ class UtilityFunctions:
         self._generate_conversion_functions()
         self.override_sys_exit_in_ipython()
         self.ipython = get_ipython() if self.in_ipython() else None
+
+        # Progress line tracking
+        self._progress_line_active = False
 
     def do_nothing(self, *args, **kwargs):
         pass
@@ -444,6 +447,12 @@ class UtilityFunctions:
     ############################################################################
     def print_same_line(self, msg):
         print('\r\033[K'+msg, end='')
+        self._progress_line_active = True
+
+    def print_same_line_end(self):
+        if self._progress_line_active:
+            print()
+            self._progress_line_active = False
 
     # automatic add 1 to simplify calling at the and of for loop
     # to show 0%, pass n=-1
@@ -453,7 +462,16 @@ class UtilityFunctions:
             progress = 100
         self.print_same_line("Progress: "+"{:.1f}".format(progress)+ " %")
         if progress == 100:
-            print('\r')
+            self.print_same_line_end()
+
+    # print private method to replace print function, and perform additional actions
+    def print(self, *args, **kwargs):
+        """
+        Custom print function that can be extended to perform additional actions.
+        For example, it can be used to log messages or display them in a specific format.
+        """
+        self.print_same_line_end()
+        print(*args, **kwargs)
 
     def print_time_left(self, n, total):
         self.print_same_line(f'Waiting for {total}s... ({total-n}s)')
@@ -681,29 +699,68 @@ class UtilityFunctions:
                 filelist.append(link)
         return filelist, dirlist
 
-    def download_file(self, url, download_dir='.', overwrite=False):
+    def download_file(self, url, download_dir='.', overwrite=False, show_abs_path=True, suppress_output=False):
+        """Download file and return status: 'downloaded', 'skipped', or 'failed'"""
         try:
             filename = urllib.parse.unquote(url.split('/')[-1])
             file_path = os.path.join(download_dir, filename)
-            if os.path.exists(file_path) and not overwrite:
-                print(f"File '{os.path.abspath(file_path)}' already exists. Skipping download.")
-                return
-            urllib.request.urlretrieve(url, file_path)
-            print(f"Downloaded '{os.path.abspath(file_path)}'")
-        except Exception as e:
-            print(f"Error downloading {url}: {e}")
 
-    def download_files(self, urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5):
-        # Create download directory if not exists
-        self.create_directory(download_dir)
+            if os.path.exists(file_path) and not overwrite:
+                print(f"File '{os.path.abspath(file_path) if show_abs_path else os.path.basename(file_path)}' already exists. Skipping download.") if not suppress_output else None
+                return 'skipped'
+
+            urllib.request.urlretrieve(url, file_path)
+            print(f"Downloaded '{os.path.abspath(file_path) if show_abs_path else os.path.basename(file_path)}'") if not suppress_output else None
+            return 'downloaded'
+        except Exception as e:
+            self.print(f"Error downloading {urllib.parse.unquote(url)}: {e}")
+            return 'failed'
+
+    def download_files(self, urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress'):
+        # output_type
+        #   'progress' - print progress in the same line
+        #   'full' - print full output for each download, does not print progress
+        #   'quiet' or any - suppress all output except errors
+        suppress_output = output_type == 'quiet' or output_type != 'full'
+
+        def get_summary_line():
+            return f'Total: {len(urls)}, Downloaded: {downloaded}, Skipped: {skipped}, Failed: {failed}'
+
+        self.create_directory(download_dir) # Create download directory if not exists
+        print(f"Download directory: {os.path.abspath(download_dir)}")
+
+        downloaded = 0; skipped = 0; failed = 0
 
         if not parallel_download:
             for url in urls:
-                self.download_file(url, download_dir, overwrite)
+                # self.download_file(url, download_dir, overwrite)
+                result = self.download_file(url, download_dir, overwrite, show_abs_path=False, suppress_output=suppress_output)
+                if result == 'downloaded':
+                    downloaded += 1
+                elif result == 'skipped':
+                    skipped += 1
+                else:
+                    failed += 1
+                self.print_same_line(f'{get_summary_line()}') if output_type=='progress' else None
         else:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                for url in urls:
-                    executor.submit(self.download_file, url, download_dir, overwrite)
+                # for url in urls:
+                #     executor.submit(self.download_file, url, download_dir, overwrite)
+                future_to_url = {executor.submit(self.download_file, url, download_dir, overwrite, show_abs_path=False, suppress_output=suppress_output): url for url in urls}
+
+                # Process completed downloads
+                for future in as_completed(future_to_url):
+                    url = future_to_url[future]
+                    result = future.result()
+                    if result == 'downloaded':
+                        downloaded += 1
+                    elif result == 'skipped':
+                        skipped += 1
+                    else:
+                        failed += 1
+                    self.print_same_line(f'{get_summary_line()}') if output_type=='progress' else None
+
+        self.print_same_line_end() if output_type=='progress' else print(f'{get_summary_line()}') # print new line after progress output, or print final summary
 
     def post_to_teams(self, webhook_url, text):
         text_conditioned_for_teams = str(text).replace('\n', '\n\n')
@@ -815,6 +872,19 @@ class UtilityFunctions:
         # filelist.sort(key=lambda x: os.path.getmtime(x))
 
         return filelist
+
+    def calculate_file_hash(self, file_path, hash_algorithm='md5'):
+        import hashlib
+
+        hash_func = getattr(hashlib, hash_algorithm, None)
+        if hash_func is None:
+            raise ValueError(f"Unsupported hash algorithm: {hash_algorithm}")
+
+        hasher = hash_func()
+        with open(file_path, 'rb') as f:
+            while chunk := f.read(8192):
+                hasher.update(chunk)
+        return hasher.hexdigest()
 
     ############################################################################
     # Binary data related
