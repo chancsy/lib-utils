@@ -596,8 +596,35 @@ class UtilityFunctions:
             return delim.join([na_str if x is None else str(x) for x in data])
         return delim.join([na_str if (x is None or str(x).lower() == 'nan') else str(x) for x in data])
 
-    def dict_lookup(self, dict, lookup_key, lookup_value, return_key):
-        for d in dict:
+    def dict_reverse_lookup(self, dict, lookup_value):
+        """
+        Reverse lookup in a dictionary to find the first key that matches the given value.
+        Returns the key if found, otherwise returns None.
+        :param dict: Dictionary to search in.
+        :param lookup_value: Value to look up in the dictionary.
+        :return: The key corresponding to the lookup_value if found, otherwise None.
+        """
+        for key, value in dict.items():
+            if value == lookup_value:
+                return key
+        return None
+
+        # # Using list comprehension
+        # keys = [key for key, value in dict.items() if value == lookup_value]
+        # if keys:
+        #     return keys[0]
+        # return None
+
+    def dict_list_lookup(self, dict_list, lookup_key, lookup_value, return_key):
+        """
+        Look up a value in a list of dictionaries by a specific key and return another key's value.
+        :param dict_list: List of dictionaries to search in.
+        :param lookup_key: Key to look up in each dictionary.
+        :param lookup_value: Value to match for the lookup key.
+        :param return_key: Key whose value to return if the lookup is successful.
+        :return: The value of return_key if found, otherwise None.
+        """
+        for d in dict_list:
             if d.get(lookup_key) == lookup_value:
                 return d.get(return_key)
         return None
