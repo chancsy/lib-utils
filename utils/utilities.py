@@ -323,6 +323,102 @@ class UtilityFunctions:
                     pass
             self.idx += 1
 
+    # Usage:
+    # timer = ThreadedTimer(5.0)  # 5 second timeout
+    # timer.start()
+    # # ... do work ...
+    # if timer.is_expired():
+    #     print("Timer expired!")
+    #     timer.clear_expired()
+    # timer.stop()
+    class ThreadedTimer(threading.Thread):
+        def __init__(self, timeout_sec, repeat=False, callback=None, auto_start=True, auto_clear_expired=True):
+            super().__init__(daemon=True)
+            self.timeout_sec = timeout_sec
+            self.repeat = repeat  # If True, timer fires repeatedly like an interrupt
+            self.callback = callback  # Optional callback function to execute on timeout
+            self._expired = threading.Event()
+            self._stop_event = threading.Event()
+            self._reset_event = threading.Event()
+            self._running = False
+            self._fire_count = 0
+            if auto_start:
+                self.start()
+            self._auto_clear_expired = auto_clear_expired
+
+        def run(self):
+            self._running = True
+            while not self._stop_event.is_set():
+                # Wait for timeout or stop/reset event
+                if self._stop_event.wait(self.timeout_sec):
+                    break  # Stop event was set
+
+                # Check if reset was requested during wait
+                if self._reset_event.is_set():
+                    self._reset_event.clear()
+                    continue  # Restart the timeout
+
+                # Timeout occurred
+                if not self._stop_event.is_set():
+                    self._fire_count += 1
+                    self._expired.set()
+
+                    # Execute callback if provided (like interrupt service routine)
+                    if self.callback:
+                        try:
+                            self.callback()
+                        except Exception as e:
+                            print(f"Timer callback error: {e}")
+
+                    # If not repeating, exit after first timeout
+                    if not self.repeat:
+                        break
+
+                    # For repeating timer, continue the loop
+                    # The expired flag stays set until manually cleared
+
+            self._running = False
+
+        def start(self):
+            if not self._running and not self.is_alive():
+                super().start()
+
+        def stop(self):
+            self._stop_event.set()
+            if self.is_alive():
+                self.join(timeout=1.0)
+
+        def reset(self):
+            """Reset the timer - restart the countdown"""
+            self._expired.clear()
+            self._reset_event.set()
+            self._fire_count = 0
+
+        def is_expired(self):
+            """Check if timer has expired and clear the expired flag"""
+            expired = self._expired.is_set()
+            if expired and self._auto_clear_expired:
+                self._expired.clear()
+            return expired
+
+        def clear_expired(self):
+            """Clear the expired flag without restarting the timer"""
+            self._expired.clear()
+
+        def is_running(self):
+            """Check if timer thread is running"""
+            return self._running
+
+        def fire_count(self):
+            """Get number of times timer has fired"""
+            return self._fire_count
+
+        def time_remaining(self):
+            """Get approximate time remaining (not precise due to threading)"""
+            if not self._running or self.is_expired():
+                return 0
+            return max(0, self.timeout_sec)
+
     ############################################################################
     # OS & hardware related functions
     ############################################################################
