@@ -839,7 +839,7 @@ class UtilityFunctions:
             self.print(f"Error downloading {urllib.parse.unquote(url)}: {e}")
             return 'failed'
 
-    def download_files(self, urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress'):
+    def download_files(self, urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1):
         # output_type
         #   'progress' - print progress in the same line
         #   'full' - print full output for each download, does not print progress
@@ -852,29 +852,18 @@ class UtilityFunctions:
         self.create_directory(download_dir) # Create download directory if not exists
         print(f"Download directory: {os.path.abspath(download_dir)}")
 
-        downloaded = 0; skipped = 0; failed = 0
+        retries = 0
 
-        if not parallel_download:
-            for url in urls:
-                # self.download_file(url, download_dir, overwrite)
-                result = self.download_file(url, download_dir, overwrite, show_abs_path=False, suppress_output=suppress_output)
-                if result == 'downloaded':
-                    downloaded += 1
-                elif result == 'skipped':
-                    skipped += 1
-                else:
-                    failed += 1
-                self.print_same_line(f'{get_summary_line()}') if output_type=='progress' else None
-        else:
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                # for url in urls:
-                #     executor.submit(self.download_file, url, download_dir, overwrite)
-                future_to_url = {executor.submit(self.download_file, url, download_dir, overwrite, show_abs_path=False, suppress_output=suppress_output): url for url in urls}
+        while retries < auto_retry_count+1:
+            downloaded = 0; skipped = 0; failed = 0
 
-                # Process completed downloads
-                for future in as_completed(future_to_url):
-                    url = future_to_url[future]
-                    result = future.result()
+            if retries:
+                print(f'Retrying download... ({retries}/{auto_retry_count})') if output_type != 'quiet' else None
+
+            if not parallel_download:
+                for url in urls:
+                    # self.download_file(url, download_dir, overwrite)
+                    result = self.download_file(url, download_dir, overwrite, show_abs_path=False, suppress_output=suppress_output)
                     if result == 'downloaded':
                         downloaded += 1
                     elif result == 'skipped':
@@ -882,6 +871,30 @@ class UtilityFunctions:
                     else:
                         failed += 1
                     self.print_same_line(f'{get_summary_line()}') if output_type=='progress' else None
+            else:
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    # for url in urls:
+                    #     executor.submit(self.download_file, url, download_dir, overwrite)
+                    future_to_url = {executor.submit(self.download_file, url, download_dir, overwrite, show_abs_path=False, suppress_output=suppress_output): url for url in urls}
+
+                    # Process completed downloads
+                    for future in as_completed(future_to_url):
+                        url = future_to_url[future]
+                        result = future.result()
+                        if result == 'downloaded':
+                            downloaded += 1
+                        elif result == 'skipped':
+                            skipped += 1
+                        else:
+                            failed += 1
+                        self.print_same_line(f'{get_summary_line()}') if output_type=='progress' else None
+            if failed == 0:
+                break
+            if retries == auto_retry_count:
+                print(f'Failed to download {failed} files after {retries} retries. Stopping.') if output_type != 'quiet' else None
+                break
+            retries += 1
+            self.print_same_line_end()
 
         self.print_same_line_end() if output_type=='progress' else print(f'{get_summary_line()}') # print new line after progress output, or print final summary
 
