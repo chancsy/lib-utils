@@ -725,6 +725,33 @@ class UtilityFunctions:
                 return d.get(return_key)
         return None
 
+    # given an list, find the smallest value that is greater than or equal to the given value
+    # [1, 2, 3, 4, 5], value=3.5, return [4]
+    # [1, 2, 3, 4, 5], value=0, return [1]
+    # [1, 2, 3, 4, 5], value=4, return [4]
+    # [1, 2, 3, 4, 5], value=6, return None
+    def find_smallest_gte(self, value, values, use_bisect=False):
+        """
+        Find the smallest value in a list that is greater than or equal to the given value.
+        :param value: The value to compare against.
+        :param values: A list of values to search in.
+        :return: The smallest value >= value, or None if not found.
+        """
+        sorted_values = sorted(values)
+        if use_bisect:
+            import bisect
+            index = bisect.bisect_left(sorted_values, value)
+            if index < len(sorted_values):
+                return sorted_values[index]
+            return None
+        else:
+            # Linear search for simplicity
+            for v in sorted_values:
+                print(v, value)
+                if v >= value:
+                    return v
+            return None
+
     ############################################################################
     # data, dataframe related
     ############################################################################
