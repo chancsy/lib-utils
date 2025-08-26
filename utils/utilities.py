@@ -577,12 +577,13 @@ class UtilityFunctions:
     ############################################################################
     # strings related
     ############################################################################
-    def remove_non_ascii(self, a_str):
+    def remove_non_printable_ascii(self, a_str):
         ascii_chars = set(string.printable)
         return ''.join(x for x in a_str if x in ascii_chars)
 
-    def contains_non_ascii(self, string):
-        return any(ord(char) > 127 for char in string)
+    def contains_non_printable_ascii(self, a_str):
+        # return any(ord(char) > 127 for char in string)
+        return any(char not in string.printable for char in a_str)
 
     def contains_digits(self, string):
         return any(char.isdigit() for char in string)
@@ -1061,7 +1062,8 @@ class UtilityFunctions:
         'int32': (-2147483648, 2147483647, int, 4),
         'float': (None, None, float, 4),
         'bytearray': (None, None, bytearray, 4),
-        'bytes': (None, None, bytes, 4),
+        'bytes': (None, None, bytes, 1),
+        'string': (None, None, str, 1),
     }
 
     def is_data_type_valid(self, data_type, value):
@@ -1071,8 +1073,8 @@ class UtilityFunctions:
         if not isinstance(value, expected_type):
             return False
 
-        # Only compare non bytes/byte array data
-        if not (expected_type==bytes or expected_type==bytearray):
+        # Only compare numeric types
+        if not (expected_type==bytes or expected_type==bytearray or expected_type==str):
             if min_val is not None and (value < min_val or value > max_val):
                 return False
         return True
