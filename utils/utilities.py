@@ -419,6 +419,13 @@ class UtilityFunctions:
                 return 0
             return max(0, self.timeout_sec)
 
+    def seconds_to_time(self, seconds):
+        """Convert seconds to a time tuple (hours, minutes, seconds)"""
+        hr = seconds // 3600
+        min = (seconds % 3600) // 60
+        sec = seconds % 60
+        return hr, min, sec
+
     ############################################################################
     # OS & hardware related functions
     ############################################################################
