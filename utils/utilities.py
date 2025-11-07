@@ -445,6 +445,37 @@ class UtilityFunctions:
     def os_info(self):
         return platform.platform()
 
+    def os_platform(self):
+        return platform.system()
+
+    def os_version_win(self):
+        platform = self.os_platform()
+        if platform == 'Windows':
+            # https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information
+            build_map = {
+                10240: "Windows 10, version 1507",
+                10586: "Windows 10, version 1511",
+                14393: "Windows 10, version 1607",
+                15063: "Windows 10, version 1703",
+                16299: "Windows 10, version 1709",
+                17134: "Windows 10, version 1803",
+                17763: "Windows 10, version 1809",
+                18362: "Windows 10, version 1903",
+                18363: "Windows 10, version 1909",
+                19041: "Windows 10, version 2004",
+                19042: "Windows 10, version 20H2",
+                19043: "Windows 10, version 21H1",
+                19044: "Windows 10, version 21H2",
+                19045: "Windows 10, version 22H2",
+                22000: "Windows 11, version 21H2",
+                22621: "Windows 11, version 22H2",
+                22631: "Windows 11, version 23H2",
+                26100: "Windows 11, version 24H2",
+            }
+            build_number = int(self.os_info().split('.')[-1].split('-')[0])
+            return build_map.get(build_number, "Unknown Windows version")
+        return 'Unknown OS version'
+
     def get_serial_number(self):
         # return self.utils.run_powershell_command('wmic bios get serialnumber')
         return platform.node()
@@ -683,6 +714,31 @@ class UtilityFunctions:
                 extract_lines(file)
 
         return lines_between
+
+    # convert range string to list of integers, "~" indicates rnage, "," indicates separate values
+    # e.g. "1~5,8,10~12" -> [1,2,3,4,5,8,10,11,12]
+    def parse_range_string(self, range_str):
+        """
+        Convert a range string like "1~5,8,10~12" to a sorted list of integers: [1,2,3,4,5,8,10,11,12]
+        """
+        result = set()
+        parts = range_str.split(',')
+        for part in parts:
+            if '~' in part:
+                start, end = part.split('~')
+                try:
+                    start = int(start)
+                    end = int(end)
+                    if start <= end:
+                        result.update(range(start, end + 1))
+                except ValueError:
+                    pass  # Ignore invalid ranges
+            else:
+                try:
+                    result.add(int(part))
+                except ValueError:
+                    pass  # Ignore invalid integers
+        return sorted(result)
 
     ############################################################################
     # list, dict related
@@ -1026,23 +1082,42 @@ class UtilityFunctions:
         if auto_create_dir:
             self.create_directory(os.path.dirname(path))
 
+        # append a new line character before content if not overwriting and not in binary mode, and the last character is not a new line
+        if not overwrite and not isinstance(content, bytes):
+            try:
+                with open(path, 'r') as file:
+                    file.seek(0, os.SEEK_END)
+                    if file.tell() > 0:
+                        file.seek(file.tell() - 1)
+                        last_char = file.read(1)
+                        if last_char != '\n':
+                            content = '\n' + content
+            except FileNotFoundError:
+                pass  # File does not exist yet
+
         with open(path, mode) as file:
             file.write(content)
 
     # list files in a directory, with optional filters
     def list_files(self, directory='.', ext='', recursive=False):
+        FileListResult = namedtuple('FileListResult', ['files', 'dirs'])
+
         filelist = []
+        dirlist = []
         for root, dirs, files in os.walk(directory):
             for file in files:
                 if file.lower().endswith(ext.lower()):
                     filelist.append(os.path.join(root, file))
+            for dir in dirs:
+                dirlist.append(os.path.join(root, dir))
             if not recursive:
                 break
 
         # # Sort the filelist by modification date and time
         # filelist.sort(key=lambda x: os.path.getmtime(x))
 
-        return filelist
+        # return filelist, dirlist
+        return FileListResult(filelist, dirlist)
 
     def calculate_file_hash(self, file_path, hash_algorithm='md5'):
         import hashlib
@@ -1092,7 +1167,8 @@ class UtilityFunctions:
     def _get_format(self, data_type, endian):
         formats = {
             'double': 'd',
-            'float': 'f',
+            'float': 'f', # single precision float
+            'half': 'e',  # half precision float
             'uint32': 'I',
             'int32': 'i',
             'uint16': 'H',
@@ -1108,7 +1184,8 @@ class UtilityFunctions:
     def _generate_conversion_functions(self):
         data_types = {
             'double': 8,
-            'float': 4,
+            'float': 4,  # single precision float
+            'half': 2,   # half precision float
             'uint32': 4,
             'int32': 4,
             'uint16': 2,
@@ -1134,6 +1211,7 @@ class UtilityFunctions:
         # list of the functions created:
         # double_to_bytes, bytes_to_double
         # float_to_bytes, bytes_to_float
+        # half_to_bytes, bytes_to_half
         # uint32_to_bytes, bytes_to_uint32
         # int32_to_bytes, bytes_to_int32
         # uint16_to_bytes, bytes_to_uint16
@@ -1228,11 +1306,30 @@ class UtilityFunctions:
         return format_string.format(num)
 
     def is_integer(self, s):
+        """
+        Returns True if s is an integer or a float string representing a whole number.
+        Returns False otherwise.
+        """
         try:
             float_val = float(s)
             return float_val.is_integer()
         except ValueError:
             return False
+
+    def int_whole_number(self, s):
+        """
+        Returns int(s) if s is an integer or a float string representing a whole number.
+        Returns None otherwise.
+        """
+        try:
+            return int(s)
+        except ValueError:
+            try:
+                float_val = float(s)
+                if float_val.is_integer():
+                    return int(float_val)
+            except ValueError:
+                return None
 
     def is_float(self, s):
         try:
@@ -1255,6 +1352,13 @@ class UtilityFunctions:
     # Threading related
     ############################################################################
     # Stoppable thread
+    # Usage:
+    #   thread = StoppableThread(target=your_function)
+    #   thread.start()
+    #   thread.stop()
+    #  def your_function():
+    #      while not thread.stop_flag():
+    #          do_something()
     class StoppableThread(threading.Thread):
         """Thread class with a stop() method. The thread itself has to check
         regularly for the stopped() condition."""
