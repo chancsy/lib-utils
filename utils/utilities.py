@@ -496,6 +496,9 @@ class UtilityFunctions:
         difference_in_days = difference_in_seconds / (24 * 3600) # Convert the difference to days with decimals
         return difference_in_days
 
+    def os_path_join(self, base_path, relative_path):
+        return os.path.join(base_path, relative_path.replace('/', os.sep))
+
     ############################################################################
     # Python related
     ############################################################################
