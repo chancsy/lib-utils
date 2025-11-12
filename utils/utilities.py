@@ -17,6 +17,7 @@ from html.parser import HTMLParser
 import threading
 import socket
 import base64
+from collections import namedtuple
 # TODO import non-standard lib: requests, python-git-info
 
 import pandas as pd
