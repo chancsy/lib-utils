@@ -683,26 +683,25 @@ class UtilityFunctions:
         else:
             return '<a href="{}">{}</a>'.format(text, text)
 
-    def extract_lines_between_strings(self, file_path, string1, string2, include_matching_string_line=False):
+    def extract_lines(self, lines, string1, string2, include_matching_string_line=False):
         lines_between = []
         inside_range = False
 
-        def extract_lines(file):
-            nonlocal inside_range
-
-            for line in file:
-                if string1 in line:
-                    inside_range = True
-                    if include_matching_string_line:
-                        lines_between.append(line)
-                    continue
-                if string2 in line and inside_range:
-                    if include_matching_string_line:
-                        lines_between.append(line)
-                    break
-                if inside_range:
+        for line in lines:
+            if string1 in line:
+                inside_range = True
+                if include_matching_string_line:
                     lines_between.append(line)
+                continue
+            if string2 in line and inside_range:
+                if include_matching_string_line:
+                    lines_between.append(line)
+                break
+            if inside_range:
+                lines_between.append(line)
+        return lines_between
 
+    def extract_lines_from_file(self, file_path, string1, string2, include_matching_string_line=False):
         # check if given path is http url
         if file_path.startswith('https://') or file_path.startswith('http://'):
             data = urllib.request.urlopen(file_path)
@@ -712,12 +711,12 @@ class UtilityFunctions:
             lines = [line.decode('utf-8') for line in lines]
             # remove lines ending, can be '\n' or '\r\n'
             lines = [line.rstrip('\n\r') for line in lines]
-            extract_lines(lines)
+            return self.extract_lines(lines, string1, string2, include_matching_string_line)
         else:
-            with open(file_path, 'r') as file:
-                extract_lines(file)
-
-        return lines_between
+            with open(file_path, 'r') as lines:
+                # lines = lines.readlines() # optional when use with extract_lines
+                # lines = [line.rstrip('\n\r') for line in lines] # optional when use with extract_lines
+                return self.extract_lines(lines, string1, string2, include_matching_string_line)
 
     # convert range string to list of integers, "~" indicates rnage, "," indicates separate values
     # e.g. "1~5,8,10~12" -> [1,2,3,4,5,8,10,11,12]
