@@ -497,8 +497,8 @@ class UtilityFunctions:
         difference_in_days = difference_in_seconds / (24 * 3600) # Convert the difference to days with decimals
         return difference_in_days
 
-    def os_path_join(self, base_path, relative_path):
-        return os.path.join(base_path, relative_path.replace('/', os.sep))
+    def os_path_join(self, *paths):
+        return os.path.join(*[p.replace('/', os.sep) for p in paths])
 
     ############################################################################
     # Python related
@@ -778,17 +778,19 @@ class UtilityFunctions:
         #     return keys[0]
         # return None
 
-    def dict_list_lookup(self, dict_list, lookup_key, lookup_value, return_key):
+    def dict_list_lookup(self, dict_list, lookup_key, lookup_value, return_key=None):
         """
         Look up a value in a list of dictionaries by a specific key and return another key's value.
         :param dict_list: List of dictionaries to search in.
         :param lookup_key: Key to look up in each dictionary.
         :param lookup_value: Value to match for the lookup key.
-        :param return_key: Key whose value to return if the lookup is successful.
+        :param return_key: Key whose value to return if the lookup is successful. If None, return the entire dictionary.
         :return: The value of return_key if found, otherwise None.
         """
         for d in dict_list:
             if d.get(lookup_key) == lookup_value:
+                if return_key is None:
+                    return d
                 return d.get(return_key)
         return None
 
@@ -900,6 +902,7 @@ class UtilityFunctions:
         return parser.urls
 
     def list_files_http(self, url, recursive=False, ignore_first_link=False, ext=''):
+        FileListResult = namedtuple('FileListResult', ['files', 'dirs'])
         filelist = []
         dirlist = []
         links = self.extract_urls(url)
@@ -914,7 +917,7 @@ class UtilityFunctions:
                     dirlist.extend(dirlist_child)
             elif link.endswith(ext):
                 filelist.append(link)
-        return filelist, dirlist
+        return FileListResult(files=filelist, dirs=dirlist)
 
     def download_file(self, url, download_dir='.', overwrite=False, show_abs_path=True, suppress_output=False):
         """Download file and return status: 'downloaded', 'skipped', or 'failed'"""
@@ -932,6 +935,15 @@ class UtilityFunctions:
         except Exception as e:
             self.print(f"Error downloading {urllib.parse.unquote(url)}: {e}")
             return 'failed'
+
+    def download_file_to_memory(self, url):
+        """Download file and return content in memory"""
+        try:
+            with urllib.request.urlopen(url) as response:
+                return response.read()
+        except Exception as e:
+            self.print(f"Error downloading {urllib.parse.unquote(url)}: {e}")
+            return None
 
     def download_files(self, urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1):
         # output_type
