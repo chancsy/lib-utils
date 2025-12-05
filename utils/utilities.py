@@ -1273,7 +1273,7 @@ class UtilityFunctions:
     def bytes_to_string(self, bytes):
         return bytes.decode(errors='replace')
 
-    def dec_to_hex_str(self, dec, prefix='', delim='', pad=True, byte_size=None):
+    def dec_to_hex_str(self, dec, prefix='', delim='', pad=True, byte_size=1):
         # 459 => 1CB (without prefix, no delim, no padding)
         # 459 => 0x1CB (with prefix, no delim, no padding)
         # 459 => 1,CB (without prefix, with delim ",", no padding)
