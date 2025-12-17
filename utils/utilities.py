@@ -55,6 +55,7 @@ class UtilityFunctions:
 
         # Progress line tracking
         self._progress_line_active = False
+        self._last_line_length = 0
 
     def do_nothing(self, *args, **kwargs):
         pass
@@ -603,7 +604,12 @@ class UtilityFunctions:
     # stdout related
     ############################################################################
     def print_same_line(self, msg):
-        print('\r\033[K'+msg, end='')
+        if self.in_ipython():
+            padding = ' ' * max(0, self._last_line_length - len(msg))
+            self._last_line_length = len(msg)
+            print('\r\033[2K'+msg+padding, end='')
+        else:
+            print('\r\033[2K'+msg, end='')
         self._progress_line_active = True
 
     def print_same_line_end(self):
