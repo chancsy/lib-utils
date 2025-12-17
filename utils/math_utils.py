@@ -89,6 +89,41 @@ class MathUtils:
         z = np.polyfit(x, y, degree)
         return z
 
+    def print_data_stats(self, read_count, callback, x_min=np.inf, x_max=-np.inf, interval_s=0, calc_stdev=False):
+        try:
+            timer = utils.IntervalTimer(interval_s) if interval_s > 0 else None
+            sum = 0
+            current_read_count = 0
+            data_count = 0
+            if calc_stdev:
+                dataset = self.Dataset()
+            while(current_read_count < read_count):
+                x = callback()
+                current_read_count += 1
+                if x is not None:
+                    x_min = min(x, x_min)
+                    x_max = max(x, x_max)
+                    sum = sum + x
+                    data_count = data_count + 1
+                    if calc_stdev:
+                        dataset.add_data(x)
+
+                avg = sum / data_count if data_count > 0 else 0
+                val = str(x) if x is not None else 'No data'
+                print_msg = f'n={data_count}, data={val}, min={x_min}, max={x_max}, avg={avg}'
+                if calc_stdev:
+                    stdev = dataset.get_std_dev()
+                    print_msg += f', stddev={stdev}'
+                utils.print_same_line(print_msg)
+
+                if timer:
+                    if current_read_count < read_count: # avoid waiting after the last read
+                        timer.wait()
+            utils.print_same_line_end()
+            return avg if data_count > 0 else None
+        except KeyboardInterrupt:
+            pass
+
     def lib_demo(self):
         print('random_integer(0, 10):', randint_0_10 := [self.random_integer(0, 10) for x in range(10)])
         print('random_float(0, 1):', rand_float_0_1 := [self.random_float(0, 1) for x in range(5)])
