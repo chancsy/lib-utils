@@ -314,15 +314,34 @@ class UtilityFunctions:
             self.interval_sec = interval_sec
             self.eco_mode = eco_mode
             self.time_start = time.time()
-            self.idx = 1
+            # self.idx = 1
+            self.idx = 0
 
+        # Original version
+        # def wait(self):
+        #     while (time.time() - self.time_start) < (self.idx * self.interval_sec):
+        #         if self.eco_mode:
+        #             time.sleep(0.01)
+        #         else:
+        #             pass
+        #     self.idx += 1
+
+        # Version with improved accuracy
         def wait(self):
-            while (time.time() - self.time_start) < (self.idx * self.interval_sec):
+            self.idx += 1
+            target_time = self.time_start + (self.idx * self.interval_sec)
+            while time.time() < target_time:
                 if self.eco_mode:
-                    time.sleep(0.01)
+                    # Sleep for a shorter duration to allow more precise timing
+                    sleep_time = target_time - time.time()
+                    if sleep_time > 0.01:  # Only sleep if more than 10ms remaining
+                        time.sleep(min(sleep_time * 0.9, 0.01))  # Sleep 90% of remaining time, max 10ms
                 else:
                     pass
-            self.idx += 1
+
+        def reset(self):
+            self.time_start = time.time()
+            self.idx = 0
 
     # Usage:
     # timer = ThreadedTimer(5.0)  # 5 second timeout
