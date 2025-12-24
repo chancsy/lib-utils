@@ -18,6 +18,7 @@ import threading
 import socket
 import base64
 from collections import namedtuple
+import shutil, tempfile
 # TODO import non-standard lib: requests, python-git-info
 
 import pandas as pd
@@ -50,6 +51,7 @@ class UtilityFunctions:
     def __init__(self):
         # binary data utils init
         self._generate_conversion_functions()
+        self.temporary_dir_list = set()
         self.override_sys_exit_in_ipython()
         self.ipython = get_ipython() if self.in_ipython() else None
 
@@ -506,7 +508,7 @@ class UtilityFunctions:
 
     def get_up_time_days(self):
         if os.name == 'nt': # Windows
-            boot_time_output = self.run_powershell_command('Get-CimInstance Win32_OperatingSystem | select -ExpandProperty LastBootUpTime') # Get PC boot time by running PowerShell command
+            boot_time_output = self.run_powershell_command('Get-CimInstance Win32_OperatingSystem | select -ExpandProperty LastBootUpTime | Get-Date -UFormat "%Y-%m-%d %H:%M:%S') # Get PC boot time by running PowerShell command
             boot_time = datetime.strptime(boot_time_output, '%A, %B %d, %Y %I:%M:%S %p') # Parse the boot time
         else: # Unix/Linux
             uptime_output = subprocess.check_output(['uptime', '-s']).decode(errors='replace').strip() # Get system boot time
@@ -570,12 +572,12 @@ class UtilityFunctions:
     ############################################################################
     # Git/Github related
     ############################################################################
-    def get_git_commit_hash(self):
+    def get_git_info(self, info=None):
         if not self.module_exists('python-git-info'):
             return
         import gitinfo
         try:
-            return gitinfo.get_git_info()['commit']
+            return gitinfo.get_git_info()[info] if info else gitinfo.get_git_info()
         except:
             return None
 
@@ -702,11 +704,13 @@ class UtilityFunctions:
         return ' '.join(capitalized_words)
 
     # Generates an HTML anchor tag.
-    def generate_html_link(self, text, new_window=True):
+    def generate_html_link(self, url, text=None, new_window=True):
+        if text is None:
+            text = url
         if new_window:
-            return '<a target="_blank" href="{}">{}</a>'.format(text, text)
+            return '<a target="_blank" href="{}">{}</a>'.format(url, text)
         else:
-            return '<a href="{}">{}</a>'.format(text, text)
+            return '<a href="{}">{}</a>'.format(url, text)
 
     def extract_lines(self, lines, string1, string2, include_matching_string_line=False):
         lines_between = []
@@ -749,6 +753,8 @@ class UtilityFunctions:
         """
         Convert a range string like "1~5,8,10~12" to a sorted list of integers: [1,2,3,4,5,8,10,11,12]
         """
+        if not range_str:
+            return []
         result = set()
         parts = range_str.split(',')
         for part in parts:
@@ -768,13 +774,51 @@ class UtilityFunctions:
                     pass  # Ignore invalid integers
         return sorted(result)
 
+    def range_to_string(self, numbers, range_sep='~'):
+        """
+        Convert a list of integers to a range string like "1~5,8,10~12"
+        """
+        if not numbers:
+            return ''
+        numbers = sorted(set(numbers))
+        ranges = []
+        start = prev = numbers[0]
+
+        for num in numbers[1:]:
+            if num == prev + 1:
+                prev = num
+            else:
+                if start == prev:
+                    ranges.append(f"{start}")
+                else:
+                    ranges.append(f"{start}{range_sep}{prev}")
+                start = prev = num
+
+        # Handle the last range
+        if start == prev:
+            ranges.append(f"{start}")
+        else:
+            ranges.append(f"{start}{range_sep}{prev}")
+
+        return ','.join(ranges)
+
     ############################################################################
     # list, dict related
     ############################################################################
-    def get_unique_elements(self, input_list, sorted=True):
-        unique_list = list(set(input_list))
+    def get_unique_elements(self, input_list, sorted=True, preserve_order=False):
         if sorted:
+            unique_list = list(set(input_list))
             unique_list.sort()
+        else:
+            if preserve_order:
+                seen = set()
+                unique_list = []
+                for item in input_list:
+                    if item not in seen:
+                        seen.add(item)
+                        unique_list.append(item)
+            else:
+                unique_list = list(set(input_list)) # not guaranteed to preserve order
         return unique_list
 
     def list_to_csv(self, data, delim=',', na_str='nan'):
@@ -1068,6 +1112,22 @@ class UtilityFunctions:
         country = data['country']
         return city, country
 
+    # extract_host_from_url('https://ti.com/lit/an/snaa296/snaa296.pdf')
+    # returns 'ti.com'
+    def extract_host_from_url(self, url):
+        parsed_url = urllib.parse.urlparse(url)
+        if parsed_url.scheme and parsed_url.netloc:
+            return parsed_url.netloc
+        return url
+
+    def is_host_reachable(self, host, port=80, timeout=5):
+        host = self.extract_host_from_url(host)
+        try:
+            with socket.create_connection((host, port), timeout=timeout):
+                return True
+        except (socket.timeout, socket.error):
+            return False
+
     ############################################################################
     # Files/Directories related
     ############################################################################
@@ -1158,6 +1218,25 @@ class UtilityFunctions:
 
         # return filelist, dirlist
         return FileListResult(filelist, dirlist)
+
+    # create a temporary directory
+    def create_temp_dir(self):
+        dir = tempfile.mkdtemp() # create temporary directory
+        self.temporary_dir_list.add(dir) # keep a record of temporary directories created to remove later
+        return dir # return the temporary directory path
+
+    # remove temporary directory
+    def remove_temp_dir(self, temp_dir):
+        # remove the directory if it is in the temporary directory list to prevent accidental deletion of other directories
+        if temp_dir in self.temporary_dir_list:
+            shutil.rmtree(temp_dir)
+            self.temporary_dir_list.remove(temp_dir)
+
+    # remove all temporary directories
+    def remove_all_temp_dirs(self):
+        for dir in self.temporary_dir_list:
+            shutil.rmtree(dir)
+        self.temporary_dir_list.clear()
 
     def calculate_file_hash(self, file_path, hash_algorithm='md5'):
         import hashlib
@@ -1538,17 +1617,18 @@ class TestClass(UtilityFunctions):
             test_name = f'Test_{self.get_datetimestamp(date_time_delim="_")}'
         self.test_name = test_name
 
-    def exit_if_up_time_exceeds(self, pc_up_time_days):
+    def exit_if_up_time_exceeds(self, pc_up_time_days, warn_only=False):
         up_time = self.get_up_time_days()
         if up_time >= pc_up_time_days:
             print('Test PC has been running for too long. Please restart the PC before running the test.')
-            sys.exit(1)
+            if not warn_only:
+                sys.exit(1)
 
     def print_test_info(self, print_test_env=True, print_git_info=True, pkg_list=[]):
         if print_test_env:
             self.print_test_environment(pkg_list=pkg_list)
         if print_git_info:
-            git_commit_hash = self.get_git_commit_hash()
+            git_commit_hash = self.get_git_info('commit')
             if git_commit_hash:
                 print(f'Git Commit Hash: {git_commit_hash}')
         print(f'Test Name: {self.test_name}')
