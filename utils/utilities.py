@@ -508,8 +508,8 @@ class UtilityFunctions:
 
     def get_up_time_days(self):
         if os.name == 'nt': # Windows
-            boot_time_output = self.run_powershell_command('Get-CimInstance Win32_OperatingSystem | select -ExpandProperty LastBootUpTime | Get-Date -UFormat "%Y-%m-%d %H:%M:%S') # Get PC boot time by running PowerShell command
-            boot_time = datetime.strptime(boot_time_output, '%A, %B %d, %Y %I:%M:%S %p') # Parse the boot time
+            boot_time_output = self.run_powershell_command('Get-CimInstance Win32_OperatingSystem | select -ExpandProperty LastBootUpTime | Get-Date -UFormat "%Y-%m-%d %H:%M:%S"') # Get PC boot time by running PowerShell command
+            boot_time = datetime.strptime(boot_time_output, '%Y-%m-%d %H:%M:%S') # Parse the boot time
         else: # Unix/Linux
             uptime_output = subprocess.check_output(['uptime', '-s']).decode(errors='replace').strip() # Get system boot time
             boot_time = datetime.strptime(uptime_output, '%Y-%m-%d %H:%M:%S') # Parse the boot time
