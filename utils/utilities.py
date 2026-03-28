@@ -257,6 +257,7 @@ class UtilityFunctions:
             None: (date_delim, date_time_delim, time_delim, show_ms, ms_delim), # 20250514110003
             0: ('-', ' ', ':', False, '.'), # 2025-05-14 10:59:34
             1: ('-', ' ', ':', True, '.'),  # 2025-05-14 10:59:34.123
+            2: ('-', ' ', '-', False, '.'), # 2025-05-14 10-59-34
         }
         date_delim, date_time_delim, time_delim, show_ms, ms_delim = style_map.get(style, (date_delim, date_time_delim, time_delim, show_ms, ms_delim))
 

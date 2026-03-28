@@ -46,7 +46,7 @@ def new_log(outputdir_path='.', prefix='', seconds=True):
     """
     if not os.path.exists(outputdir_path):
         os.makedirs(outputdir_path)
-    time_stamp = utils.get_datetimestamp(style=0) if seconds else utils.get_datestamp(style=0)
+    time_stamp = utils.get_datetimestamp(style=2) if seconds else utils.get_datestamp(style=0)
     filename_prefix = f'{prefix}_' if prefix else ''
     return os.path.join(outputdir_path, f'{filename_prefix}{time_stamp}.log')
 
