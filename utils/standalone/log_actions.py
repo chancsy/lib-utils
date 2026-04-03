@@ -9,7 +9,7 @@ For equipment-specific file logging (``print_comm``/``print_verbose``), see
 
 Typical usage::
 
-    from utils.log_actions import print_logging_start, print_logging_end
+    from utils.standalone.log_actions import print_logging_start, print_logging_end
 
     log_file = print_logging_start('path/to/logs/', hide_stdout=True)
     print('captured to disk')
@@ -23,7 +23,7 @@ Standalone file utilities:
 
 import os
 import sys
-from utils.utilities import UtilityFunctions
+from ..utilities import UtilityFunctions
 
 utils = UtilityFunctions()
 

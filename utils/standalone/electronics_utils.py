@@ -1,11 +1,11 @@
-from utilities import UtilityFunctions
+from ..utilities import UtilityFunctions
 utils = UtilityFunctions()
 
 utils.exit_if_module_missing('eseries')
 import eseries
 from eseries import E3, E6, E12, E24, E48, E96, E192
 
-from math_utils import EquationSolver
+from .math_utils import EquationSolver
 
 # Dictionary to map series names to eseries objects
 

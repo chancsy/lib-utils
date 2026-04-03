@@ -4,7 +4,7 @@
 # example: from utils import *
 from .utilities import *
 
-# other modules have to be imported explicitly
-# example: from utils.clipboard_utils import *
+# standalone helper modules have to be imported explicitly
+# example: from utils.standalone.clipboard_utils import *
 
 # dependencies for some functions are only checked at run time to reduce installation footprint
