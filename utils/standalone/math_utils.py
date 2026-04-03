@@ -1,4 +1,4 @@
-from utils.utilities import UtilityFunctions
+from ..utilities import UtilityFunctions
 utils = UtilityFunctions()
 
 utils.exit_if_module_missing('numpy')

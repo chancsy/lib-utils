@@ -1,8 +1,9 @@
-from utils.utilities import *
+from ..utilities import *
 utils = UtilityFunctions()
 utils.exit_if_not_in_ipython()
 utils.exit_if_module_missing('ipywidgets')
 
+from IPython.display import display
 import ipywidgets as widgets
 
 class Widgets:
