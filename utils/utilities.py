@@ -108,14 +108,15 @@ class UtilityFunctions(
             print(f'Invalid input, expected {data_type.__name__}')
             return None
 
-class TestClass(UtilityFunctions):
-    def __init__(self, test_name):
+class TestClass:
+    def __init__(self, test_name, utils=None):
+        self.utils = utils or UtilityFunctions() # Use the provided utils or create a new instance if None
         if not test_name:
-            test_name = f'Test_{self.get_datetimestamp(date_time_delim="_")}'
+            test_name = f'Test_{self.utils.get_datetimestamp(date_time_delim="_")}' # Use a default test name with timestamp if not provided
         self.test_name = test_name
 
     def exit_if_up_time_exceeds(self, pc_up_time_days, warn_only=False):
-        up_time = self.get_up_time_days()
+        up_time = self.utils.get_up_time_days()
         if up_time >= pc_up_time_days:
             print('Test PC has been running for too long. Please restart the PC before running the test.')
             if not warn_only:
@@ -123,9 +124,9 @@ class TestClass(UtilityFunctions):
 
     def print_test_info(self, print_test_env=True, print_git_info=True, pkg_list=[]):
         if print_test_env:
-            self.print_test_environment(pkg_list=pkg_list)
+            self.utils.print_test_environment(pkg_list=pkg_list)
         if print_git_info:
-            git_commit_hash = self.get_git_info('commit')
+            git_commit_hash = self.utils.get_git_info('commit')
             if git_commit_hash:
                 print(f'Git Commit Hash: {git_commit_hash}')
         print(f'Test Name: {self.test_name}')
