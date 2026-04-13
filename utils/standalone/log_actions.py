@@ -22,6 +22,7 @@ Standalone file utilities:
 """
 
 import os
+import re
 import sys
 from ..utilities import UtilityFunctions
 
@@ -58,13 +59,16 @@ def add_lines(filepath, text):
         filepath: Path to the target file.
         text: Text to append (a trailing newline is added automatically).
     """
-    with open(filepath, 'a') as file:
+    with open(filepath, 'a', encoding='utf-8') as file:
         file.write(text + '\n')
 
 
 # ---------------------------------------------------------------------------
 # Stdout interceptor (synchronous, no background thread)
 # ---------------------------------------------------------------------------
+
+_ANSI_ESCAPE_RE = re.compile(r'\x1b\[[0-9;]*m')
+
 
 class _StdoutInterceptor:
     """Wraps the original ``sys.stdout`` to intercept ``print()`` calls.
@@ -92,14 +96,16 @@ class _StdoutInterceptor:
             self.stream.write(data)
             self.stream.flush()
 
-        # Write non-empty, non-bare-newline data to the log file
-        if data and data != '\n':
+        # Write to log file line by line (ANSI codes stripped, blank lines skipped)
+        clean = _ANSI_ESCAPE_RE.sub('', data)
+        for line in clean.splitlines():
+            if not line:
+                continue
             if self._add_datetimestamp:
-                line = f'{utils.get_datetimestamp(style=1)}|{data}\n'
+                self._file_handle.write(f'{utils.get_datetimestamp(style=1)}|{line}\n')
             else:
-                line = f'{data}\n'
-            self._file_handle.write(line)
-            self._file_handle.flush()
+                self._file_handle.write(f'{line}\n')
+        self._file_handle.flush()
 
     def flush(self):
         """Flush both the console stream and log file."""
