@@ -255,3 +255,46 @@ class TabbedTextareaPanel:
         self.tab.layout.min_width = min_width
         self.tab.layout.overflow  = 'hidden'
         self.css = w.HTML(self._CSS)
+
+
+class WidgetStdout:
+    """File-like stdout replacement that writes directly to an ipywidgets widget.
+
+    Used with ``contextlib.redirect_stdout`` to capture ``print()`` output
+    (and ``logging.StreamHandler`` writes) inside a demo button callback and
+    forward them live to either an ``Output`` widget or a ``Textarea`` widget,
+    depending on what is passed.
+
+    Using this instead of the ``with output_widget:`` context manager avoids
+    the 4x duplication that can occur in some JupyterLab environments when
+    IOPub messages are routed to the widget *and* appended again on context
+    exit.  ``WidgetStdout`` bypasses IOPub entirely and writes directly to
+    ``output_widget.append_stdout()`` (``Output``) or ``widget.value +=``
+    (``Textarea``), giving exactly one copy of each line.
+
+    Args:
+        output_widget: An ipywidgets ``Output`` or ``Textarea`` widget.
+
+    Usage::
+
+        import contextlib
+        from utils.standalone.widget_utils import WidgetStdout
+        with contextlib.redirect_stdout(WidgetStdout(w_output)):
+            some_function()
+    """
+
+    def __init__(self, output_widget):
+        self._widget = output_widget
+
+    def write(self, s):
+        if s:  # skip empty writes
+            if hasattr(self._widget, 'outputs'):  # ipywidgets Output widget
+                self._widget.append_stdout(s)
+            else:                                  # ipywidgets Textarea widget
+                self._widget.value += s
+
+    def flush(self):
+        pass
+
+    def isatty(self):
+        return False
