@@ -206,3 +206,52 @@ class MultiSelectMoveButtons:
         self.select_R.options = sorted(self.select_R.options, key=utils.natural_sort_key)
     def clear_select_R(self, sender):
         self.select_R.options = []
+
+
+class TabbedTextareaPanel:
+    """A Tab widget containing one scrollable Textarea per tab.
+
+    A generic, reusable panel for displaying pre-formatted text in tabbed
+    panes.  The number of tabs and their titles are fully configurable.
+    Injected CSS gives each Textarea native OS scrollbars, no text-wrap,
+    and no resize handle.
+
+    Attributes:
+        outputs (list[Textarea]): One Textarea per tab, in title order.
+        tab (Tab): The ipywidgets Tab widget.
+        css (HTML): Invisible CSS injection widget; must be included
+            somewhere in the displayed widget tree.
+
+    Args:
+        w (Widgets): A ``Widgets`` proxy instance (``show_widget_on_create``
+            should be ``False`` before calling).
+        tab_titles (sequence[str]): Ordered tab title strings.  One
+            Textarea is created for each title.
+            Defaults to ``('Result', 'Source Code')``.
+        min_width (str): CSS ``min-width`` for the Tab widget.
+            Defaults to ``'300px'``.
+
+    Usage::
+
+        from utils.standalone.widget_utils import TabbedTextareaPanel
+        panel = TabbedTextareaPanel(w, tab_titles=['Output', 'Log', 'Source'])
+        panel.outputs[0].value = 'Hello!'
+        display(panel.tab)   # or embed panel.tab in an HBox
+    """
+
+    _CSS = '''<style>
+        .widget-textarea textarea { white-space: pre; overflow: auto; resize: none; }
+        [class*="TabPanel-tabContents"] { padding: 0 !important; overflow: hidden !important; }
+        [class*="TabPanel"] { overflow: hidden !important; }
+        .widget-tab { overflow: hidden !important; }
+    </style>'''
+
+    def __init__(self, w: Widgets, tab_titles=('Text'), min_width='300px'):
+        self.outputs = [w.Textarea(disabled=True, width='100%', height='100%') for _ in tab_titles]
+        self.tab     = w.Tab(children=self.outputs)
+        for i, title in enumerate(tab_titles):
+            self.tab.set_title(i, title)
+        self.tab.layout.flex      = '1'
+        self.tab.layout.min_width = min_width
+        self.tab.layout.overflow  = 'hidden'
+        self.css = w.HTML(self._CSS)
