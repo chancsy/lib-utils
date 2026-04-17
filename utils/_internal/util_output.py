@@ -1,3 +1,35 @@
+import io
+import sys
+
+
+class TeeStringIO(io.StringIO):
+    """A stdout-compatible buffer that writes to the real stdout live and captures to a string.
+
+    Use with ``contextlib.redirect_stdout`` to get both progressive console
+    output and a captured string for post-call inspection::
+
+        import contextlib
+        from utils import TeeStringIO
+
+        tee = TeeStringIO()
+        with contextlib.redirect_stdout(tee):
+            some_function_that_prints()
+        captured = tee.getvalue()
+    """
+
+    def __init__(self, real_stdout=None):
+        super().__init__()
+        self._real = real_stdout if real_stdout is not None else sys.stdout
+
+    def write(self, s):
+        self._real.write(s)
+        return super().write(s)
+
+    def flush(self):
+        self._real.flush()
+        super().flush()
+
+
 class UtilityOutputMixin:
     def print_same_line(self, msg):
         if self.in_ipython():
