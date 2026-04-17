@@ -7,7 +7,7 @@ from ._internal.util_demo import UtilityDemoMixin
 from ._internal.util_filesystem import UtilityFilesystemMixin
 from ._internal.util_ipython import UtilityIPythonMixin
 from ._internal.util_lan_monitor import LanMonitorClient, LanMonitorServer
-from ._internal.util_output import UtilityOutputMixin
+from ._internal.util_output import UtilityOutputMixin, TeeStringIO
 from ._internal.util_runtime import UtilityRuntimeMixin
 from ._internal.util_testing import UtilityTestingMixin
 from ._internal.util_text import UtilityTextMixin
