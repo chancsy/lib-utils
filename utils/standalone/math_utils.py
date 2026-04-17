@@ -8,23 +8,36 @@ utils.exit_if_module_missing('sympy')
 from sympy import symbols, solve, Eq
 from sympy.core.sympify import SympifyError
 
-# Constants for the maximum values of different unsigned integer types
-# These are calculated based on the size of the data types in bytes
-# For example, for an unsigned 8-bit integer (uint8), the maximum value is 2^8 - 1 = 255.
-UINT8_MAX = 2**8 - 1 # 2^8 - 1 = 255
-UINT16_MAX = 2**16 - 1 # 2^16 - 1 = 65535
-UINT32_MAX = 2**32 - 1 # 2^32 - 1 = 4294967295
-UINT64_MAX = 2**64 - 1 # 2^64 - 1 = 18446744073709551615
+class IntegerLimits:
+    """C-style integer limits for common fixed-width types."""
+    UINT8_MAX  = 2**8  - 1  # 255
+    UINT16_MAX = 2**16 - 1  # 65535
+    UINT32_MAX = 2**32 - 1  # 4294967295
+    UINT64_MAX = 2**64 - 1  # 18446744073709551615
 
-INT8_MAX = 2*(8-1) - 1 # 2^7 - 1 = 127
-INT16_MAX = 2*(16-1) - 1 # 2^15 - 1 = 32767
-INT32_MAX = 2*(32-1) - 1 # 2^31 - 1 = 2147483647
-INT64_MAX = 2*(64-1) - 1 # 2^63 - 1 = 9223372036854775807
+    INT8_MAX  = 2**(8  - 1) - 1  # 127
+    INT16_MAX = 2**(16 - 1) - 1  # 32767
+    INT32_MAX = 2**(32 - 1) - 1  # 2147483647
+    INT64_MAX = 2**(64 - 1) - 1  # 9223372036854775807
 
-INT8_MIN = -INT8_MAX - 1 # -128
-INT16_MIN = -INT16_MAX - 1 # -32768
-INT32_MIN = -INT32_MAX - 1 # -2147483648
-INT64_MIN = -INT64_MAX - 1 # -9223372036854775808
+    INT8_MIN  = -INT8_MAX  - 1  # -128
+    INT16_MIN = -INT16_MAX - 1  # -32768
+    INT32_MIN = -INT32_MAX - 1  # -2147483648
+    INT64_MIN = -INT64_MAX - 1  # -9223372036854775808
+
+# Module-level aliases for direct import convenience
+UINT8_MAX  = IntegerLimits.UINT8_MAX
+UINT16_MAX = IntegerLimits.UINT16_MAX
+UINT32_MAX = IntegerLimits.UINT32_MAX
+UINT64_MAX = IntegerLimits.UINT64_MAX
+INT8_MAX   = IntegerLimits.INT8_MAX
+INT16_MAX  = IntegerLimits.INT16_MAX
+INT32_MAX  = IntegerLimits.INT32_MAX
+INT64_MAX  = IntegerLimits.INT64_MAX
+INT8_MIN   = IntegerLimits.INT8_MIN
+INT16_MIN  = IntegerLimits.INT16_MIN
+INT32_MIN  = IntegerLimits.INT32_MIN
+INT64_MIN  = IntegerLimits.INT64_MIN
 
 class MathUtils:
     def __init__(self):
