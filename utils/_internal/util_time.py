@@ -99,6 +99,26 @@ class UtilityTimeMixin:
                 return None
         return None
 
+    def get_date_range(self, start_date_str, end_date_str, date_format='%Y-%m-%d', increment='day', return_as_str=False):
+            start_date = datetime.strptime(start_date_str, date_format)
+            end_date = datetime.strptime(end_date_str, date_format)
+            date_list = []
+            current_date = start_date
+            while current_date <= end_date:
+                date_list.append(current_date)
+                if increment == 'day':
+                    current_date += timedelta(days=1)
+                elif increment == 'month':
+                    if current_date.month == 12:
+                        current_date = current_date.replace(year=current_date.year + 1, month=1)
+                    else:
+                        current_date = current_date.replace(month=current_date.month + 1)
+                elif increment == 'year':
+                    current_date = current_date.replace(year=current_date.year + 1)
+            if return_as_str:
+                date_list = [date.strftime(date_format) for date in date_list]
+            return date_list
+
     def get_datetime_difference(self, start_time, end_time, output_format='seconds'):
         if isinstance(start_time, datetime) and isinstance(end_time, datetime):
             diff = end_time - start_time
