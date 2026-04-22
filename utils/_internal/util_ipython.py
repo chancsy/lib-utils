@@ -81,9 +81,13 @@ class UtilityIPythonMixin:
             raise ImportError('IPython is required for display_filelink()')
         display(FileLink(link, result_html_prefix=prefix))
 
-    def clear_output(self):
+    def clear_output(self, wait=True):
         if self.in_ipython() and clear_output is not None:
-            clear_output()
+            clear_output(wait=wait)
+
+    def display(self, obj):
+        if self.in_ipython() and display is not None:
+            display(obj)
 
     def get_ipython_handle(self):
         return get_ipython()
