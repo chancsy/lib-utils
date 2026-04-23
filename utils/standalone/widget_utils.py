@@ -1,4 +1,5 @@
 from ..utilities import *
+import re
 utils = UtilityFunctions()
 utils.exit_if_not_in_ipython()
 utils.exit_if_module_missing('ipywidgets')
@@ -285,9 +286,11 @@ class WidgetStdout:
 
     def __init__(self, output_widget):
         self._widget = output_widget
+        self._ansi_re = re.compile(r'\x1b\[[0-9;]*m')
 
     def write(self, s):
         if s:  # skip empty writes
+            s = self._ansi_re.sub('', s)  # strip ANSI colour codes — widgets don't render them
             if hasattr(self._widget, 'outputs'):  # ipywidgets Output widget
                 self._widget.append_stdout(s)
             else:                                  # ipywidgets Textarea widget
