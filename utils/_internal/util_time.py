@@ -172,15 +172,24 @@ class UtilityTimeMixin:
             self._auto_clear_expired = auto_clear_expired
 
         def run(self):
+            # Anchor all fires to an absolute start time so scheduling overruns
+            # in one interval are automatically compensated in the next.
             self._running = True
+            t_start = time.monotonic()
+            n = 0
             while not self._stop_event.is_set():
-                if self._stop_event.wait(self.timeout_sec):
+                target = t_start + (n + 1) * self.timeout_sec
+                remaining = max(0.0, target - time.monotonic())
+                if self._stop_event.wait(remaining):
                     break
 
                 if self._reset_event.is_set():
                     self._reset_event.clear()
+                    t_start = time.monotonic()
+                    n = 0
                     continue
 
+                n += 1
                 if not self._stop_event.is_set():
                     self._fire_count += 1
                     self._expired.set()
