@@ -41,8 +41,8 @@ class UtilityFilesystemMixin:
         if isinstance(content, bytes):
             mode = mode + 'b'
 
-        if auto_create_dir:
-            self.create_directory(os.path.dirname(path))
+        if auto_create_dir and (dir_part := os.path.dirname(path)):
+            self.create_directory(dir_part)
 
         if not overwrite and not isinstance(content, bytes):
             try:
