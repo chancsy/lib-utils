@@ -1,4 +1,5 @@
 from ..utilities import *
+from .._internal.util_demo import resolve_demo_input, call_demo_function
 import re
 utils = UtilityFunctions()
 utils.exit_if_not_in_ipython()
@@ -256,6 +257,230 @@ class TabbedTextareaPanel:
         self.tab.layout.min_width = min_width
         self.tab.layout.overflow  = 'hidden'
         self.css = w.HTML(self._CSS)
+
+
+def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = None, title: str = None, no_interface_wrap: bool = True):
+    """Build a Jupyter widget GUI driven by a lib_demo_params list.
+
+    Generic widget builder for any class exposing ``lib_demo_params`` — both
+    utils standalone classes and Equipment subclasses.
+
+    Args:
+        instance: The object whose methods (or lambdas) are called by buttons.
+        lib_demo_params: Primary list of demo-entry dicts (lib_demo_params schema).
+        extra_tabs: Optional list of ``(tab_title, params_list)`` tuples.  Each
+            entry adds a sibling button-tab whose buttons share the same output
+            widget as the main params.  Used by Equipment to add an
+            'Equipment Control' tab alongside 'Instrument Demo'.
+        title: Initial text shown in the Result textarea.  Defaults to the class name.
+        no_interface_wrap: When False, calls ``instance.interface_open()`` /
+            ``interface_close()`` around each button click (Equipment behaviour).
+
+    ``lib_demo_params`` entry schema::
+
+        {
+            'key': 'a',            # single-char shortcut for demo_text() menu
+            'name': 'My Action',   # display name / button label
+            'function': 'method',  # method name string or lambda (self, **kwargs)
+            'inputs': [
+                {
+                    'label':       'My Param',   # widget label (falls back to 'name')
+                    'name':        'param',       # kwarg name passed to function
+                    'type':        float,         # int | float | str | bool (ignored when 'options' set)
+                    'default':     1.0,           # pre-filled value
+                    'options':     ['a', 'b'],    # renders Dropdown; 'default' must be one of these
+                    'width':       '80px',        # CSS widget width (default '50px')
+                    'placeholder': 'hint',        # grey placeholder text
+                    'allow_empty': True,          # renders Text (not FloatText/IntText) so the
+                                                  # field can be left blank → passes None to function
+                    'password':    True,          # renders Password widget (hides typed text)
+                    'type':        bool,          # renders Checkbox when bool
+                },
+            ],
+            'button_alt_label': 'Alt\nLabel',    # override button label (optional)
+            'same_row':         True,            # place this entry on the same row as the previous one
+        }
+
+    Returns:
+        ipywidgets.HBox: ``HBox([output_tab, buttons_panel])`` ready to display.
+        Access ``result.children[0].children[0]`` for the Result textarea and
+        ``.children[1]`` for the Source Code textarea.
+    """
+    import contextlib
+    import inspect
+    import textwrap
+
+    _title = title or type(instance).__name__
+
+    w = Widgets()
+    w.show_widget_on_create = False
+
+    _tab_panel = TabbedTextareaPanel(w, tab_titles=('Result', 'Source Code'))
+    w_output        = _tab_panel.outputs[0]
+    w_source_output = _tab_panel.outputs[1]
+    w_tab           = _tab_panel.tab
+    w_css           = _tab_panel.css
+
+    def _demo_button_click(sender, demo_entry, input_bindings):
+        function_ref = demo_entry['function']
+
+        # Show source code in the Source Code tab before running.
+        try:
+            src_func = function_ref if callable(function_ref) else getattr(instance, function_ref)
+            source = textwrap.dedent(inspect.getsource(src_func))
+            w_source_output.value = f'Demo: {demo_entry["name"]}\n{"="*80}\n{source}'
+        except (OSError, TypeError) as e:
+            w_source_output.value = f'Could not retrieve source code for "{demo_entry["name"]}": {e}'
+
+        kwargs = {}
+        for inp, (arg_name, widget) in zip(demo_entry.get('inputs', []), input_bindings):
+            kwargs[arg_name] = resolve_demo_input(inp, widget.value)
+        w_output.value = f'Running Demo: {demo_entry["name"]}...\nfunction: {demo_entry["function"]}, args: {list(kwargs.values())}\n{"="*80}\n'
+
+        _no_wrap = demo_entry.get('no_interface_wrap', no_interface_wrap)
+        try:
+            if not _no_wrap:
+                instance.interface_open()
+
+            value_before_call = w_output.value
+            # Redirect stdout to the Result textarea so print() and comm-log records
+            # (which flow through _EquipmentConsoleHandler → sys.stdout) both appear there.
+            #
+            # We use contextlib.redirect_stdout(WidgetStdout(w_output)) instead of
+            # the idiomatic `with w_output:` because the Output widget context manager
+            # routes IOPub messages to the widget AND can append them a second time
+            # when the context exits, causing 4× duplication in some JupyterLab
+            # environments.  WidgetStdout bypasses IOPub entirely and writes
+            # directly to w_output.value, giving exactly one copy.
+            #
+            # The _EquipmentConsoleHandler also picks this up automatically because
+            # its .stream property resolves sys.stdout dynamically.
+            with contextlib.redirect_stdout(WidgetStdout(w_output)):
+                result = call_demo_function(instance, demo_entry, kwargs)
+
+            # Append return value only if it is not already represented in what
+            # was printed during the call.  Functions that both print() and return
+            # the same content should not produce duplicates, while functions that
+            # return a different/additional value should still show it.
+            # Comparison is done line-by-line (not substring) so that a short return
+            # value like "SOURCEVOLT" is not suppressed just because it appears as a
+            # substring inside a comm-log line (e.g. "SER <- SMU4201 : 'SOURCEVOLT\r\n'").
+            if result is not None:
+                printed_delta = w_output.value[len(value_before_call):]
+                result_str = "\n".join(str(item) for item in result) if isinstance(result, list) else str(result)
+                printed_lines = {line.strip() for line in printed_delta.splitlines()}
+                if result_str.strip() not in printed_lines:
+                    w_output.value += result_str
+        except Exception as e:
+            w_output.value += f"\nError: {e}"
+            # # Debug traceback for the exception:
+            # import traceback
+            # w_output.value += f"\nTraceback:\n{traceback.format_exc()}"
+        finally:
+            if not _no_wrap:
+                instance.interface_close()
+            # Add 'Done' at the end of the first line to indicate completion — some
+            # functions may not print or return a value, so without this the user
+            # won't know when the function has finished.
+            w_output.value = w_output.value.replace('...', '... Done', 1)
+
+    def _build_button_rows(params_list):
+        rows = []
+        current_row_items = []
+        for demo_entry in params_list:
+            inputs = demo_entry.get("inputs")
+            try:
+                w_label_list = []
+                w_input_list = []
+                if inputs:
+                    for inp in inputs:
+                        label_text = inp.get("label", inp.get("name", ""))
+                        w_label_list.append(w.Label(f'{label_text}: '))
+                        width = inp.get("width", '50px')
+                        if inp.get("options"):
+                            _options = inp["options"]
+                            _default = inp.get("default")
+                            _value = _default if _default in _options else _options[0]
+                            w_input = w.Dropdown(options=_options, value=_value, width=width)
+                        elif inp.get("allow_empty"):
+                            # Numeric fields that may be left blank are rendered as Text so the
+                            # user can clear them; the click handler parses/converts the string.
+                            _default = inp.get("default")
+                            _str_val = '' if _default is None else str(_default)
+                            w_input = w.Text(value=_str_val, width=width, placeholder=inp.get("placeholder", ''))
+                            w_input._allow_empty_type = inp.get("type", str)  # carry type for later parsing
+                        else:
+                            input_type = inp.get("type", str)
+                            if input_type == int:
+                                w_input = w.IntText(value=inp.get("default"), width=width, placeholder=inp.get("placeholder", ''))
+                            elif input_type == float:
+                                w_input = w.FloatText(value=inp.get("default"), width=width, placeholder=inp.get("placeholder", ''))
+                            elif input_type == bool:
+                                w_input = w.Checkbox(value=bool(inp.get("default", False)), width=width)
+                            elif inp.get("password"):
+                                # Password widget masks input — value is still a plain string.
+                                w_input = w.Password(value=inp.get("default", ''), width=width, placeholder=inp.get("placeholder", ''))
+                            else:
+                                w_input = w.Text(value=inp.get("default", ''), width=width, placeholder=inp.get("placeholder", ''))
+                        w_input_list.append(w_input)
+
+                button_label = demo_entry.get("button_alt_label", demo_entry["name"])
+                disabled_if = demo_entry.get('disabled_if')
+                is_disabled = disabled_if(instance) if disabled_if else False
+                input_bindings = [(inp.get('name'), widget) for inp, widget in zip(inputs or [], w_input_list)]
+
+                w_button = w.Button(
+                    desc=button_label,
+                    cb=lambda sender, de=demo_entry, ib=input_bindings: _demo_button_click(sender, de, ib),
+                    width='auto',
+                    disabled=is_disabled)
+                w_item = w.HBox([
+                    *[w.HBox([label, inp_widget]) for label, inp_widget in zip(w_label_list, w_input_list)],
+                    w_button])
+
+                if not demo_entry.get('same_row', False) and current_row_items:
+                    rows.append(w.HBox(current_row_items))
+                    current_row_items = []
+                current_row_items.append(w_item)
+            except KeyError as e:
+                print(f'Malformed demo entry "{demo_entry.get("name", "?")}": missing key {e}')
+        if current_row_items:
+            rows.append(w.HBox(current_row_items))
+        return rows
+
+    _MIN_DEMO_BUTTONS = 5
+    _placeholder = {'key': '-', 'name': 'Placeholder', 'no_interface_wrap': True,
+                    'function': lambda self: None, 'inputs': [],
+                    'disabled_if': lambda self: True}
+    _padded_params = list(lib_demo_params) + [_placeholder] * max(0, _MIN_DEMO_BUTTONS - len(lib_demo_params))
+
+    w_rows = _build_button_rows(_padded_params)
+    w_instr_content = w.VBox(w_rows) if w_rows else w.Label('No demo functions defined.')
+
+    if extra_tabs:
+        # Multiple tabs share the same output widget — wrap buttons in a Tab on the right side.
+        tab_titles = ['Instrument Demo'] + [t for t, _ in extra_tabs]
+        tab_contents = [w_instr_content]
+        for _, extra_params in extra_tabs:
+            extra_rows = _build_button_rows(extra_params)
+            tab_contents.append(w.VBox(extra_rows) if extra_rows else w.Label('No functions defined.'))
+        w_buttons_tab = w.Tab(children=tab_contents)
+        for i, t in enumerate(tab_titles):
+            w_buttons_tab.set_title(i, t)
+        # CSS must appear somewhere in the displayed tree.
+        w_buttons_vbox = w.VBox([w_css, w_buttons_tab])
+    else:
+        # CSS must appear somewhere in the displayed tree.
+        w_buttons_vbox = w.VBox([w_css, w_instr_content])
+
+    w_main = w.HBox([w_tab, w_buttons_vbox], width='100%')
+    w_main.layout.align_items = 'stretch'
+    w_output.value        = f'{_title} \u2014 click a button to run a demo function.'
+    w_source_output.value = 'Source code will appear here when a demo button is clicked.'
+    # Return widget instead of calling display() — returning lets JupyterLab display
+    # it as the cell's natural last-expression output, which is reliable in both
+    # JupyterLab and VS Code Jupyter. Callers can also pass the result to display().
+    return w_main
 
 
 class WidgetStdout:

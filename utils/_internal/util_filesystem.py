@@ -59,7 +59,7 @@ class UtilityFilesystemMixin:
         with open(path, mode) as file:
             file.write(content)
 
-    def list_files(self, directory='.', ext='', recursive=False):
+    def list_dir_contents(self, directory='.', ext='', recursive=False):
         FileListResult = namedtuple('FileListResult', ['files', 'dirs'])
 
         filelist = []
@@ -74,6 +74,42 @@ class UtilityFilesystemMixin:
                 break
 
         return FileListResult(filelist, dirlist)
+
+    # Return only the files list from list_dir_contents.
+    def list_files(self, directory: str = '.', ext: str = '', recursive: bool = False) -> list[str]:
+        return self.list_dir_contents(directory=directory, ext=ext, recursive=recursive).files
+
+    # Check if a file exists, optionally printing a message when missing.
+    def file_exists(self, path: str, verbose: bool = False) -> bool:
+        if not os.path.isfile(path):
+            if verbose:
+                print(f"File '{path}' not found.")
+            return False
+        return True
+
+    # List subdirectories under path; wraps list_files to reuse its walk logic.
+    def list_folders(self, path: str = '.', recursive: bool = False) -> list[str]:
+        return self.list_dir_contents(directory=path, recursive=recursive).dirs
+
+    # Return the filename (with extension) from a path.
+    def get_filename(self, file_path: str) -> str:
+        return os.path.basename(file_path)
+
+    # Return the filename without extension from a path.
+    def get_basename(self, file_path: str) -> str:
+        return os.path.splitext(os.path.basename(file_path))[0]
+
+    # Return the file extension (including dot) from a path.
+    def get_extension(self, file_path: str) -> str:
+        return os.path.splitext(file_path)[1]
+
+    # Return the absolute path.
+    def get_abs_path(self, file_path: str) -> str:
+        return os.path.abspath(file_path)
+
+    # Return the directory component of a path.
+    def get_dir_path(self, file_path: str) -> str:
+        return os.path.dirname(file_path)
 
     def create_temp_dir(self):
         dir = tempfile.mkdtemp()

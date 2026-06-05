@@ -1,4 +1,9 @@
-from ..utilities import UtilityFunctions
+import sys, os as _os
+if __name__ == '__main__':
+    sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
+    from utils.utilities import UtilityFunctions
+else:
+    from ..utilities import UtilityFunctions
 utils = UtilityFunctions()
 
 utils.exit_if_module_missing('eseries')
@@ -63,57 +68,53 @@ class Electronics:
         solver = EquationSolver(equation_str)
         return solver.solve(Vin=Vin, R1=R1, R2=R2, Vout=Vout)
 
-    lib_demo_dict = [
-        {'key': 'a', 'name': 'Calculate Max Value'},
-        {'key': 'b', 'name': 'Calculate Min Value'},
-        {'key': 'c', 'name': 'Calculate Min Max Value'},
-        {'key': 'd', 'name': 'Get Standard Resistor Value'},
-        {'key': 'e', 'name': 'Calculate Parallel Resistance'},
-        {'key': 'f', 'name': 'Calculate Inverting Opamp Gain'},
-        {'key': 'g', 'name': 'Calculate Non-Inverting Opamp Gain'},
-        {'key': 'h', 'name': 'Voltage Divider'}
+    lib_demo_params = [
+        {'key': 'a', 'name': 'Calculate Max Value', 'function': 'calculate_max_value', 'inputs': [
+            {'label': 'Value',  'name': 'val',    'type': float, 'default': 1000.0,  'width': '80px'},
+            {'label': 'Tol',    'name': 'tol',    'type': float, 'default': 0.05, 'width': '60px'},
+            {'label': 'PPM',    'name': 'ppm',    'type': float, 'default': 200,    'width': '60px'},
+            {'label': 'DeltaT', 'name': 'deltaT', 'type': float, 'default': 60,    'width': '60px'},
+        ]},
+        {'key': 'b', 'name': 'Calculate Min Value', 'function': 'calculate_min_value', 'inputs': [
+            {'label': 'Value',  'name': 'val',    'type': float, 'default': 1000.0,  'width': '80px'},
+            {'label': 'Tol',    'name': 'tol',    'type': float, 'default': 0.05, 'width': '60px'},
+            {'label': 'PPM',    'name': 'ppm',    'type': float, 'default': 200,    'width': '60px'},
+            {'label': 'DeltaT', 'name': 'deltaT', 'type': float, 'default': 60,    'width': '60px'},
+        ]},
+        {'key': 'c', 'name': 'Calculate Min/Max Value', 'function': 'calculate_min_max_value', 'inputs': [
+            {'label': 'Value',  'name': 'val',    'type': float, 'default': 1000.0,  'width': '80px'},
+            {'label': 'Tol',    'name': 'tol',    'type': float, 'default': 0.05, 'width': '60px'},
+            {'label': 'PPM',    'name': 'ppm',    'type': float, 'default': 200,    'width': '60px'},
+            {'label': 'DeltaT', 'name': 'deltaT', 'type': float, 'default': 60,    'width': '60px'},
+        ]},
+        {'key': 'd', 'name': 'Get Standard Resistor Values', 'function': 'get_standard_resistor_value', 'inputs': [
+            {'label': 'Series',         'name': 'series',         'options': ['E3','E6','E12','E24','E48','E96','E192'], 'default': 'E24'},
+            {'label': 'Min',            'name': 'min_val',        'type': float, 'default': 100,  'width': '80px'},
+            {'label': 'Max',            'name': 'max_val',        'type': float, 'default': 1000, 'width': '80px'},
+            {'label': 'Exclusive stop', 'name': 'exclusive_stop', 'options': [True, False],       'default': True},
+        ]},
+        {'key': 'e', 'name': 'Parallel Resistance',
+         'function': lambda self, resistances: self.r_para([float(r) for r in resistances.split(',')]),
+         'inputs': [
+            {'label': 'Resistances', 'name': 'resistances', 'type': str, 'default': '100,200', 'placeholder': 'comma-separated', 'width': '150px'},
+        ]},
+        {'key': 'f', 'name': 'Inverting Op-Amp Gain', 'function': 'inverting_opamp_gain', 'inputs': [
+            {'label': 'Rf',  'name': 'Rf',  'type': float, 'default': 10000, 'width': '80px'},
+            {'label': 'Rin', 'name': 'Rin', 'type': float, 'default': 1000,  'width': '80px'},
+        ]},
+        {'key': 'g', 'name': 'Non-Inverting Op-Amp Gain', 'function': 'non_inverting_opamp_gain', 'inputs': [
+            {'label': 'Rf',  'name': 'Rf',  'type': float, 'default': 9000, 'width': '80px'},
+            {'label': 'Rin', 'name': 'Rin', 'type': float, 'default': 1000,  'width': '80px'},
+        ]},
+        {'key': 'h', 'name': 'Voltage Divider', 'function': 'voltage_divider', 'inputs': [
+            {'label': 'Vin',  'name': 'Vin',  'type': float, 'default': 5, 'allow_empty': True, 'width': '80px'},
+            {'label': 'R1',   'name': 'R1',   'type': float, 'default': 1000, 'allow_empty': True, 'width': '80px'},
+            {'label': 'R2',   'name': 'R2',   'type': float, 'default': 1000, 'allow_empty': True, 'width': '80px'},
+            {'label': 'Vout', 'name': 'Vout', 'type': float, 'default': None, 'allow_empty': True, 'width': '80px'},
+        ]},
     ]
 
-    def lib_demo(self, demo_desc):
-        result = 0 # default return value
-        if demo_desc in ['Calculate Max Value', 'Calculate Min Value', 'Calculate Min Max Value']:
-            if (val := utils.get_user_input('Enter value', float)) is None: return None
-            tol = utils.get_user_input('Enter tolerance', float, 0.01)
-            ppm = utils.get_user_input('Enter ppm', float, 0)
-            deltaT = utils.get_user_input('Enter deltaT', float, 0) if ppm != 0 else 0
-            if demo_desc == 'Calculate Max Value':
-                result = self.calculate_max_value(val, tol, ppm, deltaT)
-            elif demo_desc == 'Calculate Min Value':
-                result = self.calculate_min_value(val, tol, ppm, deltaT)
-            elif demo_desc == 'Calculate Min Max Value':
-                result = self.calculate_min_max_value(val, tol, ppm, deltaT)
-        elif demo_desc == 'Get Standard Resistor Value':
-            series = utils.get_user_input(f'Enter series ({", ".join(self.RES_SERIES_MAP.keys())})', str, 'E24')
-            min_val = utils.get_user_input('Enter min value)', float, 100)
-            max_val = utils.get_user_input('Enter max value)', float, 1000)
-            exclusive_stop = utils.get_user_input('Exclusive stop', bool, 0)
-            result = self.get_standard_resistor_value(series, min_val, max_val, exclusive_stop)
-        elif demo_desc == 'Calculate Parallel Resistance':
-            if (resistances := utils.get_user_input('Enter resistances (comma separated)', str)) is None: return None
-            try:
-                resistances = [float(r) for r in resistances.split(',')]
-            except ValueError:
-                print('Invalid input. Please enter comma separated values.')
-                return None
-            result = self.r_para(resistances)
-        elif demo_desc == 'Calculate Inverting Opamp Gain':
-            if (Rf := utils.get_user_input('Enter Rf', float)) is None: return None
-            if (Rin := utils.get_user_input('Enter Rin', float)) is None: return None
-            result = self.inverting_opamp_gain(Rf, Rin)
-        elif demo_desc == 'Calculate Non-Inverting Opamp Gain':
-            if (Rf := utils.get_user_input('Enter Rf', float)) is None: return None
-            if (Rin := utils.get_user_input('Enter Rin', float)) is None: return None
-            result = self.non_inverting_opamp_gain(Rf, Rin)
-        elif demo_desc == 'Voltage Divider':
-            Vin = utils.get_user_input('Enter Vin', float, allow_empty=True)
-            R1 = utils.get_user_input('Enter R1', float, allow_empty=True)
-            R2 = utils.get_user_input('Enter R2', float, allow_empty=True)
-            Vout = utils.get_user_input('Enter Vout', float, allow_empty=True)
-            result = self.voltage_divider(Vin, R1, R2, Vout)
-        print(result)
-        return result
+
+if __name__ == '__main__':
+    elec = Electronics()
+    utils.demo(elec)

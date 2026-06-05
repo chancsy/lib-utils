@@ -1,3 +1,4 @@
+import base64
 import struct
 
 
@@ -74,9 +75,21 @@ class UtilityBinaryMixin:
             setattr(self, f'{data_type}_to_bytes', _create_to_bytes_function(data_type))
             setattr(self, f'bytes_to_{data_type}', _create_from_bytes_function(data_type, length))
 
+        # list of the functions created:
+        # double_to_bytes, bytes_to_double
+        # float_to_bytes, bytes_to_float
+        # half_to_bytes, bytes_to_half
+        # uint32_to_bytes, bytes_to_uint32
+        # int32_to_bytes, bytes_to_int32
+        # uint16_to_bytes, bytes_to_uint16
+        # int16_to_bytes, bytes_to_int16
+        # uint8_to_bytes, bytes_to_uint8
+
+    # Convert float to binary32 (single precision) format (caution - lose precision)
     def float_to_single(self, x):
         return struct.unpack('f', struct.pack('f', x))[0]
 
+    # Convert float to binary16 (half precision) format (caution - lose precision)
     def float_to_half(self, x):
         return struct.unpack('e', struct.pack('e', x))[0]
 
@@ -110,6 +123,16 @@ class UtilityBinaryMixin:
 
     def bytes_to_string(self, bytes):
         return bytes.decode(errors='replace')
+
+    # Encode a text string to a Base64 bytes object.
+    def base64_encode(self, text: str) -> bytes:
+        return base64.b64encode(text.encode('utf-8'))
+
+    # Decode a Base64 bytes or string back to a UTF-8 text string.
+    def base64_decode(self, data: bytes | str) -> str:
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return base64.b64decode(data).decode('utf-8')
 
     def dec_to_hex_str(self, dec, prefix='', delim='', pad=True, byte_size=1):
         if byte_size:

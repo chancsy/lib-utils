@@ -73,8 +73,12 @@ class UtilityRuntimeMixin:
         difference_in_days = difference_in_seconds / (24 * 3600)
         return difference_in_days
 
+    def get_user_home_directory(self):
+        return os.path.expanduser('~')
+
+    # Join path and replace with os specific path separator
     def os_path_join(self, *paths):
-        return os.path.join(*[p.replace('/', os.sep) for p in paths])
+        return os.path.join(*paths).replace('\\', os.sep).replace('/', os.sep)
 
     def in_virtualenv(self):
         return hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
@@ -103,6 +107,7 @@ class UtilityRuntimeMixin:
         except ImportError:
             return 'Package not found'
 
+    # append param to kwargs if not already set, or update value if overwrite argument is true
     def update_kwargs_param(self, kwargs, param_name, param_value, overwrite=False):
         if overwrite:
             kwargs[param_name] = param_value
@@ -119,6 +124,7 @@ class UtilityRuntimeMixin:
         except Exception:
             return None
 
+    # fetch the latest release info of a github repo
     def get_github_latest_release(self, repo_owner, repo_name):
         if not self.module_exists('requests'):
             return
@@ -128,9 +134,36 @@ class UtilityRuntimeMixin:
         releast_info = response.json()
         return releast_info
 
+    # get the release binary download url with specified filters
     def get_github_release_download_url(self, release_info, filter_name='browser_download_url', filter_value=''):
         urls = []
         for asset in release_info['assets']:
             if filter_value in asset[filter_name]:
                 urls.append(asset['browser_download_url'])
         return urls
+
+    # Emit a system beep at the given frequency and duration.
+    # Windows: winsound.Beep() gives precise hardware-level freq/duration control.
+    # Linux: the `beep` CLI tool (apt install beep) provides the same control but requires
+    #   root/group permissions or the `beep` package; falls back to a terminal bell (\a)
+    #   which has no frequency or duration control — it is a single audible alert only.
+    def beep(self, freq: int = 1000, duration_ms: int = 1000) -> None:
+        if os.name == 'nt':
+            import winsound
+            winsound.Beep(freq, duration_ms)
+        else:
+            # TODO To be tested
+            try:
+                subprocess.run(
+                    ['beep', '-f', str(freq), '-l', str(duration_ms)],
+                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                # fallback: terminal bell — no freq/duration control
+                print('\a', end='', flush=True)
+
+    # Emit multiple beeps with a gap between each.
+    def beep_multi(self, count: int, gap_ms: int = 100, freq: int = 1000, duration_ms: int = 100) -> None:
+        for _ in range(count):
+            self.beep(freq, duration_ms)
+            self.sleep(gap_ms / 1000)

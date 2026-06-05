@@ -31,8 +31,10 @@ class UtilityDataFrameMixin:
         return df
 
     def df_to_numeric(self, df):
+        # Create new header with unique column names
         df = self.df_unique_columns(df)
 
+        # Convert columns to numeric types where possible
         for col in df.columns:
             try:
                 df[col] = pd.to_numeric(df[col])
