@@ -43,6 +43,7 @@ class UtilityTextMixin:
         except ValueError:
             return None
 
+    # natural sort key for sorting strings with numbers
     def natural_sort_key(self, text):
         return [int(s) if s.isdigit() else s.lower() for s in re.split(r'(\d+)', text)]
 
@@ -54,6 +55,7 @@ class UtilityTextMixin:
             capitalized_words[0] = capitalized_words[0].capitalize()
         return ' '.join(capitalized_words)
 
+    # Generates an HTML anchor tag
     def generate_html_link(self, url, text=None, new_window=True):
         if text is None:
             text = url
@@ -91,14 +93,14 @@ class UtilityTextMixin:
             with open(file_path, 'r') as lines:
                 return self.extract_lines(lines, string1, string2, include_matching_string_line)
 
-    def parse_range_string(self, range_str):
+    def parse_range_string(self, range_str, range_sep='~'):
         if not range_str:
             return []
         result = set()
         parts = range_str.split(',')
         for part in parts:
-            if '~' in part:
-                start, end = part.split('~')
+            if range_sep in part:
+                start, end = part.split(range_sep)
                 try:
                     start = int(start)
                     end = int(end)

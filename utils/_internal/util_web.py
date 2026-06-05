@@ -7,10 +7,7 @@ from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from html.parser import HTMLParser
 
-try:
-    from IPython.display import HTML
-except ImportError:
-    HTML = None
+
 
 
 class UtilityWebMixin:
@@ -188,11 +185,30 @@ class UtilityWebMixin:
         except (socket.timeout, socket.error):
             return False
 
-    def img_to_base64(self, img_path):
-        with open(img_path, 'rb') as img_file:
-            return base64.b64encode(img_file.read()).decode()
+    # Convert raw image bytes to a Base64 string for embedding in HTML or JSON.
+    def img_to_base64(self, img: bytes):
+        img_base64_bin = base64.b64encode(img) # Returns a bytes object
+        img_base64_str = img_base64_bin.decode() # Convert bytes to string for easier embedding in HTML/JSON
+        return img_base64_str
 
-    def display_img_from_base64(self, img_base64):
-        if HTML is None:
+    # Decode a Base64 string back to raw image bytes.
+    def base64_to_img(self, img_base64_str: str) -> bytes:
+        img_base64_bin = img_base64_str.encode() # Convert string back to bytes for decoding
+        img = base64.decodebytes(img_base64_bin) # Decode Base64 bytes back to raw image bytes
+        return img
+
+    # Display an image in Jupyter Notebook from a Base64 string.
+    def display_img_from_base64(self, img_base64_str: str):
+        try:
+            from IPython.display import display, HTML
+        except ImportError:
             raise ImportError('IPython is required for display_img_from_base64()')
-        return HTML(f'<img src="data:image/png;base64,{img_base64}">')
+        display(HTML(f'<img src="data:image/png;base64,{img_base64_str}">'))
+
+    # Display raw image bytes inline in a Jupyter notebook.
+    def display_img(self, img: bytes):
+        try:
+            from IPython.display import display, Image
+        except ImportError:
+            raise ImportError('IPython is required for display_img()')
+        display(Image(data=img))
