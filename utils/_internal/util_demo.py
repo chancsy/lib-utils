@@ -5,17 +5,16 @@ def resolve_demo_input(inp: dict, raw):
     if options:
         # raw is already the chosen option value at this point (CLI resolves it before calling).
         return raw
-    allow_empty = inp.get('allow_empty', inp.get('default') is not None)
-    if allow_empty:
-        stripped = str(raw).strip() if raw is not None else ''
-        if not stripped:
-            return None
-        input_type = inp.get('type', str)
-        try:
-            return input_type(stripped)
-        except (ValueError, TypeError):
-            return None
-    return raw
+    stripped = str(raw).strip() if raw is not None else ''
+    if 'allow_empty' in inp and not stripped:
+        return None
+    input_type = inp.get('type', str)
+    if input_type is str:
+        return stripped if stripped else raw
+    try:
+        return input_type(stripped)
+    except (ValueError, TypeError):
+        return raw
 
 
 # Dispatch a lib_demo_params function call using pre-built kwargs.

@@ -402,13 +402,12 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
                             _default = inp.get("default")
                             _value = _default if _default in _options else _options[0]
                             w_input = w.Dropdown(options=_options, value=_value, width=width)
-                        elif inp.get("allow_empty"):
-                            # Numeric fields that may be left blank are rendered as Text so the
-                            # user can clear them; the click handler parses/converts the string.
+                        elif 'allow_empty' in inp:
+                            # Fields that may be left blank are rendered as Text so the
+                            # user can clear them; resolve_demo_input converts '' → None.
                             _default = inp.get("default")
                             _str_val = '' if _default is None else str(_default)
                             w_input = w.Text(value=_str_val, width=width, placeholder=inp.get("placeholder", ''))
-                            w_input._allow_empty_type = inp.get("type", str)  # carry type for later parsing
                         else:
                             input_type = inp.get("type", str)
                             if input_type == int:
