@@ -507,6 +507,8 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
     w_main = w.HBox([w_tab, w_buttons_vbox], width='100%')
     w_main.layout.align_items = 'stretch'
     w_main._input_registry    = _input_registry   # expose for external pre-fill
+    w_main._build_button_rows = _build_button_rows # closure: (params_list,) → list[HBox]
+    w_main._buttons_vbox      = w_instr_content    # live-mutable main-tab buttons VBox
     w_output.value        = f'{_title} \u2014 click a button to run a demo function.'
     w_source_output.value = 'Source code will appear here when a demo button is clicked.'
     # Return widget instead of calling display() — returning lets JupyterLab display
