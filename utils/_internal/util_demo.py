@@ -11,6 +11,8 @@ def resolve_demo_input(inp: dict, raw):
     input_type = inp.get('type', str)
     if input_type is str:
         return stripped if stripped else raw
+    if input_type is bool:
+        return stripped.lower() not in ('false', '0', 'no', '')
     try:
         return input_type(stripped)
     except (ValueError, TypeError):
