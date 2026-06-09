@@ -179,16 +179,22 @@ class InputSimulator:
         self._mouse_ctrl.position = (pos.x, pos.y)
 
     lib_demo_params = [
-        {'key': 'a', 'name': 'Get Mouse Position', 'function': 'get_mouse_pos', 'inputs': []},
+        {'key': 'a', 'name': 'Get Mouse Position', 'function': 'get_mouse_pos', 'inputs': [],
+         'fill_targets': {
+             'Move Mouse.x': lambda r: r.x, 'Move Mouse.y': lambda r: r.y,
+             'Mouse Click.x': lambda r: r.x, 'Mouse Click.y': lambda r: r.y,
+         }},
         {'key': 'b', 'name': 'Move Mouse', 'function': lambda self, x, y: self.mouse_move(MousePos(x, y)), 'inputs': [
             {'label': 'X', 'name': 'x', 'type': int, 'default': 100, 'width': '70px'},
             {'label': 'Y', 'name': 'y', 'type': int, 'default': 100, 'width': '70px'},
         ]},
         {'key': 'c', 'name': 'Mouse Click',
-         'function': lambda self, x, y, blocking: self.mouse_click(MousePos(x, y), blocking=blocking),
+         'function': lambda self, x, y, delay_s_during, delay_s_after, blocking: self.mouse_click(MousePos(x, y), delay_s_during=delay_s_during, delay_s_after=delay_s_after, blocking=blocking),
          'inputs': [
             {'label': 'X', 'name': 'x', 'type': int, 'default': 100, 'width': '70px'},
             {'label': 'Y', 'name': 'y', 'type': int, 'default': 100, 'width': '70px'},
+            {'label': 'Delay During (s)', 'name': 'delay_s_during', 'type': float, 'default': 0.01, 'width': '50px'},
+            {'label': 'Delay After (s)', 'name': 'delay_s_after', 'type': float, 'default': 0.01, 'width': '50px'},
             {'label': 'Block Input', 'name': 'blocking', 'type': bool, 'default': True, 'width': '100px'},
         ]},
     ]

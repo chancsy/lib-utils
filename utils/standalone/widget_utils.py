@@ -299,6 +299,9 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
             ],
             'button_alt_label': 'Alt\nLabel',    # override button label (optional)
             'same_row':         True,            # place this entry on the same row as the previous one
+            'fill_targets': {                    # auto-fill another entry's input after this button runs.
+                'OtherEntry.param_name': 'key',  #   key: dict key, list index, or True for scalar result.
+            },                                   #   Target must match "<entry name>.<input name>" exactly.
         }
 
     Returns:
@@ -371,6 +374,27 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
                 printed_lines = {line.strip() for line in printed_delta.splitlines()}
                 if result_str.strip() not in printed_lines:
                     w_output.value += result_str
+
+                # fill_targets: dict mapping "OtherEntry.param_name" → key/index into result.
+                # If result is a dict, value is used as a key; if a list/tuple, as an index;
+                # if a scalar (str/int/float), the sentinel True or 0 copies it directly.
+                # Example: 'fill_targets': {'Connect.ip': 0, 'Read.tag': 'tag_name'}
+                for target_key, selector in demo_entry.get('fill_targets', {}).items():
+                    target_widget = _input_registry.get(target_key)
+                    if target_widget is None:
+                        continue
+                    try:
+                        if callable(selector):
+                            fill_val = selector(result)
+                        elif isinstance(result, dict):
+                            fill_val = result[selector]
+                        elif isinstance(result, (list, tuple)):
+                            fill_val = result[selector]
+                        else:
+                            fill_val = result
+                        target_widget.value = type(target_widget.value)(fill_val)
+                    except (KeyError, IndexError, TypeError, ValueError):
+                        pass
         except Exception as e:
             w_output.value += f"\nError: {e}"
             # # Debug traceback for the exception:
@@ -383,6 +407,10 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
             # functions may not print or return a value, so without this the user
             # won't know when the function has finished.
             w_output.value = w_output.value.replace('...', '... Done', 1)
+
+    # Registry: maps "<entry_name>.<input_name>" → widget, populated as widgets are built.
+    # Stored on w_main after construction so callers can also access it.
+    _input_registry = {}
 
     def _build_button_rows(params_list):
         rows = []
@@ -403,11 +431,14 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
                             _value = _default if _default in _options else _options[0]
                             w_input = w.Dropdown(options=_options, value=_value, width=width)
                         elif 'allow_empty' in inp:
-                            # Fields that may be left blank are rendered as Text so the
+                            # Fields that may be left blank are rendered as Text/Password so the
                             # user can clear them; resolve_demo_input converts '' → None.
                             _default = inp.get("default")
                             _str_val = '' if _default is None else str(_default)
-                            w_input = w.Text(value=_str_val, width=width, placeholder=inp.get("placeholder", ''))
+                            if inp.get("password"):
+                                w_input = w.Password(value=_str_val, width=width, placeholder=inp.get("placeholder", ''))
+                            else:
+                                w_input = w.Text(value=_str_val, width=width, placeholder=inp.get("placeholder", ''))
                         else:
                             input_type = inp.get("type", str)
                             if input_type == int:
@@ -422,6 +453,7 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
                             else:
                                 w_input = w.Text(value=inp.get("default", ''), width=width, placeholder=inp.get("placeholder", ''))
                         w_input_list.append(w_input)
+                        _input_registry[f'{demo_entry["name"]}.{inp.get("name", "")}'] = w_input
 
                 button_label = demo_entry.get("button_alt_label", demo_entry["name"])
                 disabled_if = demo_entry.get('disabled_if')
@@ -474,6 +506,7 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
 
     w_main = w.HBox([w_tab, w_buttons_vbox], width='100%')
     w_main.layout.align_items = 'stretch'
+    w_main._input_registry    = _input_registry   # expose for external pre-fill
     w_output.value        = f'{_title} \u2014 click a button to run a demo function.'
     w_source_output.value = 'Source code will appear here when a demo button is clicked.'
     # Return widget instead of calling display() — returning lets JupyterLab display
