@@ -62,17 +62,17 @@ class Cryptography:
 
     lib_demo_params = [
         {'key': 'a', 'name': 'Derive key', 'function': 'derive_key', 'inputs': [
-            {'label': 'Password',   'name': 'password',   'type': str, 'password': True, 'default': None, 'allow_empty': True, 'width': '80px'},
+            {'label': 'Password',   'name': 'password',   'type': str, 'password': True, 'default': None, 'width': '80px'},
             {'label': 'Length',     'name': 'length',     'type': int, 'default': 32, 'width': '80px'},
             {'label': 'Iterations', 'name': 'iterations', 'type': int, 'default': 480000, 'width': '80px'},
-        ]},
+        ], 'fill_targets': {'Encrypt.key': 1, 'Decrypt.key': 1}},
         {'key': 'b', 'name': 'Encrypt', 'function': 'encrypt', 'inputs': [
-            {'label': 'Key', 'name': 'key', 'type': str, 'default': 'xeeyRjBAlKku-Bl68AuSB-0ehmiTuY6PKs7g8gBQCQk=', 'width': '150px'},
+            {'label': 'Key', 'name': 'key', 'type': str, 'default': '', 'width': '150px'},
             {'label': 'Message', 'name': 'message', 'type': str, 'default': 'Test message', 'width': '150px'},
-        ]},
+        ], 'fill_targets': {'Decrypt.message': True}},
         {'key': 'c', 'name': 'Decrypt', 'function': 'decrypt', 'inputs': [
-            {'label': 'Key', 'name': 'key', 'type': str, 'default': 'xeeyRjBAlKku-Bl68AuSB-0ehmiTuY6PKs7g8gBQCQk=', 'width': '150px'},
-            {'label': 'Message', 'name': 'message', 'type': str, 'default': 'gAAAAABqIkh0-WOzYScE6-uwp2v4i33E_42-34Bgx2YzbGuR6W-TDTb59RLGHxjomDdsF7n6a8zRul1Wd9GQ0ndB3n8SfEkUfg==', 'width': '150px'},
+            {'label': 'Key', 'name': 'key', 'type': str, 'default': '', 'width': '150px'},
+            {'label': 'Message', 'name': 'message', 'type': str, 'default': '', 'width': '150px'},
         ]},
         {'key': 'd', 'name': 'Get Hash', 'function': 'get_hash', 'inputs': [
             {'label': 'Message', 'name': 'message', 'type': str, 'default': 'Test message', 'width': '150px'},
