@@ -147,8 +147,8 @@ class SeleniumUtils:
 
     lib_demo_params = [
         {'key': 'a', 'name': 'New Driver', 'function': 'new_driver', 'inputs': [
-            {'label': 'Headless', 'name': 'headless', 'type': bool, 'default': False, 'width': 'auto'},
-            {'label': 'Auto-install driver', 'name': 'auto_install_driver', 'type': bool, 'default': False, 'width': 'auto'},
+            {'label': 'Headless', 'name': 'headless', 'type': bool, 'default': False},
+            {'label': 'Auto-install driver', 'name': 'auto_install_driver', 'type': bool, 'default': False},
             {'label': 'SOCKS5 proxy', 'name': 'socks5_proxy', 'type': str, 'default': '', 'width': '80px', 'placeholder': 'host:port'},
         ]},
         {'key': 'b', 'name': 'Open URL', 'function': 'open_url', 'inputs': [

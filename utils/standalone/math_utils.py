@@ -221,7 +221,7 @@ class MathUtils:
             {'label': 'Source range', 'name': 'source_range_str', 'type': str, 'default': '4,20', 'width': '100px', 'placeholder': 'e.g. 4,20'},
             {'label': 'Target range', 'name': 'target_range_str', 'type': str, 'default': '0,100', 'width': '100px', 'placeholder': 'e.g. 0,100'},
             {'label': 'Value', 'name': 'value', 'type': float, 'default': 12.0, 'width': '60px'},
-            {'label': 'Extrapolate', 'name': 'extrapolate', 'type': bool, 'default': True, 'width': 'auto'},
+            {'label': 'Extrapolate', 'name': 'extrapolate', 'type': bool, 'default': True},
         ]},
         {'key': 'i', 'name': 'Polyfit',
          'function': lambda self, known_x_str, known_y_str, degree, prevent_overfit:
@@ -231,7 +231,7 @@ class MathUtils:
             {'label': 'X values', 'name': 'known_x_str', 'type': str, 'default': '1,2,3', 'width': '120px', 'placeholder': 'e.g. 1,2,3'},
             {'label': 'Y values', 'name': 'known_y_str', 'type': str, 'default': '2,4,6', 'width': '120px', 'placeholder': 'e.g. 2,4,6'},
             {'label': 'Degree', 'name': 'degree', 'type': int, 'default': 1, 'width': '40px'},
-            {'label': "Don't overfit", 'name': 'prevent_overfit', 'type': bool, 'default': True, 'width': 'auto'},
+            {'label': "Don't overfit", 'name': 'prevent_overfit', 'type': bool, 'default': True},
         ]},
         {'key': 'j', 'name': 'Trend',
          'function': lambda self, known_x_str, known_y_str, x, degree, prevent_overfit:
@@ -242,7 +242,7 @@ class MathUtils:
             {'label': 'Y values', 'name': 'known_y_str', 'type': str, 'default': '2.1,3.9,6.08,7.99', 'width': '120px', 'placeholder': 'e.g. 2,4,6'},
             {'label': 'X', 'name': 'x', 'type': float, 'default': 4.0, 'width': '60px'},
             {'label': 'Degree', 'name': 'degree', 'type': int, 'default': 1, 'width': '40px'},
-            {'label': "Don't overfit", 'name': 'prevent_overfit', 'type': bool, 'default': True, 'width': 'auto'},
+            {'label': "Don't overfit", 'name': 'prevent_overfit', 'type': bool, 'default': True},
         ]},
         {'key': 'k', 'name': 'Best Combo Sum',
          'function': lambda self, numbers_str, target_sum, max_len:

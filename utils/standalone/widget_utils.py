@@ -424,7 +424,9 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
                     for inp in inputs:
                         label_text = inp.get("label", inp.get("name", ""))
                         w_label_list.append(w.Label(f'{label_text}: '))
-                        width = inp.get("width", '50px')
+                        input_type = inp.get("type", str)
+                        default_width = 'auto' if input_type == bool else '50px'
+                        width = inp.get("width", default_width)
                         if inp.get("options"):
                             _options = inp["options"]
                             _default = inp.get("default")
