@@ -195,7 +195,7 @@ class InputSimulator:
             {'label': 'Y', 'name': 'y', 'type': int, 'default': 100, 'width': '70px'},
             {'label': 'Delay During (s)', 'name': 'delay_s_during', 'type': float, 'default': 0.01, 'width': '50px'},
             {'label': 'Delay After (s)', 'name': 'delay_s_after', 'type': float, 'default': 0.01, 'width': '50px'},
-            {'label': 'Block Input', 'name': 'blocking', 'type': bool, 'default': True, 'width': '100px'},
+            {'label': 'Block Input', 'name': 'blocking', 'type': bool, 'default': True},
         ]},
     ]
 

@@ -39,7 +39,7 @@ class SQLite():
             {'label': 'Table Name',     'name': 'table_name',     'type': str,  'default': 'my_table',    'width': '100px'},
             {'label': 'Columns',        'name': 'columns',        'type': str,  'default': 'name, value', 'width': '100px', 'placeholder': 'col1, col2'},
             {'label': 'Values',         'name': 'values',         'type': str,  'default': 'hello, 1.0',  'width': '100px', 'placeholder': 'val1, val2'},
-            {'label': 'Replace',        'name': 'replace',        'type': bool, 'default': False, 'width': 'auto'},
+            {'label': 'Replace',        'name': 'replace',        'type': bool, 'default': False},
             {'label': 'Unique Columns', 'name': 'unique_columns', 'type': str,  'default': 'name', 'width': '100px', 'placeholder': 'col1, col2 (optional)', 'allow_empty': True},
         ]},
         {'key': 'i', 'name': 'Get Rows', 'function': 'get_rows', 'inputs': [
