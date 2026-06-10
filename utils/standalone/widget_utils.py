@@ -328,8 +328,19 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
         function_ref = demo_entry['function']
 
         # Show source code in the Source Code tab before running.
+        # For lambda wrappers, scan the lambda source for the first method name on the instance
+        # and show that method's source instead of the lambda itself.
         try:
-            src_func = function_ref if callable(function_ref) else getattr(instance, function_ref)
+            if callable(function_ref) and function_ref.__name__ == '<lambda>':
+                lambda_src = inspect.getsource(function_ref)
+                src_func = next(
+                    (getattr(instance, name) for name in dir(instance)
+                     if not name.startswith('_') and callable(getattr(instance, name, None))
+                     and f'self.{name}(' in lambda_src),
+                    function_ref,
+                )
+            else:
+                src_func = function_ref if callable(function_ref) else getattr(instance, function_ref)
             source = textwrap.dedent(inspect.getsource(src_func))
             w_source_output.value = f'Demo: {demo_entry["name"]}\n{"="*80}\n{source}'
         except (OSError, TypeError) as e:
