@@ -1,6 +1,10 @@
+import sys
+if sys.platform != 'win32':
+    raise ImportError('win_automation_utils requires Windows')
+
 from ctypes import windll
 from dataclasses import dataclass
-import sys, os as _os
+import os as _os
 if __name__ == '__main__':
     sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
     from utils.utilities import UtilityFunctions

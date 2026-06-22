@@ -44,7 +44,6 @@ class UtilityCollectionsMixin:
             return None
         else:
             for v in sorted_values:
-                print(v, value)
                 if v >= value:
                     return v
             return None

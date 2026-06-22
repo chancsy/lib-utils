@@ -261,7 +261,7 @@ class EquationSolver:
             # Extract variable symbols from the equation string
             self.symbols = {var: symbols(var) for var in self.extract_symbols(equation_str)}
             # Parse the equation string to create a symbolic equation
-            self.equation = Eq(eval(equation_str, {**self.symbols}), 0)
+            self.equation = Eq(eval(equation_str, {'__builtins__': {}, **self.symbols}), 0)
         except SympifyError:
             raise ValueError("Invalid equation string or variable symbols")
         except Exception as e:

@@ -1,6 +1,20 @@
+import re
 import sqlite3
 from typing import Optional
 import os
+
+
+def _sql_id(name: str) -> str:
+    """Validate and double-quote a SQL identifier (table or column name).
+
+    SQLite does not support parameterized identifiers, so we validate against
+    a safe pattern and quote with double-quotes to prevent SQL injection.
+    Raises ValueError on invalid names.
+    """
+    if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return f'"{name}"'
+
 
 class SQLite():
     """
@@ -116,6 +130,7 @@ class SQLite():
         return cursor.fetchone() is not None
 
     def create_table(self, conn: sqlite3.Connection, table_name: str, column_names: Optional[list] = None, column_constraints: Optional[list] = None):
+        _sql_id(table_name)
         """Create a table with an auto-increment 'id' primary key plus caller-defined columns.
 
         column_names and column_constraints are paired by position — they must have the same length.
@@ -127,22 +142,24 @@ class SQLite():
             # CREATE TABLE sensors (id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, serial TEXT UNIQUE, temp REAL)
         """
         cursor = conn.cursor()
+        t = _sql_id(table_name)
+        cols = ', '.join([f'{_sql_id(name)} {constraint}' for name, constraint in zip(column_names, column_constraints)])
         cursor.execute(f'''
-            CREATE TABLE IF NOT EXISTS {table_name} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-            {', '.join([f'{name} {constraint}' for name, constraint in zip(column_names, column_constraints)])}
+            CREATE TABLE IF NOT EXISTS {t} (
+            "id" INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+            {cols}
             )
         ''')
         conn.commit()
 
     def drop_table(self, conn: sqlite3.Connection, table_name: str):
         cursor = conn.cursor()
-        cursor.execute(f'DROP TABLE IF EXISTS {table_name}')
+        cursor.execute(f'DROP TABLE IF EXISTS {_sql_id(table_name)}')
         conn.commit()
 
     def get_row_count(self, conn: sqlite3.Connection, table_name: str) -> int:
         cursor = conn.cursor()
-        cursor.execute(f'SELECT COUNT(*) FROM {table_name}')
+        cursor.execute(f'SELECT COUNT(*) FROM {_sql_id(table_name)}')
         result = cursor.fetchone()
         return result[0] if result else 0
 
@@ -193,11 +210,15 @@ class SQLite():
         cursor = conn.cursor()
 
          # Check if record exists when we have unique columns
+        t = _sql_id(table_name)
+        safe_cols = [_sql_id(c) for c in column_names]
+
         record_exists = False
         if unique_columns:
+            safe_unique = [_sql_id(c) for c in unique_columns]
             unique_values = [column_values[column_names.index(col)] for col in unique_columns if col in column_names]
             cursor.execute(
-                f"SELECT COUNT(*) FROM {table_name} WHERE {' AND '.join([f'{col} = ?' for col in unique_columns])}",
+                f"SELECT COUNT(*) FROM {t} WHERE {' AND '.join([f'{c} = ?' for c in safe_unique])}",
                 unique_values,
             )
             record_exists = cursor.fetchone()[0] > 0
@@ -205,24 +226,25 @@ class SQLite():
         # Build appropriate query based on replace flag and unique columns
         if replace and unique_columns:
             # UPSERT - preserve auto-increment ID
-            conflict_columns = ', '.join(unique_columns)
-            update_columns = [name for name in column_names if name not in unique_columns]
+            safe_unique = [_sql_id(c) for c in unique_columns]
+            conflict_columns = ', '.join(safe_unique)
+            update_cols = [_sql_id(n) for n in column_names if n not in unique_columns]
             query_string = f'''
-                INSERT INTO {table_name} ({', '.join(column_names)})
+                INSERT INTO {t} ({', '.join(safe_cols)})
                 VALUES ({', '.join(['?' for _ in column_values])})
                 ON CONFLICT({conflict_columns}) DO UPDATE SET
-                {', '.join([f'{name} = excluded.{name}' for name in update_columns])}
+                {', '.join([f'{c} = excluded.{c}' for c in update_cols])}
             '''
         elif replace:
             # Standard replace
             query_string = f'''
-                INSERT OR REPLACE INTO {table_name} ({', '.join(column_names)})
+                INSERT OR REPLACE INTO {t} ({', '.join(safe_cols)})
                 VALUES ({', '.join(['?' for _ in column_values])})
             '''
         else:
             # Ignore duplicates
             query_string = f'''
-                INSERT OR IGNORE INTO {table_name} ({', '.join(column_names)})
+                INSERT OR IGNORE INTO {t} ({', '.join(safe_cols)})
                 VALUES ({', '.join(['?' for _ in column_values])})
             '''
 
@@ -274,14 +296,16 @@ class SQLite():
         if end_date is None:
             end_date = '2100-01-01 00:00:00'
 
+        t = _sql_id(table_name)
         cursor = conn.cursor()
         if column_names and column_values:
+            safe_filter_cols = [_sql_id(n) for n in column_names]
             cursor.execute(
-                f"SELECT * FROM {table_name} WHERE {' AND '.join([f'{name} = ?' for name in column_names])} AND {time_column} BETWEEN ? AND ?",
+                f"SELECT * FROM {t} WHERE {' AND '.join([f'{c} = ?' for c in safe_filter_cols])} AND {_sql_id(time_column)} BETWEEN ? AND ?",
                 column_values + [start_date, end_date],
             )
         else:
-            cursor.execute(f'SELECT * FROM {table_name}')
+            cursor.execute(f'SELECT * FROM {t}')
 
         rows = cursor.fetchall()
         if not rows:
@@ -289,7 +313,7 @@ class SQLite():
 
         if return_column_names:
             # Get indices of requested return columns
-            cursor.execute(f'PRAGMA table_info({table_name})')
+            cursor.execute(f'PRAGMA table_info({t})')
             table_info = cursor.fetchall()
             col_indices = [i for i, col in enumerate(table_info) if col[1] in return_column_names]
             # Extract only requested columns

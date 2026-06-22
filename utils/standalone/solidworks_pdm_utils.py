@@ -53,7 +53,21 @@ Quick start:
 
 import os
 import shutil
-import sys
+import sys, os as _os
+
+if sys.platform != 'win32':
+    raise ImportError('solidworks_pdm_utils requires Windows')
+
+if __name__ == '__main__':
+    sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
+    from utils.utilities import UtilityFunctions
+else:
+    from ..utilities import UtilityFunctions
+
+_u = UtilityFunctions()
+_u.exit_if_module_missing('pywin32')
+del _u
+
 import pythoncom
 import win32com.client as win
 import win32com.client.gencache as gencache

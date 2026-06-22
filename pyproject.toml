@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lib-utils"
+version = "0.1.0"
+description = "Personal helper utilities for engineering test automation"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.3",
+    "pandas>=2.3",
+]
+
+[project.optional-dependencies]
+# pip install "lib-utils[requests]"
+requests = [
+    "requests>=2.32",
+]
+
+# pip install "lib-utils[git]"
+git = [
+    "python-git-info>=0.8",
+]
+
+# pip install "lib-utils[crypto]"
+crypto = [
+    "cryptography>=45.0",
+]
+
+# pip install "lib-utils[pdf]"
+pdf = [
+    "pikepdf>=10.2",
+]
+
+# pip install "lib-utils[slack]"
+slack = [
+    "slack_sdk>=3.42",
+]
+
+# pip install "lib-utils[selenium]"
+selenium = [
+    "selenium>=4.35",
+    "webdriver_manager>=4.0",
+]
+
+# pip install "lib-utils[math]"
+math = [
+    "sympy>=1.14",
+    "eseries>=1.2",
+]
+
+# pip install "lib-utils[win]"  (Windows only)
+win = [
+    "pywin32>=311",
+    "pygetwindow>=0.0.9",
+    "pyautogui>=0.9.54",
+    "pynput>=1.8",
+    "pycaw>=20251023",
+]
+
+# pip install "lib-utils[all]"  (win excluded — Windows-only deps)
+all = [
+    "lib-utils[requests]",
+    "lib-utils[git]",
+    "lib-utils[crypto]",
+    "lib-utils[pdf]",
+    "lib-utils[slack]",
+    "lib-utils[selenium]",
+    "lib-utils[math]",
+]
+
+[tool.setuptools.packages.find]
+include = ["utils", "utils.*"]
