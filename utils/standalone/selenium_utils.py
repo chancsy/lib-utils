@@ -83,6 +83,7 @@ class SeleniumUtils:
             self.driver = None
 
     def wait(self, wait_s, driver=None):
+        # TBD driver wait instead of system wide wait
         utils.sleep(wait_s)
 
     # def css_element_click(wait_s, selector):
@@ -92,26 +93,28 @@ class SeleniumUtils:
     #     time.sleep(wait_s)
     #     driver.find_element(By.CSS_SELECTOR, selector).click()
     #     return
-    def css_element_click(self, selector, driver=None):
+    def _resolve_locator(self, locator_type):
+        lt = locator_type or self.default_locator
+        return lt.value if isinstance(lt, SeleniumUtils.LocatorType) else lt
+
+    def css_element_click(self, selector, locator_type=None, driver=None):
         d = driver or self.driver
-        e = d.find_element(By.CSS_SELECTOR, selector)
+        e = d.find_element(self._resolve_locator(locator_type), selector)
         d.execute_script("arguments[0].click();", e)
 
     def css_element_text(self, selector, locator_type=None, driver=None):
         d = driver or self.driver
-        locator_type = locator_type or self.default_locator
-        locator = locator_type.value if isinstance(locator_type, SeleniumUtils.LocatorType) else locator_type
-        return d.find_element(locator, selector).text
+        return d.find_element(self._resolve_locator(locator_type), selector).text
 
-    def css_element_field_entry(self, selector, string, driver=None):
+    def css_element_field_entry(self, selector, value, locator_type=None, driver=None):
         d = driver or self.driver
-        e = d.find_element(By.CSS_SELECTOR, selector)
+        e = d.find_element(self._resolve_locator(locator_type), selector)
         e.clear()
-        e.send_keys(string)
+        e.send_keys(value)
 
-    def css_element(self, selector, driver=None):
+    def css_element(self, selector, locator_type=None, driver=None):
         try:
-            return (driver or self.driver).find_element(By.CSS_SELECTOR, selector)
+            return (driver or self.driver).find_element(self._resolve_locator(locator_type), selector)
         except:
             return None
 
@@ -119,9 +122,9 @@ class SeleniumUtils:
     #     return len(driver.find_elements(By.CSS_SELECTOR, selector)) > 0
     #
     # TODO need more testing
-    def wait_css_element(self, selector, timeout, driver=None):
+    def wait_css_element(self, selector, timeout, locator_type=None, driver=None):
         try:
-            WebDriverWait(driver or self.driver, timeout).until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
+            WebDriverWait(driver or self.driver, timeout).until(EC.presence_of_element_located((self._resolve_locator(locator_type), selector)))
             return True
         except:
             return False
@@ -134,8 +137,8 @@ class SeleniumUtils:
         )
 
     # TODO need more testing
-    def wait_till_clickable(self, selector, timeout, driver=None):
-        WebDriverWait(driver or self.driver, timeout).until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+    def wait_till_clickable(self, selector, timeout, locator_type=None, driver=None):
+        WebDriverWait(driver or self.driver, timeout).until(EC.element_to_be_clickable((self._resolve_locator(locator_type), selector)))
 
     # TODO need more testing
     def wait_till_text_matched(self, selector, text_to_match, timeout, driver=None):

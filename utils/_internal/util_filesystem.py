@@ -126,6 +126,29 @@ class UtilityFilesystemMixin:
             shutil.rmtree(dir)
         self.temporary_dir_list.clear()
 
+    # If a directory contains exactly one subdirectory and no loose files, return
+    # that subdirectory — handles archives that wrap everything in a base folder.
+    # Otherwise returns the original directory unchanged.
+    def unwrap_single_dir_archive(self, extract_dir: str) -> str:
+        entries = os.listdir(extract_dir)
+        if len(entries) == 1 and os.path.isdir(os.path.join(extract_dir, entries[0])):
+            return os.path.join(extract_dir, entries[0])
+        return extract_dir
+
+    # Returns files present in dest_dir but absent in source_dir (relative paths).
+    def find_orphaned_files(self, source_dir: str, dest_dir: str) -> list[str]:
+        def relative_files(directory: str) -> set[str]:
+            result = set()
+            for root, _, files in os.walk(directory):
+                for f in files:
+                    abs_path = os.path.join(root, f)
+                    result.add(os.path.relpath(abs_path, directory))
+            return result
+
+        source_files = relative_files(source_dir)
+        dest_files = relative_files(dest_dir)
+        return sorted(dest_files - source_files)
+
     def calculate_file_hash(self, file_path, hash_algorithm='md5'):
         import hashlib
 
