@@ -25,7 +25,7 @@ git = [
 
 # pip install "lib-utils[crypto]"
 crypto = [
-    "cryptography>=45.0",
+    "cryptography>=48.0.1",
 ]
 
 # pip install "lib-utils[pdf]"

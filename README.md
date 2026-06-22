@@ -123,23 +123,16 @@ slack_sdk is not installed. To install, please run:
 
 Last run: 2026-06-22 against `requirements.txt`.
 
-| Package | Installed | CVE / ID | Fix version | Severity | Affects you? |
-|---|---|---|---|---|---|
-| `cryptography` | 45.0.7 | PYSEC-2026-36 | 46.0.7 | **High** | Yes — buffer overflow in `Hash.update()` with non-contiguous buffers (e.g. `buf[::-1]`). Used in `cryptography_utils.py`. |
-| `cryptography` | 45.0.7 | GHSA-537c-gmf6-5ccf | 48.0.1 | **High** | Yes — bundled OpenSSL in the wheel is vulnerable. Affects all cryptography operations. |
-| `cryptography` | 45.0.7 | CVE-2026-26007 | 46.0.5 | Medium | Partial — EC public key point not validated; only affects ECDH/ECDSA usage (not used in `cryptography_utils.py`). |
-| `cryptography` | 45.0.7 | PYSEC-2026-35 | 46.0.6 | Medium | Low — DNS name constraint bypass in TLS cert validation; not used in this lib. |
-| `requests` | 2.32.5 | CVE-2026-25645 | 2.33.0 | Low | No — only affects `extract_zipped_paths()` direct callers; this lib uses `requests.get/post` only. |
-
-**Recommended action:** upgrade `cryptography` to `>=48.0.1` (covers all 4 CVEs in one go). `requests` upgrade is optional.
-
-```bash
-pip install "cryptography>=48.0.1" "requests>=2.33.0"
-```
+| Package | Installed | CVE / ID | Status |
+|---|---|---|---|
+| `cryptography` | 49.0.0 | PYSEC-2026-36, GHSA-537c-gmf6-5ccf, CVE-2026-26007, PYSEC-2026-35 | Fixed — upgraded to 49.0.0 |
+| `requests` | 2.32.5 | CVE-2026-25645 | Low severity; not affected by the vulnerable code path |
 
 ## Development
 
 ```bash
 git clone <repo-url>
 pip install -e ".[all,win]"   # editable install with all extras
+or
+pip install -e ".[all,win]" --config-settings editable_mode=compat   # needed for Jupyter
 ```
