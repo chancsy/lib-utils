@@ -32,12 +32,12 @@ class UtilityTimeMixin:
     def get_last_day_of_month(self, year):
         return [datetime(year, month, calendar.monthrange(year, month)[1]) for month in range(1, 13)]
 
-    def get_date(self, time_now, date_delim=''):
+    def get_date(self, time_now=None, date_delim=''):
+        time_now = time_now or self.get_current_datetime()
         return time_now.strftime(f'%Y{date_delim}%m{date_delim}%d')
 
     def get_timestamp(self, time_now=None, style=None, time_delim='', show_ms=False, ms_delim='', ms_digits=3):
-        if time_now is None:
-            time_now = self.get_current_datetime()
+        time_now = time_now or self.get_current_datetime()
         style_map = {
             None: (time_delim, show_ms, ms_delim),
             0: (':', False, '.'),
@@ -55,8 +55,7 @@ class UtilityTimeMixin:
         return time_now.strftime(f'%H{time_delim}%M{time_delim}%S')
 
     def get_datestamp(self, time_now=None, style=None, date_delim=''):
-        if time_now is None:
-            time_now = self.get_current_datetime()
+        time_now = time_now or self.get_current_datetime()
         style_map = {
             None: date_delim,
             0: '-',
@@ -65,8 +64,7 @@ class UtilityTimeMixin:
         return self.get_date(time_now, date_delim)
 
     def get_datetimestamp(self, time_now=None, style=None, date_delim='', date_time_delim='', time_delim='', show_ms=False, ms_delim='', ms_digits=3):
-        if time_now is None:
-            time_now = self.get_current_datetime()
+        time_now = time_now or self.get_current_datetime()
         style_map = {
             None: (date_delim, date_time_delim, time_delim, show_ms, ms_delim),
             0: ('-', ' ', ':', False, '.'),

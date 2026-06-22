@@ -25,19 +25,19 @@ from ._internal.util_web import UtilityWebMixin
 #     return
 
 class UtilityFunctions(
-    UtilityIPythonMixin,
     UtilityBinaryMixin,
-    UtilityTimeMixin,
-    UtilityTextMixin,
     UtilityCollectionsMixin,
     UtilityDataFrameMixin,
-    UtilityFilesystemMixin,
-    UtilityRuntimeMixin,
-    UtilityOutputMixin,
-    UtilityWebMixin,
-    UtilityThreadMixin,
     UtilityDemoMixin,
+    UtilityFilesystemMixin,
+    UtilityIPythonMixin,
+    UtilityOutputMixin,
+    UtilityRuntimeMixin,
     UtilityTestingMixin,
+    UtilityTextMixin,
+    UtilityThreadMixin,
+    UtilityTimeMixin,
+    UtilityWebMixin,
 ):
     _sys_exit_overridden = False # Class-level flag to track if the message has been shown
 

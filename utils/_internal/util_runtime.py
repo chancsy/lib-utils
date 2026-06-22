@@ -131,8 +131,8 @@ class UtilityRuntimeMixin:
         import requests
         url = f'https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest'
         response = requests.get(url)
-        releast_info = response.json()
-        return releast_info
+        release_info = response.json()
+        return release_info
 
     # get the release binary download url with specified filters
     def get_github_release_download_url(self, release_info, filter_name='browser_download_url', filter_value=''):
