@@ -147,8 +147,8 @@ class UtilityWebMixin:
             return
         import requests
 
-        response = requests.post(webhook_url, json=json_data, verify=False)
-        if not (response.status_code == 201 or response.status_code == 201 or response.status_code == 202):
+        response = requests.post(webhook_url, json=json_data, verify=False)  # verify=False required for corporate proxy
+        if not (response.status_code == 200 or response.status_code == 201 or response.status_code == 202):
             print(f'{response} - Please check')
         return response
 

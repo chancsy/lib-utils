@@ -1,0 +1,37 @@
+# Exact versions tested against (generated from pip freeze).
+# For flexible installs use pyproject.toml extras instead.
+
+# core
+numpy==2.3.2
+pandas==2.3.2
+
+# [requests]
+requests==2.32.5
+
+# [git]
+python-git-info==0.8.3
+
+# [crypto]
+cryptography==45.0.7
+
+# [pdf]
+pikepdf==10.2.0
+
+# [slack]
+slack_sdk==3.42.0
+
+# [selenium]
+selenium==4.35.0
+webdriver-manager==4.0.2
+
+# [math]
+sympy==1.14.0
+eseries==1.2.1
+
+# [win] — Windows only
+pywin32==311
+pywin32-ctypes==0.2.3
+PyGetWindow==0.0.9
+PyAutoGUI==0.9.54
+pynput==1.8.2
+pycaw==20251023

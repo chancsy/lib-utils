@@ -135,8 +135,7 @@ class UtilityBinaryMixin:
         return base64.b64decode(data).decode('utf-8')
 
     def dec_to_hex_str(self, dec, prefix='', delim='', pad=True, byte_size=1):
-        if byte_size:
-            hex_str = f'{dec:0{byte_size*2}X}'
+        hex_str = f'{dec:0{byte_size*2}X}' if byte_size else f'{dec:X}'
 
         if pad and len(hex_str) % 2:
             hex_str = '0' + hex_str
