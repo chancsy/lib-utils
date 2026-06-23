@@ -123,6 +123,44 @@ class WindowManager:
     def declare_dpi_aware(self) -> None:
         windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
 
+    def capture_window(self, title: str) -> 'np.ndarray | None':
+        """
+        Capture a window's client area (excludes title bar and window borders) and return
+        a BGR numpy array (cv2-compatible).  Uses GetClientRect + ClientToScreen to locate
+        the content region.  Does NOT change DPI awareness — mss and win32 both operate in
+        whatever coordinate mode the process already has, keeping them consistent.
+        Requires: mss, opencv-python, numpy (not enforced at module level).
+        """
+        try:
+            import mss as _mss
+            import numpy as _np
+            import cv2 as _cv2
+        except ImportError as e:
+            print(f'capture_window requires mss, opencv-python, numpy: {e}')
+            return None
+
+        matches = gw.getWindowsWithTitle(title)
+        if not matches:
+            print(f'capture_window: window "{title}" not found.')
+            return None
+
+        hwnd = matches[0]._hWnd
+        # Client area coordinates — excludes title bar and window borders
+        client_rect = win32gui.GetClientRect(hwnd)  # (0, 0, width, height) in client coords
+        pt = win32gui.ClientToScreen(hwnd, (0, 0))  # client top-left in screen coords
+        monitor = {
+            'left':   pt[0],
+            'top':    pt[1],
+            'width':  client_rect[2],
+            'height': client_rect[3],
+        }
+        print(f'  [capture_window] hwnd={hwnd}  client={client_rect[2]}x{client_rect[3]}'
+              f'  screen_pos=({pt[0]},{pt[1]})')
+
+        with _mss.mss() as sct:
+            raw = sct.grab(monitor)
+        return _cv2.cvtColor(_np.array(raw), _cv2.COLOR_BGRA2BGR)
+
     lib_demo_params = [
         {'key': 'a', 'name': 'Get Screen Size', 'function': 'get_screen_size', 'inputs': []},
         {'key': 'b', 'name': 'Get Foreground Window Handle', 'function': 'get_foreground_window_handle', 'inputs': []},
@@ -139,6 +177,9 @@ class WindowManager:
         {'key': 'h', 'name': 'Get System Volume', 'function': 'get_system_volume', 'inputs': []},
         {'key': 'i', 'name': 'Set System Volume', 'function': 'set_system_volume', 'inputs': [
             {'label': 'Volume (0.0-1.0)', 'name': 'volume', 'type': float, 'default': 0.2, 'width': '90px'},
+        ]},
+        {'key': 'j', 'name': 'Capture Window', 'function': 'capture_window', 'inputs': [
+            {'label': 'Window title', 'name': 'title', 'type': str, 'default': 'scrcpy', 'width': '180px'},
         ]},
     ]
 

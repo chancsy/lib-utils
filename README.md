@@ -47,21 +47,23 @@ utils/
 │   ├── util_threads.py     # StoppableThread
 │   ├── util_time.py        # timing, timestamps, IntervalTimer
 │   └── util_web.py         # urllib download helpers, webhook
-└── standalone/             # optional modules — import explicitly, check deps at load time
-    ├── clipboard_utils.py      [requires: pyperclip]
-    ├── cryptography_utils.py   [requires: cryptography]
-    ├── electronics_utils.py    [requires: eseries, sympy]
-    ├── log_actions.py          [stdlib only]
-    ├── math_utils.py           [requires: numpy, sympy]
-    ├── pdf_utils.py            [requires: pikepdf]
-    ├── selenium_utils.py       [requires: selenium, webdriver_manager]
-    ├── slack_utils.py          [requires: slack_sdk]
-    ├── solidworks_pdm_utils.py [requires: pywin32] (Windows only — SolidWorks PDM must be installed)
-    ├── sql_utils.py            [requires: pyodbc]
-    ├── sqlite_utils.py         [stdlib only]
-    ├── ui_utils.py             [stdlib only — tkinter]
-    ├── widget_utils.py         [requires: ipywidgets, IPython] (Jupyter only)
-    └── win_automation_utils.py [requires: pywin32, pygetwindow, pyautogui, pynput, pycaw] (Windows only)
+├── standalone/             # optional modules — import explicitly, check deps at load time
+│   ├── clipboard_utils.py      [requires: pyperclip]
+│   ├── cryptography_utils.py   [requires: cryptography]
+│   ├── electronics_utils.py    [requires: eseries, sympy]
+│   ├── log_actions.py          [stdlib only]
+│   ├── math_utils.py           [requires: numpy, sympy]
+│   ├── pdf_utils.py            [requires: pikepdf]
+│   ├── selenium_utils.py       [requires: selenium, webdriver_manager]
+│   ├── slack_utils.py          [requires: slack_sdk]
+│   ├── solidworks_pdm_utils.py [requires: pywin32] (Windows only — SolidWorks PDM must be installed)
+│   ├── sql_utils.py            [requires: pyodbc]
+│   ├── sqlite_utils.py         [stdlib only]
+│   ├── ui_utils.py             [stdlib only — tkinter]
+│   ├── widget_utils.py         [requires: ipywidgets, IPython] (Jupyter only)
+│   └── win_automation_utils.py [requires: pywin32, pygetwindow, pyautogui, pynput, pycaw] (Windows only)
+└── tools/                  # interactive tools — run directly or import to orchestrate
+    └── region_setup.py         [requires: opencv-python, numpy, tkinter] — ADB screen region selector
 ```
 
 ## Usage
@@ -90,6 +92,9 @@ from utils.standalone.sqlite_utils import SQLite
 from utils.standalone.ui_utils import UIUtils
 from utils.standalone.widget_utils import Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, WidgetStdout, build_lib_demo_widget  # Jupyter only
 from utils.standalone.win_automation_utils import WindowManager, InputSimulator, WindowPos, WindowSize, MousePos, WindowInfo  # Windows only
+
+# Tools — import to orchestrate, or run directly
+from utils.tools.region_setup import RegionSetupTool
 ```
 
 ## Optional dependency check
