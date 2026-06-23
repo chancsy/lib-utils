@@ -91,8 +91,13 @@ class WindowManager:
         return sorted(w.title for w in self.get_all_windows())
 
     # Return position of the window matching name (and optionally handle).
+    @staticmethod
+    def _get_windows_exact(title: str):
+        # pygetwindow.getWindowsWithTitle does substring matching; filter to exact title.
+        return [w for w in gw.getWindowsWithTitle(title) if w.title == title]
+
     def get_window_pos(self, name: str, handle: int = 0) -> WindowPos | None:
-        matches = gw.getWindowsWithTitle(name)
+        matches = self._get_windows_exact(name)
         if not matches:
             print(f"No window found with title '{name}'")
             return None
@@ -139,7 +144,7 @@ class WindowManager:
             print(f'capture_window requires mss, opencv-python, numpy: {e}')
             return None
 
-        matches = gw.getWindowsWithTitle(title)
+        matches = self._get_windows_exact(title)
         if not matches:
             print(f'capture_window: window "{title}" not found.')
             return None
