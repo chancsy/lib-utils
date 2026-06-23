@@ -68,12 +68,30 @@ class WindowManager:
     def get_foreground_window_title(self) -> str:
         return win32gui.GetWindowText(win32gui.GetForegroundWindow())
 
-    # Bring the window with the given handle to the foreground.
+    # Bring the window with the given handle to the foreground (simple, no focus-steal bypass).
     def focus_window(self, handle: int) -> None:
         try:
             win32gui.SetForegroundWindow(handle)
         except Exception:
             print(f'Window {handle} not found')
+
+    # Force a window to OS foreground via AttachThreadInput, bypassing Windows focus-stealing prevention.
+    # Use this instead of focus_window when calling from a background process (e.g. Jupyter kernel).
+    def force_foreground_window(self, handle: int) -> None:
+        try:
+            import win32api, win32process
+            fg_hwnd = win32gui.GetForegroundWindow()
+            fg_tid = win32process.GetWindowThreadProcessId(fg_hwnd)[0]
+            cur_tid = win32api.GetCurrentThreadId()
+            if fg_tid and fg_tid != cur_tid:
+                win32process.AttachThreadInput(cur_tid, fg_tid, True)
+                win32gui.BringWindowToTop(handle)
+                win32gui.SetForegroundWindow(handle)
+                win32process.AttachThreadInput(cur_tid, fg_tid, False)
+            else:
+                win32gui.SetForegroundWindow(handle)
+        except Exception:
+            pass
 
     # Return all visible windows as a list of WindowInfo.
     def get_all_windows(self) -> list[WindowInfo]:
@@ -179,11 +197,14 @@ class WindowManager:
         {'key': 'g', 'name': 'Focus Window', 'function': 'focus_window', 'inputs': [
             {'label': 'Handle', 'name': 'handle', 'type': int, 'default': 0, 'width': '80px'},
         ]},
-        {'key': 'h', 'name': 'Get System Volume', 'function': 'get_system_volume', 'inputs': []},
-        {'key': 'i', 'name': 'Set System Volume', 'function': 'set_system_volume', 'inputs': [
+        {'key': 'h', 'name': 'Force Foreground Window', 'function': 'force_foreground_window', 'inputs': [
+            {'label': 'Handle', 'name': 'handle', 'type': int, 'default': 0, 'width': '80px'},
+        ]},
+        {'key': 'i', 'name': 'Get System Volume', 'function': 'get_system_volume', 'inputs': []},
+        {'key': 'j', 'name': 'Set System Volume', 'function': 'set_system_volume', 'inputs': [
             {'label': 'Volume (0.0-1.0)', 'name': 'volume', 'type': float, 'default': 0.2, 'width': '90px'},
         ]},
-        {'key': 'j', 'name': 'Capture Window', 'function': 'capture_window', 'inputs': [
+        {'key': 'k', 'name': 'Capture Window', 'function': 'capture_window', 'inputs': [
             {'label': 'Window title', 'name': 'title', 'type': str, 'default': 'scrcpy', 'width': '180px'},
         ]},
     ]
