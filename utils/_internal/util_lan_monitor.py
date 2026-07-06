@@ -186,3 +186,28 @@ class LanMonitorServer:
             ip_str = info['ip'] or '-'
             age_str = f"{info['seconds_since_seen']:.1f}s" if info['seconds_since_seen'] is not None else 'never'
             print(f"  [{mark}] {hostname:<17} {info['status']:<12} {ip_str:<16} {age_str}")
+
+
+    # # class to manage tcp server and client communication
+    # def start_tcp_server(self, host, port):
+    #     def server_thread(host, port):
+    #         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #         server.bind((host, port))
+    #         server.listen(5)
+    #         client_socket, addr = server.accept()
+    #         client_handler = Thread(target=handle_client_connection, args=(client_socket,))
+    #         client_handler.start()
+
+    # def stop_tcp_server(self, server):
+    #     server.close()
+
+    # def start_tcp_client(self, host, port):
+    #     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     client.connect((host, port))
+    #     return client
+
+    # def stop_tcp_client(self, client):
+    #     client.close()
+
+    # def send_tcp_data(self, conn, data):
+    #     conn.send(data.encode())
