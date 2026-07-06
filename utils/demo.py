@@ -25,8 +25,7 @@ def build_demo_instance(class_type):
 	required_parameters = [
 		parameter
 		for parameter in parameters
-		if parameter.name != "self"
-		and parameter.default is Parameter.empty
+		if parameter.default is Parameter.empty
 		and parameter.kind in (
 			Parameter.POSITIONAL_ONLY,
 			Parameter.POSITIONAL_OR_KEYWORD,
@@ -81,6 +80,8 @@ def discover_demo_targets():
 			try:
 				with redirect_stdout(module_output), redirect_stderr(module_output):
 					module = import_module(module_name)
+			except KeyboardInterrupt:
+				raise
 			except BaseException as exc:
 				reason = str(exc)
 				captured_output = module_output.getvalue().strip()
@@ -103,6 +104,8 @@ def discover_demo_targets():
 					instance_output = StringIO()
 					with redirect_stdout(instance_output), redirect_stderr(instance_output):
 						demo_instance = build_demo_instance(class_type)
+				except KeyboardInterrupt:
+					raise
 				except BaseException as exc:
 					reason = str(exc)
 					captured_output = instance_output.getvalue().strip()
@@ -173,5 +176,3 @@ else:
 		output = utils.demo(selected_target["instance"])
 	else:
 		output = selected_target["instance"].demo()
-
-# %%
