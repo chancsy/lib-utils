@@ -8,6 +8,7 @@ utils = UtilityFunctions()
 utils.exit_if_module_missing('opencv-python')
 utils.exit_if_module_missing('numpy')
 
+import os
 import subprocess
 import random
 import numpy as np
@@ -16,7 +17,11 @@ import cv2
 
 class AdbUtils:
     def __init__(self, adb_path=None):
-        self.adb_path = adb_path or 'adb'
+        adb_path = adb_path or 'adb'
+        # CreateProcess on Windows needs the actual .exe, not its containing folder
+        if os.path.isdir(adb_path):
+            adb_path = os.path.join(adb_path, 'adb.exe')
+        self.adb_path = adb_path
         self.device = None  # active device serial; None = let adb pick the only connected device
 
     def _run(self, *args, binary=False):
@@ -92,6 +97,61 @@ class AdbUtils:
         self._run('shell', 'input', 'swipe',
                   str(x1), str(y1), str(x2), str(y2), str(duration_ms))
 
+    # video container extensions; used to exclude videos when only photos are wanted —
+    # excluding by video (a small, stable set) is more robust than including by photo
+    # extension, since phone cameras produce many/growing photo formats (heic, dng, ...)
+    video_exts = {'.mp4', '.mov', '.3gp', '.mkv', '.webm', '.m4v', '.avi'}
+
+    def list_latest_files(self, remote_dir, count=1, exclude_exts=None):
+        # 'ls -t -1' relies on the device's toolbox/coreutils ls supporting these flags (true for modern Android)
+        output = self._run('shell', 'ls', '-t', '-1', remote_dir)
+        if not output or 'No such file' in output or 'Permission denied' in output:
+            return []
+        names = [line.strip() for line in output.splitlines() if line.strip()]
+        if exclude_exts:
+            names = [name for name in names if os.path.splitext(name)[1].lower() not in exclude_exts]
+        remote_dir = remote_dir.rstrip('/')
+        return [f'{remote_dir}/{name}' for name in names[:count]]
+
+    def pull_files(self, remote_paths, dest_dir, move=False):
+        dest_dir = os.path.expanduser(dest_dir)
+        os.makedirs(dest_dir, exist_ok=True)
+        pulled = []
+        for remote_path in remote_paths:
+            self._run('pull', remote_path, dest_dir)
+            local_path = os.path.join(dest_dir, os.path.basename(remote_path))
+            if os.path.exists(local_path):
+                pulled.append(local_path)
+                if move:
+                    self._run('shell', 'rm', remote_path)
+            else:
+                print(f'pull_files: failed to pull {remote_path}')
+        return pulled
+
+    def pull_latest_files(self, remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None):
+        remote_paths = self.list_latest_files(remote_dir, count, exclude_exts=exclude_exts)
+        if not remote_paths:
+            print(f'pull_latest_files: no files found in {remote_dir}')
+            return []
+        return self.pull_files(remote_paths, dest_dir, move=move)
+
+    # common Android camera output directories, checked in order until one yields files
+    common_dcim_paths = [
+        '/sdcard/DCIM/Camera',
+        '/storage/emulated/0/DCIM/Camera',
+        '/sdcard/DCIM/100ANDRO',
+        '/storage/emulated/0/Pictures',
+    ]
+
+    def pull_latest_media_files(self, dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False):
+        exclude_exts = self.video_exts if photos_only else None
+        for remote_dir in dcim_paths or self.common_dcim_paths:
+            pulled = self.pull_latest_files(remote_dir, dest_dir, count=count, move=move, exclude_exts=exclude_exts)
+            if pulled:
+                return pulled
+        print('pull_latest_media_files: no files found in any common DCIM directory')
+        return []
+
     lib_demo_params = [
         {'key': 'a', 'name': 'Get Devices', 'function': 'get_devices', 'inputs': []},
         {'key': 'b', 'name': 'Get Screen Size', 'function': 'get_screen_size', 'inputs': []},
@@ -116,6 +176,18 @@ class AdbUtils:
             {'label': 'X2', 'name': 'x2', 'type': int, 'default': 540},
             {'label': 'Y2', 'name': 'y2', 'type': int, 'default': 400},
             {'label': 'Duration ms', 'name': 'duration_ms', 'type': int, 'default': 300},
+        ]},
+        {'key': 'g', 'name': 'Pull Latest Files', 'function': 'pull_latest_files', 'inputs': [
+            {'label': 'Remote dir', 'name': 'remote_dir', 'type': str, 'default': '/sdcard/DCIM/Camera', 'width': '250px'},
+            {'label': 'Dest dir', 'name': 'dest_dir', 'type': str, 'default': '~', 'width': '200px'},
+            {'label': 'Count', 'name': 'count', 'type': int, 'default': 1},
+            {'label': 'Move (delete from device)', 'name': 'move', 'type': bool, 'default': False},
+        ]},
+        {'key': 'h', 'name': 'Pull Latest Media Files', 'function': 'pull_latest_media_files', 'inputs': [
+            {'label': 'Dest dir', 'name': 'dest_dir', 'type': str, 'default': '~', 'width': '200px'},
+            {'label': 'Count', 'name': 'count', 'type': int, 'default': 1},
+            {'label': 'Move (delete from device)', 'name': 'move', 'type': bool, 'default': False},
+            {'label': 'Photos only (exclude videos)', 'name': 'photos_only', 'type': bool, 'default': False},
         ]},
     ]
 
