@@ -349,7 +349,14 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
         kwargs = {}
         for inp, (arg_name, widget) in zip(demo_entry.get('inputs', []), input_bindings):
             kwargs[arg_name] = resolve_demo_input(inp, widget.value)
-        w_output.value = f'Running Demo: {demo_entry["name"]}...\nfunction: {demo_entry["function"]}, args: {list(kwargs.values())}\n{"="*80}\n'
+        func_display_name = getattr(src_func, '__name__', str(demo_entry['function']))
+        call_str = f'{func_display_name}(' + ', '.join(f'{k}={v!r}' for k, v in kwargs.items()) + ')'
+        w_output.value = (
+            f'Running Demo: {demo_entry["name"]}...\n'
+            f'function: {demo_entry["function"]}, args: {list(kwargs.values())}\n'
+            f'{call_str}\n'
+            f'{"="*80}\n'
+        )
 
         _no_wrap = demo_entry.get('no_interface_wrap', no_interface_wrap)
         try:
