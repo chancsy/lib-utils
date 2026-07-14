@@ -1,8 +1,4 @@
 import sys
-if sys.platform != 'win32':
-    raise ImportError('win_automation_utils requires Windows')
-
-from ctypes import windll
 from dataclasses import dataclass
 import os as _os
 if __name__ == '__main__':
@@ -12,18 +8,14 @@ else:
     from ..utilities import UtilityFunctions
 
 utils = UtilityFunctions()
-utils.exit_if_module_missing('pywin32')
-utils.exit_if_module_missing('pygetwindow')
-utils.exit_if_module_missing('pyautogui')
-utils.exit_if_module_missing('pynput')
-utils.exit_if_module_missing('pycaw')
 
-import win32gui
-import pygetwindow as gw
-import pyautogui
-from pycaw.pycaw import AudioUtilities
-from pynput import mouse as _pynput_mouse
-from pynput.mouse import Button
+
+def _check_windows_platform():
+    # Checked from each class's __init__ (at construction) rather than at module-import
+    # time, so merely importing this module - e.g. just to get the plain WindowSize/
+    # WindowPos/MousePos/WindowInfo dataclasses below - doesn't require Windows at all.
+    if sys.platform != 'win32':
+        raise ImportError('win_automation_utils requires Windows')
 
 
 # --- Data containers ---
@@ -55,23 +47,44 @@ class WindowInfo:
 class WindowManager:
     """Windows GUI automation: screen, window, and audio control."""
 
+    def __init__(self):
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require Windows or any of these packages - only
+        # actually instantiating WindowManager does. Cached on self so the methods below
+        # don't need their own import statements.
+        _check_windows_platform()
+        utils.exit_if_module_missing('pywin32')
+        utils.exit_if_module_missing('pygetwindow')
+        utils.exit_if_module_missing('pyautogui')
+        utils.exit_if_module_missing('pycaw')
+        import win32gui
+        import pygetwindow as gw
+        import pyautogui
+        from ctypes import windll
+        from pycaw.pycaw import AudioUtilities
+        self._win32gui = win32gui
+        self._gw = gw
+        self._pyautogui = pyautogui
+        self._windll = windll
+        self._AudioUtilities = AudioUtilities
+
     # Return the screen resolution.
     def get_screen_size(self) -> WindowSize:
-        size = pyautogui.size()
+        size = self._pyautogui.size()
         return WindowSize(size.width, size.height)
 
     # Return the handle of the currently focused window.
     def get_foreground_window_handle(self) -> int:
-        return win32gui.GetForegroundWindow()
+        return self._win32gui.GetForegroundWindow()
 
     # Return the title of the currently focused window.
     def get_foreground_window_title(self) -> str:
-        return win32gui.GetWindowText(win32gui.GetForegroundWindow())
+        return self._win32gui.GetWindowText(self._win32gui.GetForegroundWindow())
 
     # Bring the window with the given handle to the foreground.
     def focus_window(self, handle: int) -> None:
         try:
-            win32gui.SetForegroundWindow(handle)
+            self._win32gui.SetForegroundWindow(handle)
         except Exception:
             print(f'Window {handle} not found')
 
@@ -79,11 +92,11 @@ class WindowManager:
     def get_all_windows(self) -> list[WindowInfo]:
         windows: list[WindowInfo] = []
         def _cb(hwnd, _):
-            if win32gui.IsWindowVisible(hwnd):
-                title = win32gui.GetWindowText(hwnd)
+            if self._win32gui.IsWindowVisible(hwnd):
+                title = self._win32gui.GetWindowText(hwnd)
                 if title:
                     windows.append(WindowInfo(hwnd, title))
-        win32gui.EnumWindows(_cb, None)
+        self._win32gui.EnumWindows(_cb, None)
         return windows
 
     # Return sorted list of all visible window titles.
@@ -91,10 +104,9 @@ class WindowManager:
         return sorted(w.title for w in self.get_all_windows())
 
     # Return position of the window matching name (and optionally handle).
-    @staticmethod
-    def _get_windows_exact(title: str):
+    def _get_windows_exact(self, title: str):
         # pygetwindow.getWindowsWithTitle does substring matching; filter to exact title.
-        return [w for w in gw.getWindowsWithTitle(title) if w.title == title]
+        return [w for w in self._gw.getWindowsWithTitle(title) if w.title == title]
 
     def get_window_pos(self, name: str, handle: int = 0) -> WindowPos | None:
         matches = self._get_windows_exact(name)
@@ -126,7 +138,7 @@ class WindowManager:
 
     # Set Windows process DPI awareness to per-monitor mode.
     def declare_dpi_aware(self) -> None:
-        windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+        self._windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
 
     def capture_window(self, title: str) -> 'np.ndarray | None':
         """
@@ -136,6 +148,9 @@ class WindowManager:
         whatever coordinate mode the process already has, keeping them consistent.
         Requires: mss, opencv-python, numpy (not enforced at module level).
         """
+        # mss/opencv-python/numpy are a further-optional layer on top of WindowManager's
+        # own required deps (not checked in __init__, per the docstring above), so they
+        # stay as local per-call imports rather than being cached on self.
         try:
             import mss as _mss
             import numpy as _np
@@ -151,8 +166,8 @@ class WindowManager:
 
         hwnd = matches[0]._hWnd
         # Client area coordinates — excludes title bar and window borders
-        client_rect = win32gui.GetClientRect(hwnd)  # (0, 0, width, height) in client coords
-        pt = win32gui.ClientToScreen(hwnd, (0, 0))  # client top-left in screen coords
+        client_rect = self._win32gui.GetClientRect(hwnd)  # (0, 0, width, height) in client coords
+        pt = self._win32gui.ClientToScreen(hwnd, (0, 0))  # client top-left in screen coords
         monitor = {
             'left':   pt[0],
             'top':    pt[1],
@@ -190,12 +205,12 @@ class WindowManager:
 
     # Return the current master volume level (0.0 – 1.0).
     def get_system_volume(self) -> float:
-        return AudioUtilities.GetSpeakers().EndpointVolume.GetMasterVolumeLevelScalar()
+        return self._AudioUtilities.GetSpeakers().EndpointVolume.GetMasterVolumeLevelScalar()
 
     # Set the master volume level (0.0 – 1.0).
     def set_system_volume(self, volume: float) -> None:
         assert 0.0 <= volume <= 1.0, 'Volume must be between 0.0 and 1.0'
-        AudioUtilities.GetSpeakers().EndpointVolume.SetMasterVolumeLevelScalar(volume, None)
+        self._AudioUtilities.GetSpeakers().EndpointVolume.SetMasterVolumeLevelScalar(volume, None)
 
 
 class InputSimulator:
@@ -207,8 +222,18 @@ class InputSimulator:
     """
 
     def __init__(self, win_manager: WindowManager = None) -> None:
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require Windows or pynput - only actually
+        # instantiating InputSimulator does. Constructing a default WindowManager (when
+        # win_manager isn't provided) triggers its own checks for its own dependencies.
+        _check_windows_platform()
+        utils.exit_if_module_missing('pynput')
+        from pynput import mouse as _pynput_mouse
+        from pynput.mouse import Button
+        from ctypes import windll
         self._mouse_ctrl = _pynput_mouse.Controller()
         self._btn_left = Button.left
+        self._windll = windll
         self._win = win_manager or WindowManager()
 
     # Return the current mouse cursor position.
@@ -218,11 +243,11 @@ class InputSimulator:
 
     # Block all keyboard and mouse input (Windows only).
     def block_input(self) -> None:
-        windll.user32.BlockInput(True)
+        self._windll.user32.BlockInput(True)
 
     # Re-enable keyboard and mouse input (Windows only).
     def allow_input(self) -> None:
-        windll.user32.BlockInput(False)
+        self._windll.user32.BlockInput(False)
 
     # Move the mouse cursor to the given position.
     def mouse_move(self, pos: MousePos) -> None:

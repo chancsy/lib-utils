@@ -6,27 +6,29 @@ else:
     from ..utilities import UtilityFunctions
 utils = UtilityFunctions()
 
-utils.exit_if_module_missing('eseries')
-import eseries
-from eseries import E3, E6, E12, E24, E48, E96, E192
-
 from .math_utils import EquationSolver
 
-# Dictionary to map series names to eseries objects
 
 class Electronics:
-    RES_SERIES_MAP = {
-        'E3': E3,
-        'E6': E6,
-        'E12': E12,
-        'E24': E24,
-        'E48': E48,
-        'E96': E96,
-        'E192': E192
-    }
-
     def __init__(self):
-        pass
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require eseries - only actually instantiating
+        # Electronics does. RES_SERIES_MAP is built here (rather than as a class
+        # attribute) since it needs the eseries series constants, which are only
+        # imported once this check passes.
+        utils.exit_if_module_missing('eseries')
+        import eseries
+        from eseries import E3, E6, E12, E24, E48, E96, E192
+        self._eseries = eseries
+        self.RES_SERIES_MAP = {
+            'E3': E3,
+            'E6': E6,
+            'E12': E12,
+            'E24': E24,
+            'E48': E48,
+            'E96': E96,
+            'E192': E192,
+        }
 
     # Calculate the maximum value of a component given its nominal value, tolerance, ppm (temperature coefficient), and deltaT (temperature change)
     def calculate_max_value(self, val, tol=0.01, ppm=0, deltaT=0):
@@ -45,7 +47,7 @@ class Electronics:
     # Return the value of standard resistor values for specified series, between the given range, using eseries library
     def get_standard_resistor_value(self, series, min_val=100, max_val=1000, exclusive_stop=True):
         if series in self.RES_SERIES_MAP:
-            func = eseries.erange if not exclusive_stop else eseries.open_erange
+            func = self._eseries.erange if not exclusive_stop else self._eseries.open_erange
             return list(func(self.RES_SERIES_MAP[series], min_val, max_val))
         else:
             raise ValueError(f"Series {series} is not recognized.")

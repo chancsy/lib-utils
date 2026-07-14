@@ -5,34 +5,46 @@ if __name__ == '__main__':
 else:
     from ..utilities import UtilityFunctions
 utils = UtilityFunctions()
-utils.exit_if_module_missing('selenium')
-utils.exit_if_module_missing('webdriver_manager')
 
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 # from selenium.webdriver.common.action_chains import ActionChains
 # import time
 import os
-from enum import Enum
+from enum import Enum, auto
 
 class SeleniumUtils:
-    # enum of locator types provided by Selenium
-    # https://www.selenium.dev/documentation/webdriver/elements/locators/
+    # Enum of locator types provided by Selenium (https://www.selenium.dev/documentation/webdriver/elements/locators/).
+    # Members are plain placeholders (auto()), not selenium.webdriver.common.by.By's own
+    # constants - resolved to the real By.* values lazily in _resolve_locator, so this
+    # class definition itself doesn't require selenium to be importable.
     class LocatorType(Enum):
-        CSS_SELECTOR = By.CSS_SELECTOR
-        XPATH = By.XPATH
-        ID = By.ID
-        NAME = By.NAME
-        TAG_NAME = By.TAG_NAME
-        CLASS_NAME = By.CLASS_NAME
-        LINK_TEXT = By.LINK_TEXT
-        PARTIAL_LINK_TEXT = By.PARTIAL_LINK_TEXT
+        CSS_SELECTOR = auto()
+        XPATH = auto()
+        ID = auto()
+        NAME = auto()
+        TAG_NAME = auto()
+        CLASS_NAME = auto()
+        LINK_TEXT = auto()
+        PARTIAL_LINK_TEXT = auto()
 
     def __init__(self):
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require selenium/webdriver_manager - only
+        # actually instantiating SeleniumUtils does. Cached on self so the methods below
+        # don't need their own import statements.
+        utils.exit_if_module_missing('selenium')
+        utils.exit_if_module_missing('webdriver_manager')
+        from selenium import webdriver
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        from selenium.webdriver.chrome.service import Service as ChromeService
+        from webdriver_manager.chrome import ChromeDriverManager
+        self._webdriver = webdriver
+        self._By = By
+        self._WebDriverWait = WebDriverWait
+        self._EC = EC
+        self._ChromeService = ChromeService
+        self._ChromeDriverManager = ChromeDriverManager
         self.default_locator = SeleniumUtils.LocatorType.CSS_SELECTOR
         self.driver = None
 
@@ -40,9 +52,9 @@ class SeleniumUtils:
         download_dir = os.path.expanduser("~/Downloads/")
 
         if auto_install_driver:
-            service = ChromeService(ChromeDriverManager().install())
+            service = self._ChromeService(self._ChromeDriverManager().install())
 
-        options = webdriver.ChromeOptions()
+        options = self._webdriver.ChromeOptions()
         profile = {
             "plugins.always_open_pdf_externally": True,
             "download.default_directory": download_dir,
@@ -61,9 +73,9 @@ class SeleniumUtils:
 
         try:
             if auto_install_driver:
-                driver = webdriver.Chrome(service=service, options=options)
+                driver = self._webdriver.Chrome(service=service, options=options)
             else:
-                driver = webdriver.Chrome(options=options)
+                driver = self._webdriver.Chrome(options=options)
         except Exception as e:
             print(f"Error occurred while creating the WebDriver: {e}")
             driver = None
@@ -95,7 +107,19 @@ class SeleniumUtils:
     #     return
     def _resolve_locator(self, locator_type):
         lt = locator_type or self.default_locator
-        return lt.value if isinstance(lt, SeleniumUtils.LocatorType) else lt
+        if not isinstance(lt, SeleniumUtils.LocatorType):
+            return lt
+        By = self._By
+        return {
+            SeleniumUtils.LocatorType.CSS_SELECTOR: By.CSS_SELECTOR,
+            SeleniumUtils.LocatorType.XPATH: By.XPATH,
+            SeleniumUtils.LocatorType.ID: By.ID,
+            SeleniumUtils.LocatorType.NAME: By.NAME,
+            SeleniumUtils.LocatorType.TAG_NAME: By.TAG_NAME,
+            SeleniumUtils.LocatorType.CLASS_NAME: By.CLASS_NAME,
+            SeleniumUtils.LocatorType.LINK_TEXT: By.LINK_TEXT,
+            SeleniumUtils.LocatorType.PARTIAL_LINK_TEXT: By.PARTIAL_LINK_TEXT,
+        }[lt]
 
     def css_element_click(self, selector, locator_type=None, driver=None):
         d = driver or self.driver
@@ -124,7 +148,7 @@ class SeleniumUtils:
     # TODO need more testing
     def wait_css_element(self, selector, timeout, locator_type=None, driver=None):
         try:
-            WebDriverWait(driver or self.driver, timeout).until(EC.presence_of_element_located((self._resolve_locator(locator_type), selector)))
+            self._WebDriverWait(driver or self.driver, timeout).until(self._EC.presence_of_element_located((self._resolve_locator(locator_type), selector)))
             return True
         except:
             return False
@@ -132,13 +156,13 @@ class SeleniumUtils:
     # TODO need more testing
     def wait_for_page_load(self, driver=None):
         # Wait for the document.readyState to be "complete"
-        WebDriverWait(driver or self.driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        self._WebDriverWait(driver or self.driver, 10).until(
+            self._EC.presence_of_element_located((self._By.TAG_NAME, "body"))
         )
 
     # TODO need more testing
     def wait_till_clickable(self, selector, timeout, locator_type=None, driver=None):
-        WebDriverWait(driver or self.driver, timeout).until(EC.element_to_be_clickable((self._resolve_locator(locator_type), selector)))
+        self._WebDriverWait(driver or self.driver, timeout).until(self._EC.element_to_be_clickable((self._resolve_locator(locator_type), selector)))
 
     # TODO need more testing
     def wait_till_text_matched(self, selector, text_to_match, timeout, driver=None):

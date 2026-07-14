@@ -5,18 +5,23 @@ if __name__ == '__main__':
 else:
     from ..utilities import UtilityFunctions
 utils = UtilityFunctions()
-utils.exit_if_module_missing('opencv-python')
 utils.exit_if_module_missing('numpy')
 
 import os
 import subprocess
 import random
 import numpy as np
-import cv2
 
 
 class AdbUtils:
     def __init__(self, adb_path=None):
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require opencv-python - only actually
+        # instantiating AdbUtils does. Cached on self so take_screenshot/save_screenshot
+        # don't need their own import statements.
+        utils.exit_if_module_missing('opencv-python')
+        import cv2
+        self._cv2 = cv2
         adb_path = adb_path or 'adb'
         # CreateProcess on Windows needs the actual .exe, not its containing folder
         if os.path.isdir(adb_path):
@@ -65,7 +70,7 @@ class AdbUtils:
             print('take_screenshot: no data received from adb')
             return None
         arr = np.frombuffer(png_bytes, dtype=np.uint8)
-        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        img = self._cv2.imdecode(arr, self._cv2.IMREAD_COLOR)
         if img is None:
             print('take_screenshot: cv2.imdecode failed — bad PNG data')
         return img
@@ -73,7 +78,7 @@ class AdbUtils:
     def save_screenshot(self, path='screenshot.png'):
         img = self.take_screenshot()
         if img is not None:
-            cv2.imwrite(path, img)
+            self._cv2.imwrite(path, img)
             print(f'Screenshot saved to {path}')
         return img
 

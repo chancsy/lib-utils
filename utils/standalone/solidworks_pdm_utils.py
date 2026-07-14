@@ -55,22 +55,13 @@ import os
 import shutil
 import sys, os as _os
 
-if sys.platform != 'win32':
-    raise ImportError('solidworks_pdm_utils requires Windows')
-
 if __name__ == '__main__':
     sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
     from utils.utilities import UtilityFunctions
 else:
     from ..utilities import UtilityFunctions
 
-_u = UtilityFunctions()
-_u.exit_if_module_missing('pywin32')
-del _u
-
-import pythoncom
-import win32com.client as win
-import win32com.client.gencache as gencache
+_utils = UtilityFunctions()
 
 _VAULT_DISPATCH_KEY  = 'ConisioLib.EdmVault'
 _PDM_TYPE_LIB_GUID   = '{5FA2C692-8393-4F31-9BDB-05E6F807D0D3}'
@@ -94,6 +85,19 @@ class SolidWorksPDM:
             e.g. ``'PDM Vault'``. The vault root is assumed to be
             ``C:\\<vault_name>``.
         """
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require Windows/pywin32 - only actually
+        # instantiating SolidWorksPDM does. Cached on self so connect()/disconnect()/
+        # list_variable_names() don't need their own import statements.
+        if sys.platform != 'win32':
+            raise ImportError('solidworks_pdm_utils requires Windows')
+        _utils.exit_if_module_missing('pywin32')
+        import pythoncom
+        import win32com.client as win
+        import win32com.client.gencache as gencache
+        self._pythoncom = pythoncom
+        self._win = win
+        self._gencache = gencache
         self.vault_name = vault_name
         self.root = rf'C:\{vault_name}'
         self._client = None  # IEdmVault22 early-bound COM object
@@ -112,21 +116,21 @@ class SolidWorksPDM:
         Returns ``True`` on success, ``False`` on failure.
         """
         try:
-            pythoncom.CoInitialize()
+            self._pythoncom.CoInitialize()
             # Early-binding: generates / loads Python wrappers from the type library.
             # A stale/truncated gen_py cache raises AttributeError('MinorVersion') —
             # delete the bad directory and retry once so it regenerates cleanly.
             try:
-                gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, _PDM_TYPE_LIB_MAJOR, _PDM_TYPE_LIB_MINOR)
+                self._gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, _PDM_TYPE_LIB_MAJOR, _PDM_TYPE_LIB_MINOR)
             except AttributeError:
                 _cache_key = f'{_PDM_TYPE_LIB_GUID[1:-1]}x0x{_PDM_TYPE_LIB_MAJOR}x{_PDM_TYPE_LIB_MINOR}'
-                for _base in (gencache.GetGeneratePath(), os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Temp', 'gen_py', f'{sys.version_info.major}.{sys.version_info.minor}')):
+                for _base in (self._gencache.GetGeneratePath(), os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Temp', 'gen_py', f'{sys.version_info.major}.{sys.version_info.minor}')):
                     _bad = os.path.join(_base, _cache_key)
                     if os.path.isdir(_bad):
                         shutil.rmtree(_bad, ignore_errors=True)
                         print(f'SolidWorksPDM: cleared stale gen_py cache at {_bad}')
-                gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, _PDM_TYPE_LIB_MAJOR, _PDM_TYPE_LIB_MINOR)
-            client = gencache.EnsureDispatch(_VAULT_DISPATCH_KEY)
+                self._gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, _PDM_TYPE_LIB_MAJOR, _PDM_TYPE_LIB_MINOR)
+            client = self._gencache.EnsureDispatch(_VAULT_DISPATCH_KEY)
             if not client.IsLoggedIn:
                 client.LoginAuto(self.vault_name, 0)
             self._client = client
@@ -143,7 +147,7 @@ class SolidWorksPDM:
         try:
             self._client = None
             self._variable_names_cache = None
-            pythoncom.CoUninitialize()
+            self._pythoncom.CoUninitialize()
             return True
         except Exception as exc:
             print(f'SolidWorksPDM: disconnect failed -- {exc}')
@@ -367,7 +371,7 @@ class SolidWorksPDM:
         self._require_connection()
         if self._variable_names_cache is not None and not force_refresh:
             return self._variable_names_cache
-        mgr = win.CastTo(self._client, 'IEdmVariableMgr5')
+        mgr = self._win.CastTo(self._client, 'IEdmVariableMgr5')
         pos = mgr.GetFirstVariablePosition()
         names = []
         while not pos.IsNull:

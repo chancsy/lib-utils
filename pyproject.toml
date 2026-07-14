@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy>=2.3",
     "pandas>=2.3",
+    "ipython>=9.15.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +32,31 @@ crypto = [
 # pip install "lib-utils[pdf]"
 pdf = [
     "pikepdf>=10.2",
+]
+
+# pip install "lib-utils[sql]"
+sql = [
+    "pyodbc>=5.3.0",
+]
+
+# pip install "lib-utils[cv]"
+cv = [
+    "opencv-python>=5.0",
+]
+
+# pip install "lib-utils[clipboard]"
+clipboard = [
+    "pyperclip>=1.9.0",
+]
+
+# pip install "lib-utils[pillow]"
+pillow = [
+    "Pillow>=12.0",
+]
+
+# pip install "lib-utils[widgets]"
+widgets = [
+    "ipywidgets>=8.1.8",
 ]
 
 # pip install "lib-utils[slack]"
@@ -65,6 +91,11 @@ all = [
     "lib-utils[git]",
     "lib-utils[crypto]",
     "lib-utils[pdf]",
+    "lib-utils[sql]",
+    "lib-utils[cv]",
+    "lib-utils[clipboard]",
+    "lib-utils[pillow]",
+    "lib-utils[widgets]",
     "lib-utils[slack]",
     "lib-utils[selenium]",
     "lib-utils[math]",

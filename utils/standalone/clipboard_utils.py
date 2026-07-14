@@ -6,23 +6,26 @@ else:
     from ..utilities import UtilityFunctions
 
 utils = UtilityFunctions()
-utils.exit_if_module_missing('pyperclip')
-
-import pyperclip as clipboard
 
 
 class Clipboard:
     def __init__(self):
-        pass
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require pyperclip - only actually instantiating
+        # Clipboard does. Cached on self so copy()/paste() don't need their own import
+        # statements.
+        utils.exit_if_module_missing('pyperclip')
+        import pyperclip
+        self._pyperclip = pyperclip
 
     # Copy text to the system clipboard.
     def copy(self, text: str) -> None:
-        clipboard.copy(text)
+        self._pyperclip.copy(text)
         print(f'Copied to clipboard: {text}')
 
     # Return the current clipboard contents.
     def paste(self) -> str:
-        text = clipboard.paste()
+        text = self._pyperclip.paste()
         print(f'Clipboard: {text}')
         return text
 

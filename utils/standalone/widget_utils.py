@@ -2,14 +2,22 @@ from ..utilities import *
 from .._internal.util_demo import resolve_demo_input, call_demo_function
 import re
 utils = UtilityFunctions()
-utils.exit_if_not_in_ipython()
-utils.exit_if_module_missing('ipywidgets')
 
+# IPython is a core dependency of lib-utils (see pyproject.toml), so it's fine to import
+# here at module level too. ipywidgets is NOT core, though - it's checked/imported lazily
+# below, only once Widgets is actually constructed.
 from IPython.display import display
-import ipywidgets as widgets
 
 class Widgets:
     def __init__(self):
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require ipywidgets - only actually instantiating
+        # Widgets does. Cached on self so __getattr__ below doesn't need its own import
+        # statement.
+        utils.exit_if_not_in_ipython()
+        utils.exit_if_module_missing('ipywidgets')
+        import ipywidgets as widgets
+        self._widgets = widgets
         self.user_button_width = None
         self.user_button_height = None
         self.user_checkbox_width = None
@@ -39,7 +47,7 @@ class Widgets:
             output_widget.append_display_data(msg)
 
     def __getattr__(self, a):
-        widget_class = getattr(widgets, a)
+        widget_class = getattr(self._widgets, a)
         def wrapper(*args, **kwargs):
             # Pre-method call - Begin
             # Translate 'desc' argument to 'description' argument
@@ -49,45 +57,45 @@ class Widgets:
             # Get layout from kwargs, if not present, set to empty dict
             kwargs_layout = kwargs.get('layout', {})
             # Set default styles for widgets
-            if (widget_class == widgets.Button):
+            if (widget_class == self._widgets.Button):
                 kwargs_layout = utils.update_kwargs_param(kwargs_layout, 'width', kwargs.get('width', self.user_button_width))
                 kwargs_layout = utils.update_kwargs_param(kwargs_layout, 'height', kwargs.get('height', self.user_button_height))
-            elif (widget_class == widgets.Checkbox):
+            elif (widget_class == self._widgets.Checkbox):
                 kwargs_layout = utils.update_kwargs_param(kwargs_layout, 'width', kwargs.get('width', self.user_checkbox_width))
-            # elif (widget_class == widgets.Output):
+            # elif (widget_class == self._widgets.Output):
                 # kwargs_layout = utils.update_kwargs_param(kwargs_layout, 'overflow', 'scroll hidden')
             else:
                 kwargs_layout = utils.update_kwargs_param(kwargs_layout, 'width', kwargs.get('width', None))
                 kwargs_layout = utils.update_kwargs_param(kwargs_layout, 'height', kwargs.get('height', None))
             # Finally, update the layout parameter in kwargs
-            kwargs = utils.update_kwargs_param(kwargs, 'layout', widgets.Layout(**kwargs_layout))
+            kwargs = utils.update_kwargs_param(kwargs, 'layout', self._widgets.Layout(**kwargs_layout))
 
             # Apply continuous_update setting
             kwargs = utils.update_kwargs_param(kwargs, 'continuous_update', self.continuous_update)
 
             # Set default values for some widgets
-            if (widget_class == widgets.Dropdown or
-                widget_class == widgets.RadioButtons or
-                widget_class == widgets.Select or
-                widget_class == widgets.ToggleButtons
+            if (widget_class == self._widgets.Dropdown or
+                widget_class == self._widgets.RadioButtons or
+                widget_class == self._widgets.Select or
+                widget_class == self._widgets.ToggleButtons
                 ):
                 kwargs = utils.update_kwargs_param(kwargs, 'options', [])
                 kwargs = utils.update_kwargs_param(kwargs, 'value', None)
-            elif (widget_class == widgets.SelectMultiple):
+            elif (widget_class == self._widgets.SelectMultiple):
                 kwargs = utils.update_kwargs_param(kwargs, 'options', [])
                 # kwargs = utils.update_kwargs_param(kwargs, 'value', [])
-            elif (widget_class == widgets.Text or
-                widget_class == widgets.Textarea or
-                widget_class == widgets.Password):
+            elif (widget_class == self._widgets.Text or
+                widget_class == self._widgets.Textarea or
+                widget_class == self._widgets.Password):
                 kwargs = utils.update_kwargs_param(kwargs, 'placeholder', 'Type here')
-            elif (widget_class == widgets.Combobox):
+            elif (widget_class == self._widgets.Combobox):
                 kwargs = utils.update_kwargs_param(kwargs, 'placeholder', 'Choose one')
-            elif (widget_class == widgets.Checkbox):
+            elif (widget_class == self._widgets.Checkbox):
                 kwargs = utils.update_kwargs_param(kwargs, 'indent', False)
 
             # set rows automatically to the length of options, minimum 2
-            if (widget_class == widgets.Select or
-                widget_class == widgets.SelectMultiple
+            if (widget_class == self._widgets.Select or
+                widget_class == self._widgets.SelectMultiple
                 ):
                 kwargs = utils.update_kwargs_param(kwargs, 'rows', max(2, len(kwargs.get('options'))))
             # Post-method call - End
@@ -97,9 +105,9 @@ class Widgets:
 
             # Post-method call - Begin
             # Set callback function
-            if widget_class == widgets.Output: # skip for Output widget
+            if widget_class == self._widgets.Output: # skip for Output widget
                 pass
-            elif widget_class == widgets.Button: # Set on_click callback for Button widget
+            elif widget_class == self._widgets.Button: # Set on_click callback for Button widget
                 if 'cb' in kwargs:
                     obj.on_click(kwargs['cb'])
                 else:

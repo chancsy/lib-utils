@@ -5,15 +5,10 @@ if __name__ == '__main__':
 else:
     from ..utilities import UtilityFunctions
 utils = UtilityFunctions()
-utils.exit_if_module_missing('opencv-python')
-utils.exit_if_module_missing('Pillow')
 
 import json
 import tkinter as tk
-from tkinter import messagebox
-import cv2
 import numpy as np
-from PIL import Image, ImageTk
 
 
 # Palette for drawing region rectangles — cycles if more than 8 regions
@@ -40,6 +35,17 @@ class RegionSetupTool:
     """
 
     def __init__(self, region_names, adb=None, screenshot=None):
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require opencv-python/Pillow - only actually
+        # instantiating RegionSetupTool does. Cached on self so the methods below don't
+        # need their own import statements.
+        utils.exit_if_module_missing('opencv-python')
+        utils.exit_if_module_missing('Pillow')
+        import cv2
+        from PIL import Image, ImageTk
+        self._cv2 = cv2
+        self._Image = Image
+        self._ImageTk = ImageTk
         if adb is None and screenshot is None:
             raise ValueError('Provide either adb= or screenshot=')
         self.region_names = region_names
@@ -61,7 +67,7 @@ class RegionSetupTool:
         src = self._screenshot_src
         if isinstance(src, np.ndarray):
             return src
-        img = cv2.imread(str(src))
+        img = self._cv2.imread(str(src))
         if img is None:
             raise RuntimeError(f'Could not read image: {src}')
         return img
@@ -91,9 +97,9 @@ class RegionSetupTool:
         canvas = tk.Canvas(root, width=disp_w, height=disp_h, cursor='crosshair')
         canvas.grid(row=0, column=0, rowspan=10)
 
-        img_rgb = cv2.cvtColor(self._screenshot, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(img_rgb).resize((disp_w, disp_h), Image.LANCZOS)
-        tk_img = ImageTk.PhotoImage(pil_img)
+        img_rgb = self._cv2.cvtColor(self._screenshot, self._cv2.COLOR_BGR2RGB)
+        pil_img = self._Image.fromarray(img_rgb).resize((disp_w, disp_h), self._Image.LANCZOS)
+        tk_img = self._ImageTk.PhotoImage(pil_img)
         canvas.create_image(0, 0, anchor='nw', image=tk_img)
 
         # Right panel: instructions + region checklist
