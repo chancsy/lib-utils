@@ -5,22 +5,31 @@ if __name__ == '__main__':
 else:
     from ..utilities import UtilityFunctions
 
-utils = UtilityFunctions()
-utils.exit_if_module_missing('slack_sdk')
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from slack_sdk import WebClient
 
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
+utils = UtilityFunctions()
 
 
 class SlackUtils:
     def __init__(self):
-        self._client: WebClient = None
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require slack_sdk - only actually instantiating
+        # SlackUtils does. Cached on self so connect()/send_message() don't need their
+        # own import statements.
+        utils.exit_if_module_missing('slack_sdk')
+        from slack_sdk import WebClient
+        from slack_sdk.errors import SlackApiError
+        self._WebClient = WebClient
+        self._SlackApiError = SlackApiError
+        self._client: 'WebClient' = None
         self.token: str = None
 
     # Connect using a Slack API token; stores the WebClient for subsequent calls.
     def connect(self, token: str) -> None:
         self.token = token
-        self._client = WebClient(token=token)
+        self._client = self._WebClient(token=token)
         print(f'Connected to Slack.')
 
     # Send a plain-text message to a channel; channel must include the # prefix.
@@ -30,7 +39,7 @@ class SlackUtils:
             response = self._client.chat_postMessage(channel=channel, text=text)
             print(f'Message sent: {response["ts"]}')
             return True
-        except SlackApiError as e:
+        except self._SlackApiError as e:
             print(f'Error sending message: {e}')
             return False
 

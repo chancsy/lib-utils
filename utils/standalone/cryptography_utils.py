@@ -6,11 +6,7 @@ else:
     from ..utilities import UtilityFunctions
 
 utils = UtilityFunctions()
-utils.exit_if_module_missing('cryptography')
 
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 import hashlib
 import os
@@ -18,15 +14,25 @@ import os
 
 class Cryptography:
     def __init__(self):
-        pass
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require cryptography - only actually instantiating
+        # Cryptography does. Cached on self so the methods below don't need their own
+        # import statements.
+        utils.exit_if_module_missing('cryptography')
+        from cryptography.fernet import Fernet
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+        self._Fernet = Fernet
+        self._hashes = hashes
+        self._PBKDF2HMAC = PBKDF2HMAC
 
     # Derive a Fernet-compatible key from a password using PBKDF2-SHA256.
     # Returns (salt_hex, key_str); pass salt=bytes.fromhex(salt_hex) to re-derive the same key.
     def derive_key(self, password: str, salt: bytes = None, length: int = 32, iterations: int = 480000) -> tuple[str, str]:
         if salt is None:
             salt = os.urandom(16)
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
+        kdf = self._PBKDF2HMAC(
+            algorithm=self._hashes.SHA256(),
             length=length,
             salt=salt,
             iterations=iterations,
@@ -37,7 +43,7 @@ class Cryptography:
     def encrypt(self, key: str | bytes, message: str) -> str:
         if isinstance(key, str):
             key = key.encode()
-        return Fernet(key).encrypt(message.encode()).decode()
+        return self._Fernet(key).encrypt(message.encode()).decode()
 
     # Decrypt a base64 ciphertext string or bytes with the given Fernet key; returns plaintext or '' on failure.
     def decrypt(self, key: str | bytes, message: str | bytes) -> str:
@@ -46,7 +52,7 @@ class Cryptography:
         if isinstance(message, str):
             message = message.encode()
         try:
-            return Fernet(key).decrypt(message).decode()
+            return self._Fernet(key).decrypt(message).decode()
         except Exception:
             return ''
 

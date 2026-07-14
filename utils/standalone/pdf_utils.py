@@ -6,36 +6,40 @@ else:
     from ..utilities import UtilityFunctions
 
 utils = UtilityFunctions()
-utils.exit_if_module_missing('pikepdf')
 
 import os
-import pikepdf
 
 class PdfUtils:
     def __init__(self):
-        pass
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module doesn't require pikepdf - only actually instantiating
+        # PdfUtils does. Cached on self so the methods below don't need their own import
+        # statements.
+        utils.exit_if_module_missing('pikepdf')
+        import pikepdf
+        self._pikepdf = pikepdf
 
     # check if pdf is password protected
     def is_encrypted(self, file):
         try:
-            pdf = pikepdf.open(file)
+            pdf = self._pikepdf.open(file)
             pdf.close()
             return False
-        except pikepdf.PasswordError:
+        except self._pikepdf.PasswordError:
             return True
 
     # open pdf if not password protected
     def open(self, file):
         try:
-            pdf = pikepdf.open(file)
+            pdf = self._pikepdf.open(file)
             pdf.close()
             return pdf
-        except pikepdf.PasswordError:
+        except self._pikepdf.PasswordError:
             return None
 
     # # extract text from pdf
     # def extract_text2(self, file):
-    #     with pikepdf.Pdf.open(file) as my_pdf:
+    #     with self._pikepdf.Pdf.open(file) as my_pdf:
     #         for page in my_pdf.pages:
     #             page.rotate(180, relative=True)
     #         my_pdf.save('test-rotated.pdf')
@@ -53,11 +57,11 @@ class PdfUtils:
 
         # Early return if file is not encrypted — check before prompting for password/output.
         try:
-            with pikepdf.Pdf.open(file) as pdf:
+            with self._pikepdf.Pdf.open(file) as pdf:
                 pass
             print(f'File is not encrypted - "{file}"')
             return None
-        except pikepdf.PasswordError:
+        except self._pikepdf.PasswordError:
             pass
 
         if ui:
@@ -76,9 +80,9 @@ class PdfUtils:
 
         try:
             if not replace_original:
-                pdf = pikepdf.open(file, password=password)
+                pdf = self._pikepdf.open(file, password=password)
             else:
-                pdf = pikepdf.open(file, password=password, allow_overwriting_input=True)
+                pdf = self._pikepdf.open(file, password=password, allow_overwriting_input=True)
             if output:
                 pdf.save(output)
             # if not output, save to the same file_decrypted.pdf suffix or overwrite the original file if replace_original is True
@@ -89,9 +93,9 @@ class PdfUtils:
                     pdf.save(file.replace('.pdf', '_decrypted.pdf'))
             pdf.close()
             return True
-        except pikepdf.PasswordError:
+        except self._pikepdf.PasswordError:
             print("Invalid password")
-            return pikepdf.PasswordError
+            return self._pikepdf.PasswordError
 
     # Encrypt a PDF with the given password; saves to output path or <basename>_encrypted.pdf.
     def encrypt(self, file: str = None, password: str = None, output: str = None, ui: bool = False) -> None:
@@ -106,9 +110,9 @@ class PdfUtils:
 
         # Early return if file is already encrypted — check before prompting for password/output.
         try:
-            with pikepdf.open(file) as pdf:
+            with self._pikepdf.open(file) as pdf:
                 pass
-        except pikepdf.PasswordError:
+        except self._pikepdf.PasswordError:
             print(f'PDF is already encrypted - "{file}"')
             return
 
@@ -126,11 +130,11 @@ class PdfUtils:
                     print('No output file specified.')
                     return
 
-        with pikepdf.open(file, allow_overwriting_input=True) as pdf:
+        with self._pikepdf.open(file, allow_overwriting_input=True) as pdf:
             out_path = output or file.replace('.pdf', '_encrypted.pdf')
-            pdf.save(out_path, encryption=pikepdf.Encryption(
+            pdf.save(out_path, encryption=self._pikepdf.Encryption(
                 user=password, owner=password,
-                allow=pikepdf.Permissions(extract=False),
+                allow=self._pikepdf.Permissions(extract=False),
             ))
 
     # Merge a list of PDF files or all PDFs in a directory (non-recursive) into output.
@@ -173,10 +177,10 @@ class PdfUtils:
             print('Merge cancelled.')
             return
 
-        pdf = pikepdf.Pdf.new()
+        pdf = self._pikepdf.Pdf.new()
         try:
             for file in files:
-                with pikepdf.open(file) as src:
+                with self._pikepdf.open(file) as src:
                     pdf.pages.extend(src.pages)
             if not output.endswith('.pdf'):
                 output += '.pdf'
@@ -203,11 +207,11 @@ class PdfUtils:
         out_dir = output_dir or os.path.dirname(file)
         basename = os.path.splitext(os.path.basename(file))[0]
         try:
-            with pikepdf.open(file) as src:
+            with self._pikepdf.open(file) as src:
                 if pages:
                     # parse 1-based page spec (supports "-" ranges e.g. "1-4,6") and convert to 0-based
                     indices = [p - 1 for p in utils.parse_range_string(pages, range_sep='-')]
-                    dest = pikepdf.Pdf.new()
+                    dest = self._pikepdf.Pdf.new()
                     for idx in indices:
                         dest.pages.append(src.pages[idx])
                     safe_pages = pages.replace(',', '_')
@@ -217,7 +221,7 @@ class PdfUtils:
                     dest.close()
                 else:
                     for n, page in enumerate(src.pages):
-                        dest = pikepdf.Pdf.new()
+                        dest = self._pikepdf.Pdf.new()
                         dest.pages.append(page)
                         out_path = os.path.join(out_dir, f'{basename}_{n:02d}.pdf')
                         print(out_path)

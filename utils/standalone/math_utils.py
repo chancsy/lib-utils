@@ -11,10 +11,6 @@ import numpy as np
 
 from itertools import combinations
 
-utils.exit_if_module_missing('sympy')
-from sympy import symbols, solve, Eq
-from sympy.core.sympify import SympifyError
-
 class IntegerLimits:
     """C-style integer limits for common fixed-width types."""
     UINT8_MAX  = 2**8  - 1  # 255
@@ -257,6 +253,14 @@ class MathUtils:
 # Solve equations with one unknown variable
 class EquationSolver:
     def __init__(self, equation_str):
+        # Checked here (at construction) rather than at module-import time, so merely
+        # importing this module - e.g. just to get IntegerLimits/MathUtils above, which
+        # don't need sympy at all - doesn't require sympy. Cached on self so solve()
+        # doesn't need its own import statement.
+        utils.exit_if_module_missing('sympy')
+        from sympy import symbols, solve, Eq
+        from sympy.core.sympify import SympifyError
+        self._sympy_solve = solve
         try:
             # Extract variable symbols from the equation string
             self.symbols = {var: symbols(var) for var in self.extract_symbols(equation_str)}
@@ -279,7 +283,7 @@ class EquationSolver:
         if len(unknowns) != 1:
             raise ValueError("You must specify the values of all but one variable, leaving one to be calculated")
 
-        result = solve(self.equation.subs(knowns), unknowns[0])
+        result = self._sympy_solve(self.equation.subs(knowns), unknowns[0])
         return result[0] if result else None
 
 if __name__ == '__main__':

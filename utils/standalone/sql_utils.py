@@ -1,14 +1,15 @@
 import sys, os as _os
+from typing import TYPE_CHECKING
 if __name__ == '__main__':
     sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
     from utils.utilities import UtilityFunctions
 else:
     from ..utilities import UtilityFunctions
 
-utils = UtilityFunctions()
-utils.exit_if_module_missing('pyodbc')
+if TYPE_CHECKING:
+    import pyodbc
 
-import pyodbc
+utils = UtilityFunctions()
 
 
 class SQL():
@@ -16,6 +17,18 @@ class SQL():
     Mixin class for database-related utility functions.
     Supports SQL Server connections with Windows Authentication or SQL Authentication.
     """
+
+    def __init__(self, *args, **kwargs):
+        # Checked here (at construction) rather than at module-import time, so merely importing
+        # this module (e.g. transitively, through an unrelated class) doesn't require pyodbc -
+        # only actually instantiating something that mixes in SQL does. Checked here rather than
+        # lazily inside db_connect() so a missing dependency surfaces immediately at setup time,
+        # not deep into a test run whenever a query first happens to be made. Cached on self so
+        # db_connect() doesn't need its own import statement.
+        utils.exit_if_module_missing('pyodbc')
+        import pyodbc
+        self._pyodbc = pyodbc
+        super().__init__(*args, **kwargs)
 
     # _demo_conn is used only by lib_demo_params to hold a connection across button clicks.
     # The class API itself remains stateless — all methods still take conn as an argument.
@@ -56,7 +69,7 @@ class SQL():
         username: str = None,
         password: str = None,
         driver: str = "ODBC Driver 17 for SQL Server",
-    ) -> pyodbc.Connection:
+    ) -> 'pyodbc.Connection':
         """Connect to a SQL Server database.
 
         Uses Windows Authentication (Trusted_Connection) when username/password
@@ -87,9 +100,9 @@ class SQL():
                 f"DATABASE={database};"
                 f"Trusted_Connection=yes;"
             )
-        return pyodbc.connect(conn_str)
+        return self._pyodbc.connect(conn_str)
 
-    def db_close(self, conn: pyodbc.Connection) -> None:
+    def db_close(self, conn: 'pyodbc.Connection') -> None:
         """Close a database connection.
 
         Args:
@@ -100,7 +113,7 @@ class SQL():
 
     def db_query(
         self,
-        conn: pyodbc.Connection,
+        conn: 'pyodbc.Connection',
         sql: str,
         params: tuple = None,
         as_dataframe: bool = True,
@@ -134,7 +147,7 @@ class SQL():
 
     def db_execute(
         self,
-        conn: pyodbc.Connection,
+        conn: 'pyodbc.Connection',
         sql: str,
         params: tuple = None,
         commit: bool = True,

@@ -38,7 +38,7 @@ utils/
 │   ├── util_dataframe.py   # pandas DataFrame helpers          [requires: pandas]
 │   ├── util_demo.py        # interactive CLI/widget demo runner
 │   ├── util_filesystem.py  # file/directory helpers
-│   ├── util_ipython.py     # IPython display helpers           [optional: IPython]
+│   ├── util_ipython.py     # IPython display helpers           [requires: IPython]
 │   ├── util_lan_monitor.py # LAN heartbeat client/server
 │   ├── util_output.py      # print helpers, TeeStringIO
 │   ├── util_runtime.py     # OS/env/package introspection
@@ -109,8 +109,17 @@ slack_sdk is not installed. To install, please run:
 ## Requirements
 
 - Python >= 3.10
-- Core: `numpy>=2.3`, `pandas>=2.3`
+- Core: `numpy>=2.3`, `pandas>=2.3`, `ipython>=9.15.0`
 - Optional: see [pyproject.toml](pyproject.toml) `[project.optional-dependencies]`
+
+`IPython` is declared as a core dependency (not optional) because `utils/_internal/util_ipython.py`
+is mixed into `UtilityFunctions`, which nearly every module in this library instantiates
+unconditionally at module scope. Note that `util_ipython.py` itself still guards its `IPython`
+import in a `try/except ImportError` and degrades to no-op stubs if it's ever missing anyway
+(so `in_ipython()`/`display()`/etc. never hard-crash) — the core-dependency declaration exists
+so a plain `pip install lib-utils` is guaranteed to have working IPython display/notebook
+features out of the box, rather than relying on it being pulled in transitively by something
+else (e.g. `jupyterlab`) in a consuming project's own requirements.
 
 ## Interactive demo
 
