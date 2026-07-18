@@ -14,8 +14,13 @@ All notable changes to this project will be documented here.
 
 ### Added
 - `pyproject.toml` — modern packaging metadata with `extras_require` groups (`requests`, `git`, `crypto`, `pdf`, `slack`, `selenium`, `math`, `win`, `all`)
-- `setup.py` — reduced to a minimal shim; all metadata lives in `pyproject.toml`
 - `README.md` — package layout, install instructions, usage examples
+
+### Changed
+- `requirements.txt` — rewritten as a flat `>=` mirror of the `pyproject.toml` dependencies (same floors), replacing the stale pip-freeze pins (`cryptography==45.0.7` contradicted pyproject's `>=48.0.1`); added previously missing sections (`ipython` core, `[sql]`, `[cv]`, `[clipboard]`, `[pillow]`, `[widgets]`); dropped transitive `pywin32-ctypes`. `pip-audit` re-run 2026-07-18 on the full resolved set (73 packages incl. transitives): no known vulnerabilities
+
+### Removed
+- `setup.py` — the shim (all metadata already lived in `pyproject.toml`) is no longer needed; PEP 660 editable installs work from `pyproject.toml` alone with `setuptools>=68`
 
 ## [0.1.0] — initial tracked state
 
