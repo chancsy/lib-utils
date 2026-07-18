@@ -43,12 +43,29 @@ class SlackUtils:
             print(f'Error sending message: {e}')
             return False
 
+    # Upload a file to a channel, with optional caption text; channel must
+    # include the # prefix, same as send_message.
+    def send_file(self, channel: str = 'general', file_path: str = '', text: str = '') -> bool:
+        assert self._client is not None, 'Call connect() first.'
+        try:
+            response = self._client.files_upload_v2(channel=channel, file=file_path, initial_comment=text)
+            print(f'File sent: {response["file"]["id"]}')
+            return True
+        except SlackApiError as e:
+            print(f'Error sending file: {e}')
+            return False
+
     lib_demo_params = [
         {'key': 'a', 'name': 'Connect', 'function': 'connect', 'inputs': [
             {'label': 'Token', 'name': 'token', 'type': str, 'default': '', 'width': '150px'},
         ]},
         {'key': 'b', 'name': 'Send Message', 'function': 'send_message', 'inputs': [
             {'label': 'Channel', 'name': 'channel', 'type': str, 'default': 'general', 'width': '150px'},
+            {'label': 'Text', 'name': 'text', 'type': str, 'default': '', 'width': '150px'},
+        ]},
+        {'key': 'c', 'name': 'Send File', 'function': 'send_file', 'inputs': [
+            {'label': 'Channel', 'name': 'channel', 'type': str, 'default': 'general', 'width': '150px'},
+            {'label': 'File Path', 'name': 'file_path', 'type': str, 'default': '', 'width': '150px'},
             {'label': 'Text', 'name': 'text', 'type': str, 'default': '', 'width': '150px'},
         ]},
     ]
