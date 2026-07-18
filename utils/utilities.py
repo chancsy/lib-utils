@@ -124,6 +124,15 @@ class UtilityFunctions(
             json.dump(data, f, indent=2, ensure_ascii=False)
             f.write('\n')
 
+    # Read JSON, returning 'default' if the file doesn't exist (caller decides whether
+    # that's a valid empty-config case or should be treated as an error).
+    def read_json_file(self, file_path: str, default: object = None, encoding: str = 'utf-8') -> object:
+        path = Path(file_path)
+        if not path.is_file():
+            return default
+        with open(path, 'r', encoding=encoding) as f:
+            return json.load(f)
+
     def wait_user_enter_key(self, msg=None):
         input(msg or 'Press enter to continue...')
 

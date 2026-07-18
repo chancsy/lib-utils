@@ -8,6 +8,7 @@ utils = UtilityFunctions()
 utils.exit_if_module_missing('numpy')
 
 import os
+import re
 import subprocess
 import random
 import numpy as np
@@ -52,6 +53,45 @@ class AdbUtils:
 
     def set_device(self, serial):
         self.device = serial
+
+    def get_api_level(self):
+        output = self._run('shell', 'getprop', 'ro.build.version.sdk')
+        try:
+            return int(output.strip())
+        except ValueError:
+            print(f'get_api_level: could not parse api level from "{output}"')
+            return None
+
+    def _run_cmd(self, cmd):
+        return self._run(*cmd.split())
+
+    # each entry: (command string, line filter keywords, api levels it has been confirmed on)
+    # add new sources here as they're verified on-device, and note the api level so
+    # get_current_activity_name keeps trying only what's plausible before falling back
+    _activity_sources = [
+        ('shell dumpsys window', ('mCurrentFocus', 'mFocusedApp', 'mObscuringWindow'), 'confirmed API 36'),
+        ('shell dumpsys window windows', ('mCurrentFocus', 'mFocusedApp', 'mObscuringWindow'), 'older API'),
+        ('shell dumpsys activity activities', ('mResumedActivity',), 'fallback, untested range'),
+    ]
+
+    def get_current_activity_name(self):
+        for cmd, keys, _tested in self._activity_sources:
+            out_lines = self._run_cmd(cmd).splitlines()
+            # walk keywords in priority order (mCurrentFocus before mObscuringWindow, etc.) — some
+            # keywords' lines (e.g. mObscuringWindow's wallpaper/systemui window) have no pkg/activity
+            # to extract, so taking the single "last matching line" could skip a good one earlier
+            for keyword in keys:
+                for line in out_lines:
+                    if keyword not in line:
+                        continue
+                    if 'null' in line:
+                        print('get_current_activity_name: active activity not found, is the screen unlocked?')
+                        return None
+                    match = re.search(r'[\w.]+/[\w.]+', line)
+                    if match:
+                        return match.group(0)
+        print(f'get_current_activity_name: no focused window info found (api level {self.get_api_level()})')
+        return None
 
     def get_screen_size(self):
         output = self._run('shell', 'wm', 'size')
@@ -160,6 +200,8 @@ class AdbUtils:
     lib_demo_params = [
         {'key': 'a', 'name': 'Get Devices', 'function': 'get_devices', 'inputs': []},
         {'key': 'b', 'name': 'Get Screen Size', 'function': 'get_screen_size', 'inputs': []},
+        {'key': 'i', 'name': 'Get Current Activity Name', 'function': 'get_current_activity_name', 'inputs': []},
+        {'key': 'j', 'name': 'Get API Level', 'function': 'get_api_level', 'inputs': []},
         {'key': 'c', 'name': 'Save Screenshot', 'function': 'save_screenshot', 'inputs': [
             {'label': 'Output path', 'name': 'path', 'type': str, 'default': 'screenshot.png', 'width': '200px'},
         ]},
