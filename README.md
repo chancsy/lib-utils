@@ -135,12 +135,13 @@ else (e.g. `jupyterlab`) in a consuming project's own requirements.
 
 ## Security audit (`pip-audit`)
 
-Last run: 2026-06-22 against `requirements.txt`.
+Last run: 2026-07-18. Method: resolve `requirements.txt` in a clean venv
+(`pip install --dry-run -r requirements.txt --report`), then `pip-audit --no-deps` the full
+resolved set — 73 packages including transitive dependencies (Windows, Python 3.14).
 
-| Package | Installed | CVE / ID | Status |
-|---|---|---|---|
-| `cryptography` | 49.0.0 | PYSEC-2026-36, GHSA-537c-gmf6-5ccf, CVE-2026-26007, PYSEC-2026-35 | Fixed — upgraded to 49.0.0 |
-| `requests` | 2.32.5 | CVE-2026-25645 | Low severity; not affected by the vulnerable code path |
+**No known vulnerabilities found.** The `>=` floors also audit clean: `cryptography>=48.0.1`
+resolves past PYSEC-2026-36 / CVE-2026-26007 (fixed by 48.0.1, previously flagged on 45.x),
+and `requests>=2.32` resolves to 2.34.x, past CVE-2026-25645.
 
 ## Development
 
