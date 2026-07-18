@@ -1,0 +1,4 @@
+# Pair ipynb notebooks to py:percent text notebooks
+formats = "py:percent,_jupytext-sync-ipynb//.ipynb"
+notebook_metadata_filter = "-all"
+cell_metadata_filter = "-all"
