@@ -13,6 +13,7 @@ All notable changes to this project will be documented here.
 - `EquationSolver` — `eval()` exposed Python builtins; restricted to `{'__builtins__': {}}` so only sympy symbols are in scope (windll imported unconditionally); now raises a clear `ImportError` on non-Windows at import time
 
 ### Added
+- `read_json_file()` — counterpart to the existing `write_json_file()`; returns a caller-supplied `default` when the file doesn't exist instead of raising
 - `pyproject.toml` — modern packaging metadata with `extras_require` groups (`requests`, `git`, `crypto`, `pdf`, `slack`, `selenium`, `math`, `win`, `all`)
 - `README.md` — package layout, install instructions, usage examples
 
