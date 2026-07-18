@@ -56,6 +56,20 @@ class Cryptography:
         except Exception:
             return ''
 
+    # Encrypt with a password directly; returns 'salt_hex:fernet_token' as one paste-able string.
+    def encrypt_with_password(self, password: str, message: str) -> str:
+        salt_hex, key = self.derive_key(password)
+        return f'{salt_hex}:{self.encrypt(key, message)}'
+
+    # Reverse of encrypt_with_password(); returns '' on wrong password or corrupt input (same
+    # failure convention as decrypt()).
+    def decrypt_with_password(self, password: str, blob: str) -> str:
+        salt_hex, _, token = blob.partition(':')
+        if not token:
+            return ''
+        _, key = self.derive_key(password, salt=bytes.fromhex(salt_hex))
+        return self.decrypt(key, token)
+
     # Return a hex digest of a string using any algorithm supported by hashlib.
     def get_hash(self, message: str, method: str = 'md5') -> str:
         method_norm = method.strip().lower().replace('-', '_')
@@ -83,6 +97,14 @@ class Cryptography:
         {'key': 'd', 'name': 'Get Hash', 'function': 'get_hash', 'inputs': [
             {'label': 'Message', 'name': 'message', 'type': str, 'default': 'Test message', 'width': '150px'},
             {'label': 'Method', 'name': 'method', 'options': sorted(hashlib.algorithms_available), 'default': 'md5', 'width': '160px'},
+        ]},
+        {'key': 'e', 'name': 'Encrypt with password', 'function': 'encrypt_with_password', 'inputs': [
+            {'label': 'Password', 'name': 'password', 'type': str, 'password': True, 'default': None, 'width': '80px'},
+            {'label': 'Message', 'name': 'message', 'type': str, 'default': 'Test message', 'width': '150px'},
+        ], 'fill_targets': {'Decrypt with password.blob': True}},
+        {'key': 'f', 'name': 'Decrypt with password', 'function': 'decrypt_with_password', 'inputs': [
+            {'label': 'Password', 'name': 'password', 'type': str, 'password': True, 'default': None, 'width': '80px'},
+            {'label': 'Blob', 'name': 'blob', 'type': str, 'default': '', 'width': '150px'},
         ]},
     ]
 
