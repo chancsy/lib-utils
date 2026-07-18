@@ -64,10 +64,26 @@ slack = [
     "slack_sdk>=3.42",
 ]
 
+# pip install "lib-utils[telegram]"
+telegram = [
+    "requests>=2.32",
+]
+
 # pip install "lib-utils[selenium]"
 selenium = [
     "selenium>=4.35",
     "webdriver_manager>=4.0",
+]
+
+# pip install "lib-utils[playwright]"
+playwright = [
+    "playwright>=1.48",
+]
+
+# pip install "lib-utils[sheets]"
+sheets = [
+    "gspread>=6.1",
+    "google-auth>=2.35",
 ]
 
 # pip install "lib-utils[math]"
@@ -97,7 +113,10 @@ all = [
     "lib-utils[pillow]",
     "lib-utils[widgets]",
     "lib-utils[slack]",
+    "lib-utils[telegram]",
     "lib-utils[selenium]",
+    "lib-utils[playwright]",
+    "lib-utils[sheets]",
     "lib-utils[math]",
 ]
 

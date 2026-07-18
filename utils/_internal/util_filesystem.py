@@ -149,6 +149,15 @@ class UtilityFilesystemMixin:
         dest_files = relative_files(dest_dir)
         return sorted(dest_files - source_files)
 
+    # Generic named-placeholder formatter for structured file/directory naming,
+    # e.g. build_structured_filename('{provider}_{account_no}_{period}.pdf', provider='TNB', account_no='123', period='202607').
+    # Field values are sanitized (path separators stripped) so a stray '/' or '\' in a
+    # field can't split into an unintended extra path segment; the template's own
+    # separators are left untouched.
+    def build_structured_filename(self, template: str, **fields) -> str:
+        safe_fields = {k: str(v).replace('/', '_').replace('\\', '_') for k, v in fields.items()}
+        return template.format(**safe_fields)
+
     def calculate_file_hash(self, file_path, hash_algorithm='md5'):
         import hashlib
 
