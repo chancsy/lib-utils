@@ -64,6 +64,16 @@ class UtilityFunctions(
         stdout_value = process.communicate()[0].decode("utf-8", errors='replace').strip()
         return stdout_value
 
+    # Run a .ps1 script file, streaming its stdout/stderr live (inherited, not captured) -
+    # unlike run_powershell_command(), which captures a command string's output and returns
+    # it only once the process has finished. check=True (default) raises CalledProcessError
+    # on a non-zero exit, matching subprocess.run()'s own convention.
+    def run_powershell_script(self, script_path, *args, check=True):
+        return subprocess.run(
+            ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script_path), *args],
+            check=check,
+        )
+
     # Normalize keys for stable text matching across sources.
     def normalize_lookup_key(self, key: str) -> str:
         if key is None:
