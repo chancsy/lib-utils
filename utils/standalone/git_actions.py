@@ -36,16 +36,42 @@ def git_fetch(repo_path, branch, remote='origin'):
     _run_git(['-C', str(repo_path), 'fetch', remote, f'+{branch}:{branch}'])
 
 
-def git_last_commit_info(repo_path, branch):
-    """Return ``'<YYYYMMDD_HHMM>_<short-hash>'`` for the tip of ``branch``."""
-    return _run_git(['-C', str(repo_path), 'log', '-1', branch,
+def git_fetch_all(repo_path, remote='origin'):
+    """Fetch new objects/refs from ``remote`` without moving any local branch ref."""
+    _run_git(['-C', str(repo_path), 'fetch', remote])
+
+
+def git_last_commit_info(repo_path, ref):
+    """Return ``'<YYYYMMDD_HHMM>_<short-hash>'`` for ``ref`` (a branch name or a commit hash)."""
+    return _run_git(['-C', str(repo_path), 'log', '-1', ref,
                       '--pretty=format:%ad_%h', '--date=format:%Y%m%d_%H%M'])
 
 
-def git_archive_zip(repo_path, branch, output_zip, prefix):
-    """Archive ``branch`` to ``output_zip``, with all paths under ``<prefix>/``."""
+def git_archive_zip(repo_path, ref, output_zip, prefix):
+    """Archive ``ref`` (a branch name or a commit hash) to ``output_zip``, with all paths under ``<prefix>/``."""
     _run_git(['-C', str(repo_path), 'archive', '--format=zip',
-              f'--prefix={prefix}/', f'--output={output_zip}', branch])
+              f'--prefix={prefix}/', f'--output={output_zip}', ref])
+
+
+def git_checkout(repo_path, ref):
+    """Check out ``ref`` (branch, tag, or commit hash) in ``repo_path``; returns git's combined output."""
+    result = subprocess.run(['git', '-C', str(repo_path), 'checkout', ref], capture_output=True, text=True)
+    output = (result.stdout + result.stderr).strip()
+    if result.returncode != 0:
+        raise RuntimeError(f'git checkout {ref} failed in {repo_path}: {output}')
+    return output
+
+
+def git_current_commit(repo_path):
+    """Return the full commit hash currently checked out in ``repo_path``."""
+    return _run_git(['-C', str(repo_path), 'rev-parse', 'HEAD'])
+
+
+def git_commit_exists(repo_path, commit):
+    """True if ``commit`` exists as a commit object in ``repo_path`` (e.g. after a fetch)."""
+    result = subprocess.run(['git', '-C', str(repo_path), 'cat-file', '-e', f'{commit}^{{commit}}'],
+                             capture_output=True, text=True)
+    return result.returncode == 0
 
 
 def git_remote_url(repo_path, remote='origin'):
