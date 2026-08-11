@@ -86,7 +86,16 @@ def git_set_remote_url(repo_path, url, remote='origin'):
 
 def git_has_uncommitted_changes(repo_path):
     """True if tracked files in ``repo_path`` have uncommitted changes (ignores untracked files)."""
-    return bool(_run_git(['-C', str(repo_path), 'status', '--porcelain', '-uno']))
+    return bool(git_uncommitted_files(repo_path))
+
+
+def git_uncommitted_files(repo_path):
+    """Paths of tracked files in ``repo_path`` with uncommitted changes (ignores untracked files)."""
+    # Uses subprocess directly rather than _run_git(): its blanket .strip() would eat a leading
+    # " " status char (e.g. " M file" for an unstaged-only change), misaligning the line[3:] slice below.
+    result = subprocess.run(['git', '-C', str(repo_path), 'status', '--porcelain', '-uno'],
+                             capture_output=True, text=True)
+    return [line[3:] for line in result.stdout.splitlines() if line]
 
 
 def git_pull(repo_path):
