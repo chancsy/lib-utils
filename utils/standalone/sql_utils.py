@@ -68,7 +68,7 @@ class SQL():
         database: str,
         username: str = None,
         password: str = None,
-        driver: str = "ODBC Driver 17 for SQL Server",
+        driver: str = "ODBC Driver 18 for SQL Server",
     ) -> 'pyodbc.Connection':
         """Connect to a SQL Server database.
 
@@ -80,7 +80,7 @@ class SQL():
             database: Database name.
             username: SQL login username. Omit for Windows Authentication.
             password: SQL login password. Omit for Windows Authentication.
-            driver: ODBC driver name. Defaults to 'ODBC Driver 17 for SQL Server'.
+            driver: ODBC driver name. Defaults to 'ODBC Driver 18 for SQL Server'.
 
         Returns:
             pyodbc.Connection object.
@@ -92,6 +92,7 @@ class SQL():
                 f"DATABASE={database};"
                 f"UID={username};"
                 f"PWD={password};"
+                f"TrustServerCertificate=yes;"
             )
         else:
             conn_str = (
@@ -99,6 +100,7 @@ class SQL():
                 f"SERVER={server};"
                 f"DATABASE={database};"
                 f"Trusted_Connection=yes;"
+                f"TrustServerCertificate=yes;"
             )
         return self._pyodbc.connect(conn_str)
 
