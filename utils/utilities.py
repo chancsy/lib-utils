@@ -64,6 +64,16 @@ class UtilityFunctions(
         stdout_value = process.communicate()[0].decode("utf-8", errors='replace').strip()
         return stdout_value
 
+    # Run a .ps1 script file, streaming its stdout/stderr live (inherited, not captured) -
+    # unlike run_powershell_command(), which captures a command string's output and returns
+    # it only once the process has finished. check=True (default) raises CalledProcessError
+    # on a non-zero exit, matching subprocess.run()'s own convention.
+    def run_powershell_script(self, script_path, *args, check=True):
+        return subprocess.run(
+            ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script_path), *args],
+            check=check,
+        )
+
     # Normalize keys for stable text matching across sources.
     def normalize_lookup_key(self, key: str) -> str:
         if key is None:
@@ -123,6 +133,15 @@ class UtilityFunctions(
         with open(path, 'w', encoding=encoding) as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
             f.write('\n')
+
+    # Read JSON, returning 'default' if the file doesn't exist (caller decides whether
+    # that's a valid empty-config case or should be treated as an error).
+    def read_json_file(self, file_path: str, default: object = None, encoding: str = 'utf-8') -> object:
+        path = Path(file_path)
+        if not path.is_file():
+            return default
+        with open(path, 'r', encoding=encoding) as f:
+            return json.load(f)
 
     def wait_user_enter_key(self, msg=None):
         input(msg or 'Press enter to continue...')

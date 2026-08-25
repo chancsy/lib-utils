@@ -107,6 +107,10 @@ class UtilityRuntimeMixin:
         except ImportError:
             return 'Package not found'
 
+    # prompt a Y/N question via input(); returns True only on an exact 'y'/'Y' reply
+    def confirm(self, prompt):
+        return input(f'{prompt} (Y/N): ').strip().lower() == 'y'
+
     # append param to kwargs if not already set, or update value if overwrite argument is true
     def update_kwargs_param(self, kwargs, param_name, param_value, overwrite=False):
         if overwrite:
