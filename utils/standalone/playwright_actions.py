@@ -7,7 +7,7 @@ else:
 utils = UtilityFunctions()
 utils.exit_if_module_missing('playwright')
 
-import os
+import shutil
 import tempfile
 import time
 
@@ -26,9 +26,18 @@ class PlaywrightUtils:
         self._playwright = None
         self.browser = None
         self.page = None
+        self._ephemeral_user_data_dir = None  # set when new_browser() makes a throwaway profile
 
-    # persistent=True keeps a real user-data-dir so the same profile can be
-    # reattached to (e.g. by a Playwright MCP server) across runs.
+    # persistent=True runs a real on-disk browser profile (needed for sites relying on
+    # native Windows SSO - WAM/Windows Hello - which won't engage for a fully in-memory
+    # context). user_data_dir controls that profile's lifetime:
+    #   None      -> a fresh temp dir per call, deleted by close_browser(). Use this unless
+    #                you specifically need state to survive: reusing one profile across runs
+    #                leaks session state (e.g. Edge restoring a prior download tab and
+    #                aborting the next run), and two callers sharing one dir fight over the
+    #                browser's single-instance lock.
+    #   <a path>  -> that exact dir, left in place - so the same profile can be reattached to
+    #                later (stays logged in, or a Playwright MCP server picks it up).
     # cdp_port, if set, launches Chromium with --remote-debugging-port=<port>
     # so an external tool (e.g. `@playwright/mcp --cdp-endpoint=...`) can attach
     # to this exact running session later.
@@ -52,7 +61,9 @@ class PlaywrightUtils:
             launch_args.append(f'--remote-debugging-port={cdp_port}')
 
         if persistent:
-            user_data_dir = user_data_dir or os.path.join(tempfile.gettempdir(), 'playwright_profile')
+            if user_data_dir is None:
+                user_data_dir = tempfile.mkdtemp(prefix='playwright_profile_')
+                self._ephemeral_user_data_dir = user_data_dir
             context = self._playwright.chromium.launch_persistent_context(
                 user_data_dir, headless=headless, args=launch_args, viewport=viewport, channel=channel,
             )
@@ -70,6 +81,9 @@ class PlaywrightUtils:
             self.browser.close()
         if self._playwright is not None:
             self._playwright.stop()
+        if self._ephemeral_user_data_dir is not None:
+            shutil.rmtree(self._ephemeral_user_data_dir, ignore_errors=True)
+            self._ephemeral_user_data_dir = None
         self.browser = None
         self.page = None
         self._playwright = None
