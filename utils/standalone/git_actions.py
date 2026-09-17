@@ -140,3 +140,14 @@ def git_pull(repo_path):
     if result.returncode != 0:
         raise RuntimeError(f'git pull failed in {repo_path}: {output}')
     return output
+
+
+def git_diff_file(repo_path, file_path):
+    """Return the unstaged unified diff for one tracked file in ``repo_path`` (empty string
+    if it has no uncommitted changes)."""
+    return _run_git(['-C', str(repo_path), 'diff', '--', str(file_path)])
+
+
+def git_restore_file(repo_path, file_path):
+    """Discard uncommitted worktree changes to one tracked file, restoring it from the index."""
+    _run_git(['-C', str(repo_path), 'restore', '--', str(file_path)])
