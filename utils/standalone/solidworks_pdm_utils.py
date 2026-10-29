@@ -53,6 +53,7 @@ Quick start:
 
 import os
 import shutil
+import stat
 import sys, os as _os
 
 if __name__ == '__main__':
@@ -237,6 +238,57 @@ class SolidWorksPDM:
             results.append(entry['path'])
         return results
 
+    def search_files(self, root_path: str, name_pattern: str, details: bool = False) -> list:
+        """Server-side filename search (``IEdmSearch5``) under a vault folder.
+
+        Much faster than ``find_files()`` on large trees, since it doesn't walk
+        folders one COM call at a time.
+
+        Parameters
+        ----------
+        root_path : str
+            Starting directory inside the vault (searched recursively).
+        name_pattern : str
+            Filename pattern. ``*`` and ``%`` are wildcards. A pattern without
+            wildcards matches anywhere in the name (``GE58337`` -> ``%GE58337%``).
+        details : bool, optional
+            If ``True``, return a dict per file instead of just the path. The
+            extra fields come with the search result (no extra server calls).
+
+        Returns
+        -------
+        list of str, or list of dict if ``details``
+            Full absolute paths of matching files (folders excluded). With
+            ``details``: ``path``, ``name``, ``state``, ``version``, ``size``
+            (bytes), ``date`` (datetime).
+        """
+        self._require_connection()
+        pattern = name_pattern.strip().replace('*', '%')
+        if '%' not in pattern:
+            pattern = f'%{pattern}%'
+        search = self._win.CastTo(self._client.CreateSearch(), 'IEdmSearch5')
+        search.FindFiles = True
+        search.FindFolders = False
+        search.Recursive = True
+        search.StartFolderID = self._get_folder(root_path).ID
+        search.FileName = pattern
+        results = []
+        res = search.GetFirstResult()
+        while res is not None:
+            if details:
+                results.append({
+                    'path':    res.Path,
+                    'name':    res.Name,
+                    'state':   res.StateName,
+                    'version': res.Version,
+                    'size':    res.FileSize,
+                    'date':    res.FileDate,
+                })
+            else:
+                results.append(res.Path)
+            res = search.GetNextResult()
+        return results
+
     # ------------------------------------------------------------------
     # File information
     # ------------------------------------------------------------------
@@ -342,6 +394,9 @@ class SolidWorksPDM:
         final_name = dest_name or filename
         final_path = os.path.join(dest_folder, final_name)
         shutil.copy2(resolved_path, final_path)
+        # copy2 carries over the vault cache's read-only attribute; the downloaded copy
+        # isn't vault-controlled, so make it writable (also lets a re-download overwrite it).
+        os.chmod(final_path, stat.S_IREAD | stat.S_IWRITE)
         return final_path
 
     # ------------------------------------------------------------------
