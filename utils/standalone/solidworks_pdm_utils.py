@@ -4,10 +4,15 @@ SolidWorks PDM Vault utilities.
 Uses the PDM COM API directly via win32com — no extra wrapper library required.
 Requires SolidWorks PDM Standard/Professional to be installed on the local machine.
 
-Verified against PDM 2025 (ConisioLib.EdmVault / PDMWorks Enterprise Type Library).
+Verified against SOLIDWORKS PDM Client 2026 SP03.2 (ConisioLib.EdmVault /
+PDMWorks Enterprise Type Library 5.29). ``connect()`` loads whichever 5.x type
+library is registered rather than pinning a minor version.
 
 Key COM interfaces used:
     IEdmVault22         -- dispatched via EnsureDispatch('ConisioLib.EdmVault')
+    IEdmSearch9         -- returned by IEdmVault21.CreateSearch2(); filename search
+                           with the extended search syntax (OR, *, ?). Falls back to
+                           IEdmSearch5 (CreateSearch) on clients without CreateSearch2.
     IEdmVariableMgr5    -- accessed via CastTo(client, 'IEdmVariableMgr5')
                            for variable name enumeration (GetFirstVariablePosition /
                            GetNextVariable)
@@ -21,7 +26,13 @@ Quick start:
     pdm = SolidWorksPDM('PDM Vault')
     pdm.connect()
 
-    # List a directory
+    # Server-side filename search - one pattern, or several OR'd in one query
+    fisher = r'C:\\PDM Vault\\Master Data Record\\FISHER'
+    print(pdm.search_files(fisher, 'GE58337'))
+    print(pdm.search_files(fisher, ['GE58337*.pdf', 'GE58340_D*'], details=True))
+    print(pdm.search_files(r'C:\\PDM Vault\\Projects', '*'))   # every file under a folder
+
+    # List a directory (one level: sub-folders and files)
     print(pdm.list_dir(r'C:\\PDM Vault\\Projects'))
 
     # File metadata
@@ -36,9 +47,8 @@ Quick start:
     # List all variable names defined in the vault
     print(pdm.list_variable_names())
 
-    # Recursive walk / search
-    print(pdm.list_dir_recursive(r'C:\\PDM Vault\\Projects'))
-    print(pdm.find_files(r'C:\\PDM Vault', extension='.SLDDRW'))
+    # Download a copy (no checkout)
+    pdm.download_file(path, r'C:\\temp')
 
     # Check out / in
     pdm.checkout(path)
@@ -48,16 +58,17 @@ Quick start:
 
     # Or use as a context manager
     with SolidWorksPDM('PDM Vault') as pdm:
-        print(pdm.list_dir_root())
+        print(pdm.list_dir(r'C:\\PDM Vault'))
 """
 
 import os
+import re
 import shutil
 import stat
-import sys, os as _os
+import sys
 
 if __name__ == '__main__':
-    sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..', '..'))
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     from utils.utilities import UtilityFunctions
 else:
     from ..utilities import UtilityFunctions
@@ -67,7 +78,10 @@ _utils = UtilityFunctions()
 _VAULT_DISPATCH_KEY  = 'ConisioLib.EdmVault'
 _PDM_TYPE_LIB_GUID   = '{5FA2C692-8393-4F31-9BDB-05E6F807D0D3}'
 _PDM_TYPE_LIB_MAJOR  = 5
-_PDM_TYPE_LIB_MINOR  = 28
+_DISP_E_MEMBERNOTFOUND = -2147352573
+
+# Splits an OR'd search string into terms, for the per-term legacy search fallback.
+_OR_SPLIT_RE = re.compile(r'\s+OR\s+|\s*\|\s*')
 
 
 class SolidWorksPDM:
@@ -83,13 +97,12 @@ class SolidWorksPDM:
         ----------
         vault_name : str
             Exact vault name as it appears in File Explorer (case-sensitive),
-            e.g. ``'PDM Vault'``. The vault root is assumed to be
-            ``C:\\<vault_name>``.
+            e.g. ``'PDM Vault'``.
         """
         # Checked here (at construction) rather than at module-import time, so merely
         # importing this module doesn't require Windows/pywin32 - only actually
-        # instantiating SolidWorksPDM does. Cached on self so connect()/disconnect()/
-        # list_variable_names() don't need their own import statements.
+        # instantiating SolidWorksPDM does. Cached on self so the methods don't need
+        # their own import statements.
         if sys.platform != 'win32':
             raise ImportError('solidworks_pdm_utils requires Windows')
         _utils.exit_if_module_missing('pywin32')
@@ -100,7 +113,6 @@ class SolidWorksPDM:
         self._win = win
         self._gencache = gencache
         self.vault_name = vault_name
-        self.root = rf'C:\{vault_name}'
         self._client = None  # IEdmVault22 early-bound COM object
         self._variable_names_cache = None  # cached after first remote call
 
@@ -112,25 +124,14 @@ class SolidWorksPDM:
         """Connect to the PDM vault using cached Windows credentials.
 
         Uses early-binding (``EnsureDispatch``) so the generated type library
-        wrappers are available -- required for ``CastTo(client, 'IEdmVariableMgr5')``.
+        wrappers are available -- required for ``CastTo(client, 'IEdmVariableMgr5')``
+        and for the ``Edm*`` constants.
 
         Returns ``True`` on success, ``False`` on failure.
         """
         try:
             self._pythoncom.CoInitialize()
-            # Early-binding: generates / loads Python wrappers from the type library.
-            # A stale/truncated gen_py cache raises AttributeError('MinorVersion') —
-            # delete the bad directory and retry once so it regenerates cleanly.
-            try:
-                self._gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, _PDM_TYPE_LIB_MAJOR, _PDM_TYPE_LIB_MINOR)
-            except AttributeError:
-                _cache_key = f'{_PDM_TYPE_LIB_GUID[1:-1]}x0x{_PDM_TYPE_LIB_MAJOR}x{_PDM_TYPE_LIB_MINOR}'
-                for _base in (self._gencache.GetGeneratePath(), os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Temp', 'gen_py', f'{sys.version_info.major}.{sys.version_info.minor}')):
-                    _bad = os.path.join(_base, _cache_key)
-                    if os.path.isdir(_bad):
-                        shutil.rmtree(_bad, ignore_errors=True)
-                        print(f'SolidWorksPDM: cleared stale gen_py cache at {_bad}')
-                self._gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, _PDM_TYPE_LIB_MAJOR, _PDM_TYPE_LIB_MINOR)
+            self._ensure_type_library()
             client = self._gencache.EnsureDispatch(_VAULT_DISPATCH_KEY)
             if not client.IsLoggedIn:
                 client.LoginAuto(self.vault_name, 0)
@@ -179,78 +180,44 @@ class SolidWorksPDM:
         folders = []
         pos = folder.GetFirstSubFolderPosition()
         while not pos.IsNull:
-            sub = folder.GetNextSubFolder(pos)
-            folders.append(sub.Name)
+            folders.append(folder.GetNextSubFolder(pos).Name)
 
         files = []
         pos = folder.GetFirstFilePosition()
         while not pos.IsNull:
-            f = folder.GetNextFile(pos)
-            files.append(f.Name)
+            files.append(folder.GetNextFile(pos).Name)
 
         return {'folders': folders, 'files': files}
 
-    def list_dir_root(self) -> dict:
-        """Convenience wrapper -- list the vault root directory."""
-        return self.list_dir(self.root)
+    # ------------------------------------------------------------------
+    # Search
+    # ------------------------------------------------------------------
 
-    def list_dir_recursive(self, path: str) -> list:
-        """Walk a vault directory tree and return all entries.
+    def search_files(self, root_path: str, name_patterns, details: bool = False) -> list:
+        """Server-side filename search under a vault folder (recursive).
 
-        Returns
-        -------
-        list of dict
-            Each entry has ``'path'`` (full path), ``'name'``, and
-            ``'type'`` (``'file'`` or ``'folder'``).
-        """
-        self._require_connection()
-        results = []
-        self._walk(path, results)
-        return results
+        Several patterns are OR'd together in a single server query, so searching
+        for 4 part numbers costs about the same as searching for one.
 
-    def find_files(self, root_path: str, extension: str = None, name_contains: str = None) -> list:
-        """Recursively find files in the vault, optionally filtered.
+        Pattern syntax (PDM extended search syntax, ``IEdmSearch9``):
+
+        - ``*`` matches any run of characters, ``?`` exactly one; ``_`` is literal.
+          ``%`` is accepted as an alias for ``*``.
+        - A pattern without wildcards matches anywhere in the name
+          (``GE58337`` finds ``GE58337_AB.pdf``); once a pattern has a wildcard
+          it must match the whole name (``GE58340*.pdf``).
+        - A single string may also contain ``OR`` / ``|`` between terms.
+
+        On PDM clients without ``CreateSearch2`` it falls back to one
+        ``IEdmSearch5`` query per term (slower), where ``_`` is a single-character
+        wildcard rather than literal.
 
         Parameters
         ----------
         root_path : str
             Starting directory inside the vault.
-        extension : str, optional
-            Case-insensitive file extension filter, e.g. ``'.SLDPRT'``.
-        name_contains : str, optional
-            Case-insensitive substring the filename must contain.
-
-        Returns
-        -------
-        list of str
-            Full absolute paths of matching files.
-        """
-        entries = self.list_dir_recursive(root_path)
-        results = []
-        for entry in entries:
-            if entry['type'] != 'file':
-                continue
-            name = entry['name']
-            if extension and not name.lower().endswith(extension.lower()):
-                continue
-            if name_contains and name_contains.lower() not in name.lower():
-                continue
-            results.append(entry['path'])
-        return results
-
-    def search_files(self, root_path: str, name_pattern: str, details: bool = False) -> list:
-        """Server-side filename search (``IEdmSearch5``) under a vault folder.
-
-        Much faster than ``find_files()`` on large trees, since it doesn't walk
-        folders one COM call at a time.
-
-        Parameters
-        ----------
-        root_path : str
-            Starting directory inside the vault (searched recursively).
-        name_pattern : str
-            Filename pattern. ``*`` and ``%`` are wildcards. A pattern without
-            wildcards matches anywhere in the name (``GE58337`` -> ``%GE58337%``).
+        name_patterns : str or list of str
+            One pattern, or several to OR together.
         details : bool, optional
             If ``True``, return a dict per file instead of just the path. The
             extra fields come with the search result (no extra server calls).
@@ -258,36 +225,23 @@ class SolidWorksPDM:
         Returns
         -------
         list of str, or list of dict if ``details``
-            Full absolute paths of matching files (folders excluded). With
+            Matching files (folders excluded), each listed once. With
             ``details``: ``path``, ``name``, ``state``, ``version``, ``size``
             (bytes), ``date`` (datetime).
         """
         self._require_connection()
-        pattern = name_pattern.strip().replace('*', '%')
-        if '%' not in pattern:
-            pattern = f'%{pattern}%'
-        search = self._win.CastTo(self._client.CreateSearch(), 'IEdmSearch5')
-        search.FindFiles = True
-        search.FindFolders = False
-        search.Recursive = True
-        search.StartFolderID = self._get_folder(root_path).ID
-        search.FileName = pattern
-        results = []
-        res = search.GetFirstResult()
-        while res is not None:
-            if details:
-                results.append({
-                    'path':    res.Path,
-                    'name':    res.Name,
-                    'state':   res.StateName,
-                    'version': res.Version,
-                    'size':    res.FileSize,
-                    'date':    res.FileDate,
-                })
-            else:
-                results.append(res.Path)
-            res = search.GetNextResult()
-        return results
+        terms = [name_patterns] if isinstance(name_patterns, str) else list(name_patterns)
+        terms = [t.strip() for t in terms if t and t.strip()]
+        if not terms:
+            raise ValueError('search_files: no search pattern given')
+        folder_id = self._get_folder(root_path).ID
+        try:
+            search = self._win.CastTo(self._client.CreateSearch2(), 'IEdmSearch9')
+        except (AttributeError, self._pythoncom.com_error):
+            return self._search_files_legacy(folder_id, terms, details)
+        search.SetToken(self._win.constants.Edmstok_AllVersions, False)  # docs: must be set explicitly
+        search.FileName = ' OR '.join(t.replace('%', '*') for t in terms)
+        return self._collect_search_results(search, folder_id, details, {})
 
     # ------------------------------------------------------------------
     # File information
@@ -299,15 +253,13 @@ class SolidWorksPDM:
         Returns
         -------
         dict with keys:
-            ``name``, ``path``, ``state``, ``revision``, ``version``,
+            ``name``, ``path``, ``state``, ``version``,
+            ``revision`` (PDM revision-scheme value; empty for many files),
+            ``card_revision`` (the data card ``Revision`` variable, or ``''``),
             ``checked_out`` (bool), ``checked_out_by`` (str or None)
         """
         self._require_connection()
-        folder_path, filename = self._split_path(path)
-        folder = self._get_folder(folder_path)
-        f = folder.GetFile(filename)
-        if f is None:
-            raise FileNotFoundError(f'PDM file not found: {path}')
+        _, f = self._get_file(path)
 
         checked_out = bool(f.IsLocked)
         checked_out_by = None
@@ -317,15 +269,21 @@ class SolidWorksPDM:
             except Exception:
                 pass
 
+        try:
+            found, card_revision = f.GetEnumeratorVariable().GetVar('Revision', '')
+            card_revision = card_revision if found and card_revision is not None else ''
+        except Exception:
+            card_revision = ''
+
         return {
             'name':           f.Name,
             'path':           path,
             'state':          f.CurrentState.Name,
-            'revision':       f.CurrentRevision,
             'version':        f.CurrentVersion,
+            'revision':       f.CurrentRevision,
+            'card_revision':  card_revision,
             'checked_out':    checked_out,
             'checked_out_by': checked_out_by,
-
         }
 
     # ------------------------------------------------------------------
@@ -333,12 +291,14 @@ class SolidWorksPDM:
     # ------------------------------------------------------------------
 
     def download_file(self, src_path: str, dest_folder: str, dest_name: str = None,
-                      version: int = None) -> str:
-        """Download a file from the vault to a local folder.
+                      version=None) -> str:
+        """Download a copy of a vault file to a local folder (no checkout).
 
-        Uses ``IEdmFile5.GetFileCopy`` which copies the file content from the
-        PDM server to ``dest_folder`` without checking it out. Works for both
-        locally-cached and off-site (non-cached) vault files.
+        The file is always copied straight from the vault server to
+        ``dest_folder`` (~4 s per file), never from the local vault cache, so
+        the result is the vault's content even if the cached copy is stale, and
+        the local vault cache is left untouched. The copy is writable, and an
+        existing file of the same name is replaced.
 
         Parameters
         ----------
@@ -350,53 +310,53 @@ class SolidWorksPDM:
         dest_name : str, optional
             Filename to save as inside ``dest_folder``. Defaults to the
             original vault filename.
-        version : int, optional
-            Specific version number to download. Defaults to the current
-            (latest) version.
+        version : int or str, optional
+            Version number (e.g. ``3``) or revision name (e.g. ``'AB'``) to
+            download. Defaults to the current (latest) version.
 
         Returns
         -------
         str
             Full path of the downloaded file.
+
+        Raises
+        ------
+        ValueError
+            If ``version`` is a number outside ``1..current version``, or an
+            unknown revision name.
+        PermissionError
+            If an existing file at the destination can't be replaced (e.g. it
+            is open in another program).
         """
         self._require_connection()
-        folder_path, filename = self._split_path(src_path)
-        folder = self._get_folder(folder_path)
-        f = folder.GetFile(filename)
-        if f is None:
-            raise FileNotFoundError(f'PDM file not found: {src_path}')
+        _, f = self._get_file(src_path)
+        if isinstance(version, int) and not 1 <= version <= f.CurrentVersion:
+            raise ValueError(f'version {version} out of range 1..{f.CurrentVersion} for {src_path}')
 
         os.makedirs(dest_folder, exist_ok=True)
-        ver = version if version is not None else f.CurrentVersion
+        final_name = dest_name or os.path.basename(src_path)
+        final_path = os.path.join(dest_folder, final_name)
+        if os.path.exists(final_path):
+            # Removed first so a silently failed copy can't leave the old file looking like
+            # a successful download; chmod clears a read-only attribute from older downloads.
+            os.chmod(final_path, stat.S_IREAD | stat.S_IWRITE)
+            os.remove(final_path)
 
         # GetFileCopy(lParentWnd, poVersionNoOrRevisionName, poPathOrFolderID,
         #             lEdmGetFlags, bsNewName)
-        # poPathOrFolderID must be the vault folder's integer .ID (not a string
-        # path) — passing a BSTR string causes com_error "Member not found".
-        # lEdmGetFlags=16 → EdmGet_UseLocalRootFolder (standard get, no extra refs)
-        # The call triggers a sync/download if needed; the file ends up at its
-        # local vault-cache path (src_path).  The return value is None when the
-        # file was already cached; otherwise it is the downloaded path.
-        vault_local_path = f.GetFileCopy(0, ver, folder.ID, 16, '')
-
-        # Resolve the actual local path: prefer the return value, fall back to src_path
-        if vault_local_path and os.path.exists(vault_local_path):
-            resolved_path = vault_local_path
-        elif os.path.exists(src_path):
-            resolved_path = src_path
-        else:
-            raise RuntimeError(
-                f'GetFileCopy did not produce a file. '
-                f'Return value: {vault_local_path!r}'
-            )
-
-        # Copy from vault cache to the requested destination
-        final_name = dest_name or filename
-        final_path = os.path.join(dest_folder, final_name)
-        shutil.copy2(resolved_path, final_path)
-        # copy2 carries over the vault cache's read-only attribute; the downloaded copy
-        # isn't vault-controlled, so make it writable (also lets a re-download overwrite it).
-        os.chmod(final_path, stat.S_IREAD | stat.S_IWRITE)
+        # A path string (rather than a vault folder ID, which targets the local vault
+        # cache) copies straight to that folder. It's read as a file path, so the folder
+        # needs a trailing backslash - without it the copy lands in the parent folder.
+        ver = version if version is not None else f.CurrentVersion
+        try:
+            f.GetFileCopy(0, ver, os.path.join(os.path.abspath(dest_folder), ''),
+                          self._win.constants.EdmGet_Simple, final_name)
+        except self._pythoncom.com_error as exc:
+            if exc.hresult == _DISP_E_MEMBERNOTFOUND:  # what an unknown revision name raises
+                raise ValueError(f'revision {version!r} not found for {src_path}') from exc
+            raise
+        if not os.path.exists(final_path):
+            raise RuntimeError(f'GetFileCopy did not produce {final_path}')
         return final_path
 
     # ------------------------------------------------------------------
@@ -430,14 +390,16 @@ class SolidWorksPDM:
         pos = mgr.GetFirstVariablePosition()
         names = []
         while not pos.IsNull:
-            var = mgr.GetNextVariable(pos)
-            names.append(var.Name)
+            names.append(mgr.GetNextVariable(pos).Name)
         self._variable_names_cache = names
         return names
 
     def get_file_variables(self, path: str, var_names: list = None, config: str = '',
                            skip_empty: bool = True) -> dict:
         """Return PDM data card variable values for a file.
+
+        Each variable is one server round trip (~0.4 s), so pass ``var_names``
+        when only a few are needed.
 
         Parameters
         ----------
@@ -460,11 +422,7 @@ class SolidWorksPDM:
             ``{variable_name: value, ...}``
         """
         self._require_connection()
-        folder_path, filename = self._split_path(path)
-        folder = self._get_folder(folder_path)
-        f = folder.GetFile(filename)
-        if f is None:
-            raise FileNotFoundError(f'PDM file not found: {path}')
+        _, f = self._get_file(path)
 
         if var_names is None:
             var_names = self.list_variable_names()
@@ -489,38 +447,29 @@ class SolidWorksPDM:
     # Check out / Check in
     # ------------------------------------------------------------------
 
+    # TODO: not tested
     def checkout(self, path: str) -> None:
         """Check out a file. No-op if already checked out."""
         self._require_connection()
-        folder_path, filename = self._split_path(path)
-        folder = self._get_folder(folder_path)
-        f = folder.GetFile(filename)
-        if f is None:
-            raise FileNotFoundError(f'PDM file not found: {path}')
+        folder, f = self._get_file(path)
         if f.IsLocked:
             return
         f.LockFile(folder.ID, 0)
 
+    # TODO: not tested
     def checkin(self, path: str, comment: str = '') -> None:
         """Check in a file. No-op if already checked in."""
         self._require_connection()
-        folder_path, filename = self._split_path(path)
-        folder = self._get_folder(folder_path)
-        f = folder.GetFile(filename)
-        if f is None:
-            raise FileNotFoundError(f'PDM file not found: {path}')
+        _, f = self._get_file(path)
         if not f.IsLocked:
             return
         f.UnlockFile(0, comment)
 
+    # TODO: not tested
     def undo_checkout(self, path: str) -> None:
         """Revert a checkout without saving changes."""
         self._require_connection()
-        folder_path, filename = self._split_path(path)
-        folder = self._get_folder(folder_path)
-        f = folder.GetFile(filename)
-        if f is None:
-            raise FileNotFoundError(f'PDM file not found: {path}')
+        _, f = self._get_file(path)
         if not f.IsLocked:
             return
         f.UndoLockFile(0)
@@ -528,6 +477,64 @@ class SolidWorksPDM:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _ensure_type_library(self) -> None:
+        """Generate / load the early-bound wrappers for the installed PDM type library."""
+        # LoadRegTypeLib returns the highest registered minor version >= the one asked for.
+        attr = self._pythoncom.LoadRegTypeLib(_PDM_TYPE_LIB_GUID, _PDM_TYPE_LIB_MAJOR, 0, 0).GetLibAttr()
+        major, minor = attr[3], attr[4]
+        try:
+            self._gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, major, minor)
+        except AttributeError:
+            # A stale/truncated gen_py cache raises AttributeError('MinorVersion') —
+            # delete the bad directory and retry once so it regenerates cleanly.
+            cache_key = f'{_PDM_TYPE_LIB_GUID[1:-1]}x0x{major}x{minor}'
+            gen_py_dirs = (
+                self._gencache.GetGeneratePath(),
+                os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Temp', 'gen_py', f'{sys.version_info.major}.{sys.version_info.minor}'),
+            )
+            for base in gen_py_dirs:
+                bad = os.path.join(base, cache_key)
+                if os.path.isdir(bad):
+                    shutil.rmtree(bad, ignore_errors=True)
+                    print(f'SolidWorksPDM: cleared stale gen_py cache at {bad}')
+            self._gencache.EnsureModule(_PDM_TYPE_LIB_GUID, 0, major, minor)
+
+    def _search_files_legacy(self, folder_id: int, terms: list, details: bool) -> list:
+        """``IEdmSearch5`` fallback: one query per term (SQL LIKE wildcards ``%`` / ``_``)."""
+        # Untested against a real pre-CreateSearch2 client; only exercised by forcing
+        # this path on a 2026 client.
+        seen = {}
+        for term in (t for s in terms for t in _OR_SPLIT_RE.split(s) if t.strip()):
+            term = term.strip()
+            pattern = term.replace('*', '%').replace('?', '_')
+            if not any(c in term for c in '*?%'):
+                pattern = f'%{pattern}%'
+            search = self._win.CastTo(self._client.CreateSearch(), 'IEdmSearch5')
+            search.FileName = pattern
+            self._collect_search_results(search, folder_id, details, seen)
+        return list(seen.values())
+
+    @staticmethod
+    def _collect_search_results(search, folder_id: int, details: bool, seen: dict) -> list:
+        """Run a prepared search, adding results to ``seen`` (path -> entry, de-duplicated)."""
+        search.FindFiles = True
+        search.FindFolders = False
+        search.Recursive = True
+        search.StartFolderID = folder_id
+        res = search.GetFirstResult()
+        while res is not None:
+            if res.Path not in seen:
+                seen[res.Path] = {
+                    'path':    res.Path,
+                    'name':    res.Name,
+                    'state':   res.StateName,
+                    'version': res.Version,
+                    'size':    res.FileSize,
+                    'date':    res.FileDate,
+                } if details else res.Path
+            res = search.GetNextResult()
+        return list(seen.values())
 
     def _require_connection(self) -> None:
         if self._client is None:
@@ -540,27 +547,20 @@ class SolidWorksPDM:
             raise FileNotFoundError(f'PDM folder not found: {path}')
         return folder
 
-    @staticmethod
-    def _split_path(path: str) -> tuple:
-        """Split a full file path into (folder_path, filename)."""
-        return os.path.dirname(path), os.path.basename(path)
+    def _get_file(self, path: str) -> tuple:
+        """Return ``(IEdmFolder5, IEdmFile5)`` for a full vault file path, raising if not found."""
+        folder = self._get_folder(os.path.dirname(path))
+        try:
+            f = folder.GetFile(os.path.basename(path))
+        except self._pythoncom.com_error:  # raised ('The file/key name was invalid') rather than returning None
+            f = None
+        if f is None:
+            raise FileNotFoundError(f'PDM file not found: {path}')
+        return folder, f
 
-    def _walk(self, path: str, results: list) -> None:
-        """Recursively populate ``results`` with file and folder entries."""
-        folder = self._get_folder(path)
-
-        pos = folder.GetFirstFilePosition()
-        while not pos.IsNull:
-            f = folder.GetNextFile(pos)
-            results.append({'path': os.path.join(path, f.Name), 'name': f.Name, 'type': 'file'})
-
-        pos = folder.GetFirstSubFolderPosition()
-        while not pos.IsNull:
-            sub = folder.GetNextSubFolder(pos)
-            sub_path = os.path.join(path, sub.Name)
-            results.append({'path': sub_path, 'name': sub.Name, 'type': 'folder'})
-            self._walk(sub_path, results)
-
+    # ------------------------------------------------------------------
+    # Demo
+    # ------------------------------------------------------------------
 
     def demo_download_file(self, src_path: str, dest_folder: str, append_rev_as_suffix: bool = True) -> str:
         """Download a vault file, optionally appending the PDM revision as a filename suffix.
@@ -586,14 +586,10 @@ class SolidWorksPDM:
         {'key': 'c', 'name': 'List Dir',           'function': 'list_dir',           'inputs': [
             {'label': 'Path', 'name': 'path', 'type': str, 'default': r'C:\PDM Vault', 'width': '100px'},
         ]},
-        {'key': 'd', 'name': 'List Dir Root',      'function': 'list_dir_root',      'inputs': []},
-        {'key': 'e', 'name': 'List Dir Recursive', 'function': 'list_dir_recursive', 'inputs': [
-            {'label': 'Path', 'name': 'path', 'type': str, 'default': r'C:\PDM Vault', 'width': '100px'},
-        ]},
-        {'key': 'f', 'name': 'Find Files',         'function': 'find_files',         'inputs': [
-            {'label': 'Root Path',     'name': 'root_path',     'type': str, 'default': r'C:\PDM Vault\Master Data Record\FISHER', 'width': '100px'},
-            {'label': 'Extension',     'name': 'extension',     'type': str, 'default': '', 'width': '50px', 'placeholder': 'e.g. .SLDPRT', 'allow_empty': True},
-            {'label': 'Name Contains', 'name': 'name_contains', 'type': str, 'default': 'GK10608', 'width': '100px'},
+        {'key': 'n', 'name': 'Search Files',       'function': 'search_files',       'inputs': [
+            {'label': 'Root Path', 'name': 'root_path',     'type': str, 'default': r'C:\PDM Vault\Master Data Record\FISHER', 'width': '100px'},
+            {'label': 'Patterns',  'name': 'name_patterns', 'type': lambda s: [v.strip() for v in s.split(',') if v.strip()], 'default': 'GK10608*.pdf, GE58340_D*', 'width': '200px', 'placeholder': 'comma-separated, * ? wildcards'},
+            {'label': 'Details',   'name': 'details',       'type': bool, 'default': False, 'width': 'auto'},
         ]},
         {'key': 'g', 'name': 'Get File Info',      'function': 'get_file_info',      'inputs': [
             {'label': 'Path', 'name': 'path', 'type': str, 'default': r'C:\PDM Vault\Master Data Record\FISHER\SCHEMATIC\GK10\GK10608\GK10608.pdf', 'width': '100px'},
