@@ -69,7 +69,10 @@ utils/
     ├── portable_apps_manager/[requires: requests, truststore, ipywidgets; 7-Zip for .7z assets] (Windows) — deploy/track/update portable apps from GitHub releases or download URLs
     │   ├── portable_apps_manager.py  # py:percent UI; registry is <root>/portable_apps.ini, install manifests in <root>/portable_apps.manifests/
     │   └── apps_catalog.ini          # shared recipes: how each app is best tracked (Add → From catalog)
-    └── region_setup.py         [requires: opencv-python, numpy, tkinter] — ADB screen region selector
+    ├── region_setup.py         [requires: opencv-python, numpy, tkinter] — ADB screen region selector
+    └── task_scheduler/         [requires: pywin32; UI: ipywidgets] (Windows) — add/list/enable/disable/run/stop/remove scheduled tasks
+        ├── task_scheduler.py         # py:percent UI; API in __init__.py (e.g. add_python_script)
+        └── _elevated.py              # elevated helper: a UAC prompt only for changes that need administrator rights
 ```
 
 ## Usage
@@ -106,6 +109,8 @@ from utils.tools.env_path_editor.env_path_editor import show_gui                
 from utils.tools.env_path_editor import update_user_path, add_user_path, in_path  # no UI
 from utils.tools.portable_apps_manager.portable_apps_manager import show_gui    # Jupyter: display(show_gui())
 from utils.tools.portable_apps_manager import AppsConfig, check, prepare, finish  # same steps, no UI
+from utils.tools.task_scheduler.task_scheduler import show_gui                  # Jupyter: display(show_gui())
+from utils.tools.task_scheduler import add_python_script, at_startup, list_tasks, enable_task, disable_task, delete_task  # no UI
 ```
 
 ## Optional dependency check

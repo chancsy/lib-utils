@@ -1,0 +1,3 @@
+name        = "Task Scheduler"
+entry       = "utils.tools.task_scheduler.task_scheduler:show_gui"
+description = "Add, list, enable / disable, run and remove Windows scheduled tasks"
