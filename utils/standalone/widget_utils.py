@@ -588,3 +588,124 @@ class WidgetStdout:
 
     def isatty(self):
         return False
+
+
+# folder browser for picking a file: drive list, folder box, optional home button, and a list of folders and matching files
+class FileBrowser:
+    """Pick a file by browsing folders, in plain ipywidgets (no extra package). It browses the file system of the
+    PC that runs the Jupyter kernel, also when Jupyter is used from another PC's browser.
+
+    Click a folder (📁) to open it, ⬆ .. to go up, a file to pick it; or type a folder in the folder box, or choose a
+    drive. Errors (folder not found, no access) show in a line under the list.
+
+    start: first folder (default: the current working directory).
+    patterns: file name patterns to list (fnmatch, case-insensitive), e.g. ('*.py',); folders are always listed.
+    on_pick: called with the picked file's Path.
+    home / home_label: a button that goes back to `home` (e.g. a repo root), if given.
+    skip_dirs: folder names never listed (dot folders are skipped unless show_hidden).
+    Attributes: widget (the VBox to display), folder (Path shown), picked (Path or None).
+    """
+    SKIP_DIRS = ('__pycache__', '.ipynb_checkpoints')
+    _UP, _DIR = '⬆ ..', '📁 '
+
+    def __init__(self, start=None, patterns=('*',), on_pick=None, home=None, home_label='Home',
+                 skip_dirs=SKIP_DIRS, show_hidden=False, rows=10, width='760px', show=False):
+        import fnmatch, os, string
+        from pathlib import Path
+        self._fnmatch, self._os, self._Path = fnmatch, os, Path
+        self.w = Widgets()
+        self.w.show_widget_on_create = False
+        self.patterns = tuple(p.lower() for p in patterns)
+        self.on_pick = on_pick
+        self.skip_dirs = set(skip_dirs)
+        self.show_hidden = show_hidden
+        self.picked = None
+        self._syncing = False
+        if os.name == 'nt':
+            drives = [f'{d}:\\' for d in string.ascii_uppercase if os.path.exists(f'{d}:\\')]
+        else:
+            drives = ['/']
+        self.drive_dd = self.w.Dropdown(options=drives, value=drives[0] if drives else None, width='80px',
+                                        cb=lambda ch: self._guard(self._drive_changed, ch))
+        self.dir_text = self.w.Text(width=f'calc({width} - 180px)', placeholder='folder',
+                                    cb=lambda ch: self._guard(self._dir_typed, ch))
+        self.home = Path(home) if home else None
+        self.home_btn = self.w.Button(desc=home_label, icon='home', width='90px', tooltip=str(home or ''),
+                                      cb=lambda _: self._guard(self.browse_to, self.home))
+        self.select = self.w.Select(options=[], rows=rows, width=width, cb=lambda ch: self._guard(self._picked, ch))
+        self.status = self.w.HTML()
+        bar = [self.drive_dd, self.dir_text] + ([self.home_btn] if self.home else [])
+        self.widget = self.w.VBox([self.w.HBox(bar), self.select, self.status])
+        self.folder = None
+        self._guard(self.browse_to, start or os.getcwd())
+        if show:
+            display(self.widget)
+
+    def _guard(self, fn, *args):
+        """Run a callback; show a ValueError / OSError in the status line instead of losing it in the kernel log."""
+        try:
+            self.status.value = ''
+            fn(*args)
+        except (ValueError, OSError) as e:
+            self.status.value = f'<span style="color:#c0392b">{e}</span>'
+
+    def _sync(self, widget, attr, value):
+        self._syncing = True
+        try:
+            setattr(widget, attr, value)
+        finally:
+            self._syncing = False
+
+    def _matches(self, name: str) -> bool:
+        n = name.lower()
+        return any(self._fnmatch.fnmatch(n, p) for p in self.patterns)
+
+    def browse_to(self, folder):
+        """Show `folder`'s subfolders and matching files (ValueError if it isn't a folder or can't be read)."""
+        folder = self._Path(str(folder).strip().strip('"'))
+        if not folder.is_dir():
+            raise ValueError(f'Not a folder: {folder}')
+        entries = []
+        try:
+            for e in sorted(self._os.scandir(folder), key=lambda e: (not e.is_dir(), e.name.lower())):
+                if (e.name.startswith('.') and not self.show_hidden) or e.name in self.skip_dirs:
+                    continue
+                if e.is_dir():
+                    entries.append((self._DIR + e.name, e.path))
+                elif self._matches(e.name):
+                    entries.append((e.name, e.path))
+        except PermissionError:
+            raise ValueError(f'No access to {folder}') from None
+        if folder.parent != folder:
+            entries.insert(0, (self._UP, str(folder.parent)))
+        self.folder = folder
+        self._sync(self.select, 'options', entries)
+        self._sync(self.select, 'value', None)
+        self._sync(self.dir_text, 'value', str(folder))
+        drive = folder.anchor.upper() if self._os.name == 'nt' else '/'
+        if drive in self.drive_dd.options:
+            self._sync(self.drive_dd, 'value', drive)
+
+    def clear_selection(self):
+        """Forget the picked file and unselect the list (the folder stays)."""
+        self.picked = None
+        self._sync(self.select, 'value', None)
+
+    def _picked(self, change):
+        if self._syncing or not change['new']:
+            return
+        p = self._Path(change['new'])
+        if p.is_dir():
+            self.browse_to(p)
+        else:
+            self.picked = p
+            if self.on_pick:
+                self.on_pick(p)
+
+    def _drive_changed(self, change):
+        if not self._syncing and change['new']:
+            self.browse_to(change['new'])
+
+    def _dir_typed(self, change):
+        if not self._syncing and change['new'].strip():
+            self.browse_to(change['new'])
