@@ -17,6 +17,7 @@ dependencies = [
 # pip install "lib-utils[requests]"
 requests = [
     "requests>=2.32",
+    "truststore>=0.10",   # TLS verification via the Windows cert store (corporate TLS inspection)
 ]
 
 # pip install "lib-utils[git]"
