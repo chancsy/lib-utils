@@ -63,6 +63,8 @@ utils/
 │   ├── widget_utils.py         [requires: ipywidgets, IPython] (Jupyter only)
 │   └── win_automation_utils.py [requires: pywin32, pygetwindow, pyautogui, pynput, pycaw] (Windows only)
 └── tools/                  # interactive tools — run directly or import to orchestrate
+    ├── env_path_editor/        [UI: ipywidgets] (Windows) — view/check/edit the User and System PATH, with backup
+    │   └── env_path_editor.py        # py:percent UI; API in __init__.py (e.g. update_user_path)
     └── region_setup.py         [requires: opencv-python, numpy, tkinter] — ADB screen region selector
 ```
 
@@ -95,6 +97,8 @@ from utils.standalone.win_automation_utils import WindowManager, InputSimulator,
 
 # Tools — import to orchestrate, or run directly
 from utils.tools.region_setup import RegionSetupTool
+from utils.tools.env_path_editor.env_path_editor import show_gui                # Jupyter: display(show_gui())
+from utils.tools.env_path_editor import update_user_path, add_user_path, in_path  # no UI
 ```
 
 ## Optional dependency check
