@@ -13,11 +13,13 @@ All notable changes to this project will be documented here.
 - `EquationSolver` — `eval()` exposed Python builtins; restricted to `{'__builtins__': {}}` so only sympy symbols are in scope (windll imported unconditionally); now raises a clear `ImportError` on non-Windows at import time
 
 ### Added
+- `tools/launcher.py` — Tools launcher: finds every `utils/tools` subfolder with a `tool.toml` manifest (`name`, `entry = "package.module:function"`, optional `description`, `order`) and shows one button per tool; a click imports the tool and embeds the widget its entry function returns. Manifests are read without importing, so a tool with missing packages fails only on its own button; an unreadable manifest gives a disabled button with the reason. `discover_tools()` returns the list. Manifests added for Env Path Editor, Portable Apps Manager and Task Scheduler. Embedded in `work_dir/tools_launcher.py` as "lib-utils Tools"
 - `tools/env_path_editor` — Env Path Editor: ipywidgets UI and API to view, check and edit the Windows User and System PATH (raw registry values, `%VAR%` entries kept unexpanded, value type kept). Flags empty entries, unresolved variables, relative paths, missing folders, files, duplicates (compared as expanded absolute paths, case- and trailing-backslash-insensitive) and User entries already in System. No sorting: Move up / down, Add / Add at top / Replace selected, Remove selected, Select flagged, Remove duplicates & empty. Save refuses if either PATH changed outside the tool since load, optionally backs up both raw values to `%TEMP%\env_path_editor_backups` (`restore_backup()` writes one back exactly), then broadcasts `WM_SETTINGCHANGE`. System is read-only unless running as administrator. API for other tools: `update_user_path(add, remove, prepend, backup_first)`, `add_user_path`, `remove_user_path`, `in_path`
 - `pyproject.toml` — modern packaging metadata with `extras_require` groups (`requests`, `git`, `crypto`, `pdf`, `slack`, `selenium`, `math`, `win`, `all`)
 - `README.md` — package layout, install instructions, usage examples
 
 ### Changed
+- `requires-python` raised to `>=3.11` (`tools/launcher.py` reads `tool.toml` with the standard-library `tomllib`)
 - `requirements.txt` — rewritten as a flat `>=` mirror of the `pyproject.toml` dependencies (same floors), replacing the stale pip-freeze pins (`cryptography==45.0.7` contradicted pyproject's `>=48.0.1`); added previously missing sections (`ipython` core, `[sql]`, `[cv]`, `[clipboard]`, `[pillow]`, `[widgets]`); dropped transitive `pywin32-ctypes`. `pip-audit` re-run 2026-07-18 on the full resolved set (73 packages incl. transitives): no known vulnerabilities
 
 ### Removed

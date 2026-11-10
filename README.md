@@ -65,6 +65,7 @@ utils/
 └── tools/                  # interactive tools — run directly or import to orchestrate
     ├── env_path_editor/        [UI: ipywidgets] (Windows) — view/check/edit the User and System PATH, with backup
     │   └── env_path_editor.py        # py:percent UI; API in __init__.py (e.g. update_user_path)
+    ├── launcher.py             [UI: ipywidgets] — one button per tool folder with a tool.toml (name, entry, description); embedded by work_dir/tools_launcher.py
     └── region_setup.py         [requires: opencv-python, numpy, tkinter] — ADB screen region selector
 ```
 
@@ -97,6 +98,7 @@ from utils.standalone.win_automation_utils import WindowManager, InputSimulator,
 
 # Tools — import to orchestrate, or run directly
 from utils.tools.region_setup import RegionSetupTool
+from utils.tools.launcher import show_gui, discover_tools                        # all tools with a tool.toml
 from utils.tools.env_path_editor.env_path_editor import show_gui                # Jupyter: display(show_gui())
 from utils.tools.env_path_editor import update_user_path, add_user_path, in_path  # no UI
 ```
@@ -112,7 +114,7 @@ slack_sdk is not installed. To install, please run:
 
 ## Requirements
 
-- Python >= 3.10
+- Python >= 3.11
 - Core: `numpy>=2.3`, `pandas>=2.3`, `ipython>=9.15.0`
 - Optional: see [pyproject.toml](pyproject.toml) `[project.optional-dependencies]`
 
