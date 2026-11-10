@@ -66,6 +66,9 @@ utils/
     ├── env_path_editor/        [UI: ipywidgets] (Windows) — view/check/edit the User and System PATH, with backup
     │   └── env_path_editor.py        # py:percent UI; API in __init__.py (e.g. update_user_path)
     ├── launcher.py             [UI: ipywidgets] — one button per tool folder with a tool.toml (name, entry, description); embedded by work_dir/tools_launcher.py
+    ├── portable_apps_manager/[requires: requests, truststore, ipywidgets; 7-Zip for .7z assets] (Windows) — deploy/track/update portable apps from GitHub releases or download URLs
+    │   ├── portable_apps_manager.py  # py:percent UI; registry is <root>/portable_apps.ini, install manifests in <root>/portable_apps.manifests/
+    │   └── apps_catalog.ini          # shared recipes: how each app is best tracked (Add → From catalog)
     └── region_setup.py         [requires: opencv-python, numpy, tkinter] — ADB screen region selector
 ```
 
@@ -101,6 +104,8 @@ from utils.tools.region_setup import RegionSetupTool
 from utils.tools.launcher import show_gui, discover_tools                        # all tools with a tool.toml
 from utils.tools.env_path_editor.env_path_editor import show_gui                # Jupyter: display(show_gui())
 from utils.tools.env_path_editor import update_user_path, add_user_path, in_path  # no UI
+from utils.tools.portable_apps_manager.portable_apps_manager import show_gui    # Jupyter: display(show_gui())
+from utils.tools.portable_apps_manager import AppsConfig, check, prepare, finish  # same steps, no UI
 ```
 
 ## Optional dependency check

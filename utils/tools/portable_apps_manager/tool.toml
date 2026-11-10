@@ -1,0 +1,3 @@
+name        = "Portable Apps Manager"
+entry       = "utils.tools.portable_apps_manager.portable_apps_manager:show_gui"
+description = "Deploy, track and update portable apps from GitHub releases or download URLs"
