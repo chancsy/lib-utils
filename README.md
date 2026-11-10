@@ -99,7 +99,7 @@ from utils.standalone.solidworks_pdm_utils import SolidWorksPDM          # Windo
 from utils.standalone.sql_utils import SQL
 from utils.standalone.sqlite_utils import SQLite
 from utils.standalone.ui_utils import UIUtils
-from utils.standalone.widget_utils import Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, WidgetStdout, build_lib_demo_widget  # Jupyter only
+from utils.standalone.widget_utils import Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, WidgetStdout, FileBrowser, build_lib_demo_widget  # Jupyter only
 from utils.standalone.win_automation_utils import WindowManager, InputSimulator, WindowPos, WindowSize, MousePos, WindowInfo  # Windows only
 
 # Tools — import to orchestrate, or run directly
