@@ -1,0 +1,3 @@
+name        = "Env Path Editor"
+entry       = "utils.tools.env_path_editor.env_path_editor:show_gui"
+description = "View, check and edit the Windows User and System PATH"

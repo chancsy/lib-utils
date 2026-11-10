@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "lib-utils"
 version = "0.1.0"
 description = "Personal helper utilities for engineering test automation"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.3",
     "pandas>=2.3",
