@@ -13,6 +13,7 @@ All notable changes to this project will be documented here.
 - `EquationSolver` — `eval()` exposed Python builtins; restricted to `{'__builtins__': {}}` so only sympy symbols are in scope (windll imported unconditionally); now raises a clear `ImportError` on non-Windows at import time
 
 ### Added
+- `tools/env_path_editor` — Env Path Editor: ipywidgets UI and API to view, check and edit the Windows User and System PATH (raw registry values, `%VAR%` entries kept unexpanded, value type kept). Flags empty entries, unresolved variables, relative paths, missing folders, files, duplicates (compared as expanded absolute paths, case- and trailing-backslash-insensitive) and User entries already in System. No sorting: Move up / down, Add / Add at top / Replace selected, Remove selected, Select flagged, Remove duplicates & empty. Save refuses if either PATH changed outside the tool since load, optionally backs up both raw values to `%TEMP%\env_path_editor_backups` (`restore_backup()` writes one back exactly), then broadcasts `WM_SETTINGCHANGE`. System is read-only unless running as administrator. API for other tools: `update_user_path(add, remove, prepend, backup_first)`, `add_user_path`, `remove_user_path`, `in_path`
 - `pyproject.toml` — modern packaging metadata with `extras_require` groups (`requests`, `git`, `crypto`, `pdf`, `slack`, `selenium`, `math`, `win`, `all`)
 - `README.md` — package layout, install instructions, usage examples
 
