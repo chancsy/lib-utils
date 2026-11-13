@@ -24,6 +24,7 @@ pip install -e "lib-utils[crypto]"
 pip install -e "lib-utils[pdf,slack]"
 pip install -e "lib-utils[all]"        # all extras except win
 pip install -e "lib-utils[all,win]"    # include Windows automation
+pip install -e "lib-utils[tools]"      # the tools under utils/tools (Windows): pywin32, ipywidgets
 ```
 
 ## Package layout
@@ -51,6 +52,7 @@ utils/
 │   ├── clipboard_utils.py      [requires: pyperclip]
 │   ├── cryptography_utils.py   [requires: cryptography]
 │   ├── electronics_utils.py    [requires: eseries, sympy]
+│   ├── elevate_utils.py        [requires: pywin32] (Windows) — on-demand UAC: a module's listed calls run in a short-lived elevated helper, one prompt per batch; Windows password dialog
 │   ├── log_actions.py          [stdlib only]
 │   ├── math_utils.py           [requires: numpy, sympy]
 │   ├── pdf_utils.py            [requires: pikepdf]
@@ -61,8 +63,9 @@ utils/
 │   ├── sqlite_utils.py         [stdlib only]
 │   ├── ui_utils.py             [stdlib only — tkinter]
 │   ├── widget_utils.py         [requires: ipywidgets, IPython] (Jupyter only)
-│   └── win_automation_utils.py [requires: pywin32, pygetwindow, pyautogui, pynput, pycaw] (Windows only)
-└── tools/                  # interactive tools — run directly or import to orchestrate
+│   ├── win_automation_utils.py [requires: pywin32, pygetwindow, pyautogui, pynput, pycaw] (Windows only)
+│   └── win_service_utils.py    [requires: pywin32] (Windows) — Python Windows services: install / uninstall (UAC on demand), start / stop, restart on crash, pre-shutdown time, non-admin control; ServiceBase
+└── tools/                  # apps, not the core library: a UI plus its API each — run directly or import to orchestrate; need the [tools] extra (region_setup: [cv])
     ├── env_path_editor/        [UI: ipywidgets] (Windows) — view/check/edit the User and System PATH, with backup
     │   └── env_path_editor.py        # py:percent UI; API in __init__.py (e.g. update_user_path)
     ├── launcher.py             [UI: ipywidgets] — one button per tool folder with a tool.toml (name, entry, description); embedded by work_dir/tools_launcher.py
@@ -72,7 +75,7 @@ utils/
     ├── region_setup.py         [requires: opencv-python, numpy, tkinter] — ADB screen region selector
     └── task_scheduler/         [requires: pywin32; UI: ipywidgets] (Windows) — add/list/enable/disable/run/stop/remove scheduled tasks
         ├── task_scheduler.py         # py:percent UI; API in __init__.py (e.g. add_python_script)
-        └── _elevated.py              # elevated helper: a UAC prompt only for changes that need administrator rights
+        └── _elevated.py              # the calls the elevated helper (standalone/elevate_utils) may make: a UAC prompt only for changes that need administrator rights
 ```
 
 ## Usage
@@ -101,6 +104,8 @@ from utils.standalone.sqlite_utils import SQLite
 from utils.standalone.ui_utils import UIUtils
 from utils.standalone.widget_utils import Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, WidgetStdout, FileBrowser, build_lib_demo_widget  # Jupyter only
 from utils.standalone.win_automation_utils import WindowManager, InputSimulator, WindowPos, WindowSize, MousePos, WindowInfo  # Windows only
+from utils.standalone import win_service_utils as ws                     # Windows only: ws.install(...), ws.start(...), ws.ServiceBase
+from utils.standalone import elevate_utils                               # Windows only: elevate_utils.call(module, requests, description)
 
 # Tools — import to orchestrate, or run directly
 from utils.tools.region_setup import RegionSetupTool

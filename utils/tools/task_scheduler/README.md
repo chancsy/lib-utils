@@ -12,7 +12,7 @@ Requires pywin32; the UI also needs ipywidgets. Windows only.
 |---|---|
 | `__init__.py` | API summary and `add_python_script()` |
 | `_winsched.py` | Task Scheduler COM API (`Schedule.Service`): register, list, change, delete; triggers; errors |
-| `_elevated.py` | Elevated helper: one UAC prompt for a batch of changes |
+| `_elevated.py` | The calls the elevated helper may make for this tool (`OPS`, `run_op`); the helper is the shared `utils/standalone/elevate_utils.py` |
 | `task_scheduler.py` | UI (jupytext py:percent); `show_gui(folder)` returns the widget |
 | `tool.toml` | Manifest for the lib-utils tools launcher |
 
@@ -103,11 +103,11 @@ Running a task registered with administrator rights (`run_task`) doesn't need th
 - **`True`:** always the helper.
 - **`False`:** never; the access denied error is raised instead.
 
-**The elevated helper (`_elevated.py`):**
+**The elevated helper** (the shared [`utils/standalone/elevate_utils.py`](../../standalone/elevate_utils.py), also used by `win_service_utils`; `_elevated.py` lists the calls it may make for this tool):
 - **Start:** it runs with the same interpreter (pythonw.exe if present, so no console window), via "run as administrator", which shows the UAC prompt.
 - **One prompt per batch.**
 - **Command line:**
-  - a plain description of the change, e.g. `Disable \Tests\a, \Tests\b`, followed by the request as readable JSON (`"op": "register_task"`, `"logon": "password"`, the command, ...);
+  - a plain description of the change, e.g. `Disable \Tests\a, \Tests\b`, followed by the module whose calls it makes (`utils.tools.task_scheduler._elevated`) and the request as readable JSON (`"op": "register_task"`, `"logon": "password"`, the command, ...);
   - the prompt's "Show more details" shows all of it under "Program location";
   - it is fixed once the prompt is shown;
   - it never holds a password: for logon `password` the helper asks for it in its own password dialog. So an elevated registration refuses a `password=` argument.
