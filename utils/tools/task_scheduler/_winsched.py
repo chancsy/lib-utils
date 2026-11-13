@@ -2,7 +2,6 @@
 run / stop, export and delete tasks. Only the basic settings are covered; see __init__.py for the API summary."""
 from __future__ import annotations
 
-import ctypes
 import datetime as _dt
 import re
 from contextlib import contextmanager
@@ -12,7 +11,9 @@ import pythoncom
 import pywintypes
 import win32api
 import win32com.client
-import win32con
+
+from ...standalone import elevate_utils as _elevate
+from ...standalone.elevate_utils import current_user, is_admin  # noqa: F401 - part of this package's API
 
 ROOT = '\\'
 
@@ -89,37 +90,14 @@ def _com(what: str):
         raise TaskSchedulerError(f'{what}: {text} (0x{code:08X})', code) from None
 
 
-def is_admin() -> bool:
-    """True if this process runs as administrator (elevated)."""
-    try:
-        return bool(ctypes.windll.shell32.IsUserAnAdmin())
-    except OSError:
-        return False
-
-
-def current_user() -> str:
-    r"""This process's account as DOMAIN\user."""
-    return win32api.GetUserNameEx(win32con.NameSamCompatible)
-
-
 def ask_password(user: str, task_path: str = '', retry: bool = False) -> str:
     """The Windows password dialog for `user` (user name fixed, nothing saved); TaskSchedulerError 1223 if cancelled."""
-    import win32cred
-    flags = (win32cred.CREDUI_FLAGS_GENERIC_CREDENTIALS | win32cred.CREDUI_FLAGS_DO_NOT_PERSIST
-             | win32cred.CREDUI_FLAGS_ALWAYS_SHOW_UI | win32cred.CREDUI_FLAGS_KEEP_USERNAME
-             | win32cred.CREDUI_FLAGS_EXCLUDE_CERTIFICATES | (win32cred.CREDUI_FLAGS_INCORRECT_PASSWORD if retry else 0))
-    info = {'CaptionText': 'Task Scheduler',
-            'MessageText': (f'Wrong password - try again.\n\n' if retry else '') +
-                           f'Password of {user}, to run {task_path or "the task"} whether the user is logged on or '
-                           'not. Windows keeps it with the task.'}
     try:
-        _, password, _ = win32cred.CredUIPromptForCredentials('Task Scheduler', 1326 if retry else 0, user, None,
-                                                              False, flags, info)
-    except pywintypes.error as e:
-        if e.winerror == 1223:
-            raise TaskSchedulerError('Password dialog cancelled - nothing changed', 1223) from None
-        raise TaskSchedulerError(f'Password dialog: {e.strerror}', e.winerror) from None
-    return password
+        return _elevate.ask_password(user, 'Task Scheduler',
+                                     f'Password of {user}, to run {task_path or "the task"} whether the user is logged '
+                                     'on or not. Windows keeps it with the task.', retry)
+    except _elevate.ElevationError as e:
+        raise TaskSchedulerError(str(e), e.code) from None
 
 
 def needs_admin(triggers=(), logon: str = '', run_level: str = '') -> bool:
