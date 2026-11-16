@@ -14,6 +14,7 @@ Typical usage::
 Standalone file utilities:
 
 - ``new_log()``   — Generate a timestamped log file path.
+- ``latest_log()`` — The newest date-named log in a folder.
 - ``add_lines()`` — Append a line of text to a file.
 """
 
@@ -46,6 +47,26 @@ def new_log(outputdir_path='.', prefix='', seconds=True):
     time_stamp = utils.get_datetimestamp(style=2) if seconds else utils.get_datestamp(style=0)
     filename_prefix = f'{prefix}_' if prefix else ''
     return os.path.join(outputdir_path, f'{filename_prefix}{time_stamp}.log')
+
+
+def latest_log(outputdir_path, prefix=''):
+    """The newest date-named log in a folder, as ``new_log(seconds=False)`` names them.
+
+    Only ``<prefix>_YYYY-MM-DD.log`` counts, so e.g. ``PrintLog_2026-10-27_Combined.log``
+    is never picked.
+
+    Args:
+        outputdir_path: Folder to look in.
+        prefix: Filename prefix (e.g. ``'PrintLog'``).
+
+    Returns:
+        Full path of the newest such file, or None if there is none (or no folder).
+    """
+    if not os.path.isdir(outputdir_path):
+        return None
+    name_re = re.compile(rf'{re.escape(prefix + "_" if prefix else "")}\d{{4}}-\d{{2}}-\d{{2}}\.log', re.IGNORECASE)
+    names = sorted(n for n in os.listdir(outputdir_path) if name_re.fullmatch(n))
+    return os.path.join(outputdir_path, names[-1]) if names else None
 
 
 def add_lines(filepath, text):
@@ -125,6 +146,8 @@ class PrintLogger:
       console output while still writing to the log file.
     - Calling ``start()`` while a session is active automatically ends the previous
       session first (useful for switching log directories mid-test).
+    - ``resume=True`` continues an earlier file instead of starting today's, so a test
+      that switches folders, or restarts, keeps one file per folder across days.
 
     Attributes:
         log_file (str): Path to the active log file, or empty string if inactive.
@@ -136,14 +159,18 @@ class PrintLogger:
         self.is_active = False
         self._orig_stdout = None
         self._file_handle = None
+        self._dir_files = {}  # folder (normalised) -> the file this logger last wrote there
 
-    def start(self, logfile_directory_path, add_datetimestamp=True, hide_stdout=False):
+    def start(self, logfile_directory_path, add_datetimestamp=True, hide_stdout=False, resume=False):
         """Begin a logging session.
 
         Args:
             logfile_directory_path: Directory where the log file will be created.
             add_datetimestamp: If True, prefix each ``print()`` line with a datetime stamp.
             hide_stdout: If True, suppress all console output while still writing to disk.
+            resume: False (default): log to ``PrintLog_<today>.log`` (appended to if it exists).
+                True: continue the file this process last logged to in that folder; if none,
+                the newest ``PrintLog_YYYY-MM-DD.log`` there; if none, today's new file.
 
         Returns:
             str: Path to the log file being written to.
@@ -151,7 +178,15 @@ class PrintLogger:
         if self.is_active:
             self.stop()
 
-        self.log_file = new_log(logfile_directory_path, prefix='PrintLog', seconds=False)
+        folder = os.path.normcase(os.path.abspath(logfile_directory_path))
+        log_file = None
+        if resume:
+            log_file = self._dir_files.get(folder) or latest_log(logfile_directory_path, prefix='PrintLog')
+        if log_file is None:
+            log_file = new_log(logfile_directory_path, prefix='PrintLog', seconds=False)
+        os.makedirs(os.path.dirname(os.path.abspath(log_file)), exist_ok=True)
+        self.log_file = log_file
+        self._dir_files[folder] = log_file
         self._file_handle = open(self.log_file, 'a', encoding='utf-8')
 
         self._orig_stdout = sys.stdout
@@ -193,7 +228,7 @@ _print_logger = PrintLogger()
 """Module-level ``PrintLogger`` instance used by the convenience functions below."""
 
 
-def print_logging_start(logfile_directory_path, add_datetimestamp=True, hide_stdout=False):
+def print_logging_start(logfile_directory_path, add_datetimestamp=True, hide_stdout=False, resume=False):
     """Begin a logging session that captures ``print()`` output to disk.
 
     Wrapper around :meth:`PrintLogger.start`.  Multiple calls without a
@@ -204,11 +239,13 @@ def print_logging_start(logfile_directory_path, add_datetimestamp=True, hide_std
         logfile_directory_path: Directory where the timestamped log file will be created.
         add_datetimestamp: Prefix each log line with a datetime stamp (default True).
         hide_stdout: If True, suppress console output while still writing to file.
+        resume: True to continue the earlier file in that folder instead of today's
+            (see :meth:`PrintLogger.start`).
 
     Returns:
         str: Path to the log file being written to.
     """
-    return _print_logger.start(logfile_directory_path, add_datetimestamp, hide_stdout)
+    return _print_logger.start(logfile_directory_path, add_datetimestamp, hide_stdout, resume)
 
 
 def print_logging_end():

@@ -93,7 +93,7 @@ utils.uint16_to_bytes(1234, endian='BE')
 from utils.standalone.clipboard_utils import Clipboard
 from utils.standalone.cryptography_utils import Cryptography
 from utils.standalone.electronics_utils import Electronics
-from utils.standalone.log_actions import PrintLogger, print_logging_start, print_logging_end, new_log, add_lines
+from utils.standalone.log_actions import PrintLogger, print_logging_start, print_logging_end, new_log, latest_log, add_lines
 from utils.standalone.math_utils import MathUtils, EquationSolver, IntegerLimits
 from utils.standalone.pdf_utils import PdfUtils
 from utils.standalone.selenium_utils import SeleniumUtils
