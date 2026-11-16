@@ -1,0 +1,3 @@
+name        = "PDM File Downloader"
+entry       = "utils.tools.pdm_file_downloader.pdm_file_downloader:show_gui"
+description = "Search a SolidWorks PDM vault by item name and download copies of the selected files"

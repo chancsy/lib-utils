@@ -162,6 +162,11 @@ class SolidWorksPDM:
     def __exit__(self, *_):
         self.disconnect()
 
+    def root_folder(self) -> str:
+        """Local path of the vault's root folder (the vault view), e.g. ``r'C:\\PDM Vault'``."""
+        self._require_connection()
+        return self._client.RootFolderPath
+
     # ------------------------------------------------------------------
     # Directory listing
     # ------------------------------------------------------------------

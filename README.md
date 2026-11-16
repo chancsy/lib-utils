@@ -69,6 +69,8 @@ utils/
     ├── env_path_editor/        [UI: ipywidgets] (Windows) — view/check/edit the User and System PATH, with backup
     │   └── env_path_editor.py        # py:percent UI; API in __init__.py (e.g. update_user_path)
     ├── launcher.py             [UI: ipywidgets] — one button per tool folder with a tool.toml (name, entry, description); embedded by another project's tools_launcher.py
+    ├── pdm_file_downloader/    [requires: pywin32, SolidWorks PDM client; UI: ipywidgets] (Windows) — search a PDM vault by item name, filter / sort, download copies; without the PDM client only a warning + "Show UI anyway"
+    │   └── pdm_file_downloader.py    # py:percent UI, show_gui(**kwargs): vault, look_in, dest; API in __init__.py (pdm_missing, is_markup, download_files)
     ├── portable_apps_manager/[requires: requests, truststore, ipywidgets; 7-Zip for .7z assets] (Windows) — deploy/track/update portable apps from GitHub releases or download URLs
     │   ├── portable_apps_manager.py  # py:percent UI; registry is <root>/portable_apps.ini, install manifests in <root>/portable_apps.manifests/
     │   └── apps_catalog.ini          # shared recipes: how each app is best tracked (Add → From catalog)
@@ -112,6 +114,8 @@ from utils.tools.region_setup import RegionSetupTool
 from utils.tools.launcher import show_gui, discover_tools                        # all tools with a tool.toml
 from utils.tools.env_path_editor.env_path_editor import show_gui                # Jupyter: display(show_gui())
 from utils.tools.env_path_editor import update_user_path, add_user_path, in_path  # no UI
+from utils.tools.pdm_file_downloader.pdm_file_downloader import show_gui        # Jupyter: display(show_gui(look_in=r'C:\PDM Vault\Projects'))
+from utils.tools.pdm_file_downloader import pdm_missing, is_markup, download_files  # no UI
 from utils.tools.portable_apps_manager.portable_apps_manager import show_gui    # Jupyter: display(show_gui())
 from utils.tools.portable_apps_manager import AppsConfig, check, prepare, finish  # same steps, no UI
 from utils.tools.task_scheduler.task_scheduler import show_gui                  # Jupyter: display(show_gui())
