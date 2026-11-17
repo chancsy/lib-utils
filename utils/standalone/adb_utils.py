@@ -152,9 +152,61 @@ class AdbUtils:
 
     def get_hardware_serial(self):
         """The device's own serial (ro.serialno) - the same over USB and Wi-Fi, unlike the adb
-        serial ('host:port' over Wi-Fi). Falls back to the adb serial if the property is empty."""
-        out = self._run('shell', 'getprop', 'ro.serialno').strip()
-        return out or self.device
+        serial ('host:port' over Wi-Fi). Falls back to the adb serial if the property is empty.
+        Cached per adb serial (it never changes for one), so repeated calls cost no adb round trip."""
+        cache = self.__dict__.setdefault('_hw_serials', {})
+        if self.device not in cache:
+            out = self._run('shell', 'getprop', 'ro.serialno').strip()
+            if not out:
+                return self.device   # not cached: may be a transient failure
+            cache[self.device] = out
+        return cache[self.device]
+
+    def pick_device(self, devices=None):
+        """Choose a device among `devices` (default: get_devices()) and set it as current; returns
+        its serial, or None if there are none.
+
+        USB before Wi-Fi (lower latency), else adb's order. A paired Wireless debugging device is
+        listed twice once adb auto-connects it ('host:port' and 'adb-<id>._adb-tls-connect._tcp'),
+        so this warns only when the serials belong to different devices (by get_hardware_serial()).
+        """
+        devices = self.get_devices() if devices is None else list(devices)
+        if not devices:
+            return None
+        if len(devices) > 1:
+            hw = set()
+            for s in devices:
+                self.set_device(s)
+                hw.add(self.get_hardware_serial())
+            pick = sorted(devices, key=self.is_wireless)[0]   # stable: USB first
+            if len(hw) > 1:
+                print(f'Several devices attached: {devices} - using {pick} '
+                      '(unplug the others, or connect to one explicitly).')
+        else:
+            pick = devices[0]
+        self.set_device(pick)
+        return pick
+
+    def reconnect_wireless(self, saved=None):
+        """Reconnect a Wi-Fi device: `saved` ('host:port', e.g. from your config) first, then each
+        Wireless debugging device advertised over mDNS (its port changes every time Wireless
+        debugging is turned on; only devices paired with this PC accept). Sets and returns the
+        serial, or None. Store the returned address if it differs from `saved`."""
+        if saved:
+            print(f'Reconnecting over Wi-Fi to {saved}...')
+            serial = self.connect(saved)
+            if serial:
+                self.set_device(serial)
+                return serial
+        for name, service, address in self.mdns_services():
+            if not service.startswith('_adb-tls-connect'):
+                continue
+            print(f'Trying Wireless debugging device {name} at {address}...')
+            serial = self.connect(address)
+            if serial:
+                self.set_device(serial)
+                return serial
+        return None
 
     # Android SDK level as int (e.g. 34); None if unparsable
     def get_api_level(self):
@@ -327,6 +379,10 @@ class AdbUtils:
         ]},
         {'key': 'n', 'name': 'mDNS Services', 'function': 'mdns_services', 'inputs': []},
         {'key': 'o', 'name': 'Disconnect Wi-Fi', 'function': 'disconnect', 'inputs': []},
+        {'key': 'p', 'name': 'Pick Device (USB first, duplicates merged)', 'function': 'pick_device', 'inputs': []},
+        {'key': 'r', 'name': 'Reconnect Wi-Fi (saved, then mDNS)', 'function': 'reconnect_wireless', 'inputs': [
+            {'label': 'Saved host:port', 'name': 'saved', 'type': str, 'default': '', 'width': '180px'},
+        ]},
         {'key': 'c', 'name': 'Save Screenshot', 'function': 'save_screenshot', 'inputs': [
             {'label': 'Output path', 'name': 'path', 'type': str, 'default': 'screenshot.png', 'width': '200px'},
         ]},
