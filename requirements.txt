@@ -50,6 +50,9 @@ eseries>=1.2
 matplotlib>=3.10
 ipympl>=0.9
 
+# [qr]  (+ Pillow, listed under [pillow])
+pyzbar>=0.1.9
+
 # [win] — Windows only
 pywin32>=311
 pygetwindow>=0.0.9

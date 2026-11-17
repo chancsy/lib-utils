@@ -55,6 +55,7 @@ utils/
 │   ├── math_utils.py           [requires: numpy, sympy]
 │   ├── matplotlib_utils.py     [requires: matplotlib, ipympl] (LivePlot: Jupyter only)
 │   ├── pdf_utils.py            [requires: pikepdf]
+│   ├── qr_utils.py             [requires: pyzbar, Pillow]
 │   ├── selenium_utils.py       [requires: selenium, webdriver_manager]
 │   ├── slack_utils.py          [requires: slack_sdk]
 │   ├── solidworks_pdm_utils.py [requires: pywin32] (Windows only — SolidWorks PDM must be installed)
@@ -86,6 +87,7 @@ from utils.standalone.log_actions import PrintLogger, print_logging_start, print
 from utils.standalone.math_utils import MathUtils, EquationSolver, IntegerLimits
 from utils.standalone.matplotlib_utils import LivePlot, XY_Data                     # LivePlot: Jupyter only
 from utils.standalone.pdf_utils import PdfUtils
+from utils.standalone.qr_utils import QRUtils
 from utils.standalone.selenium_utils import SeleniumUtils
 from utils.standalone.slack_utils import SlackUtils
 from utils.standalone.solidworks_pdm_utils import SolidWorksPDM          # Windows only

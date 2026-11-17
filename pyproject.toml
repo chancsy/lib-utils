@@ -82,6 +82,12 @@ plot = [
     "ipympl>=0.9",
 ]
 
+# pip install "lib-utils[qr]"
+qr = [
+    "pyzbar>=0.1.9",
+    "Pillow>=12.0",
+]
+
 # pip install "lib-utils[win]"  (Windows only)
 win = [
     "pywin32>=311",
@@ -106,6 +112,7 @@ all = [
     "lib-utils[selenium]",
     "lib-utils[math]",
     "lib-utils[plot]",
+    "lib-utils[qr]",
 ]
 
 [tool.setuptools.packages.find]
