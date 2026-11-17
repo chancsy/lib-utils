@@ -107,23 +107,29 @@ class UtilityTimeMixin:
                 return None
         return None
 
-    # start..end inclusive, stepping by 'day' / 'month' / 'year' (anything else never ends); datetimes, or str with return_as_str
+    # start..end inclusive by 'day' / 'month' / 'year' (month-end clamped: Jan 31 -> Feb 28); datetimes, or str if return_as_str
     def get_date_range(self, start_date_str, end_date_str, date_format='%Y-%m-%d', increment='day', return_as_str=False):
+            if increment not in ('day', 'month', 'year'):
+                raise ValueError(f"increment must be 'day', 'month' or 'year', not {increment!r}")
             start_date = datetime.strptime(start_date_str, date_format)
             end_date = datetime.strptime(end_date_str, date_format)
             date_list = []
             current_date = start_date
+            step = 0
             while current_date <= end_date:
                 date_list.append(current_date)
+                step += 1
                 if increment == 'day':
-                    current_date += timedelta(days=1)
-                elif increment == 'month':
-                    if current_date.month == 12:
-                        current_date = current_date.replace(year=current_date.year + 1, month=1)
-                    else:
-                        current_date = current_date.replace(month=current_date.month + 1)
-                elif increment == 'year':
-                    current_date = current_date.replace(year=current_date.year + 1)
+                    current_date = start_date + timedelta(days=step)
+                else:
+                    # n months / years from the start date (not from the previous date, so the day doesn't drift
+                    # down after a short month), clamped to the target month's last day: Jan 31 -> Feb 28 -> Mar 31
+                    months = step if increment == 'month' else 12 * step
+                    year, month_index = divmod(start_date.month - 1 + months, 12)
+                    year += start_date.year
+                    month = month_index + 1
+                    day = min(start_date.day, calendar.monthrange(year, month)[1])
+                    current_date = start_date.replace(year=year, month=month, day=day)
             if return_as_str:
                 date_list = [date.strftime(date_format) for date in date_list]
             return date_list

@@ -289,9 +289,9 @@ L46     get_timestamp(time_now=None, style=None, time_delim='', show_ms=False, m
 L65     get_datestamp(time_now=None, style=None, date_delim='')  - 'YYYYMMDD' with date_delim; style 0 -> 'YYYY-MM-DD'
 L75     get_datetimestamp(time_now=None, style=None, date_delim='', date_time_delim='', time_delim='', show_ms=False, ms_delim='', ms_digits=3)  - Default 'YYYYMMDDHHMMSS'; style 0 'YYYY-MM-DD HH:MM:SS', 1 adds '.mmm', 2 'YYYY-MM-DD HH-MM-SS'
 L90     extract_date_from_string(string)  - First YYYYMM[DD] or YYYYH1/H2 in string -> datetime (no day: 1st; H2: Jul 1), else None; needs a non-digit…
-L111    get_date_range(start_date_str, end_date_str, date_format='%Y-%m-%d', increment='day', return_as_str=False)  - start..end inclusive, stepping by 'day' / 'month' / 'year' (anything else never ends); datetimes, or str with…
-L132    get_datetime_difference(start_time, end_time, output_format='seconds')  - end - start in 'seconds' / 'minutes' / 'hours' / 'days'; None if negative or not datetimes
-L253    seconds_to_time(seconds)  - -> (hours, minutes, seconds)
+L111    get_date_range(start_date_str, end_date_str, date_format='%Y-%m-%d', increment='day', return_as_str=False)  - start..end inclusive by 'day' / 'month' / 'year' (month-end clamped: Jan 31 -> Feb 28); datetimes, or str if…
+L138    get_datetime_difference(start_time, end_time, output_format='seconds')  - end - start in 'seconds' / 'minutes' / 'hours' / 'days'; None if negative or not datetimes
+L259    seconds_to_time(seconds)  - -> (hours, minutes, seconds)
 ```
 
 ## utils/_internal/util_web.py  [needs: IPython, requests, truststore]
