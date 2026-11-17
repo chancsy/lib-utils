@@ -154,7 +154,7 @@ def launch_scrcpy(window_title: str = 'scrcpy', exe: str | None = None, serial: 
         env = dict(os.environ, ADB=shutil.which(adb_path) or adb_path)
     print(f'Launching scrcpy: {scrcpy} (bitrate={video_bitrate}'
           + (f', adb={env["ADB"]}' if env else '') + ')...')
-    proc = subprocess.Popen(cmd, env=env)
+    proc = subprocess.Popen(cmd, env=env, stdin=subprocess.DEVNULL)   # don't share the caller's console input
 
     t0 = time.perf_counter()
     while time.perf_counter() - t0 < launch_timeout:

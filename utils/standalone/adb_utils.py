@@ -36,7 +36,9 @@ class AdbUtils:
         if self.device:
             cmd += ['-s', self.device]
         cmd += list(args)
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # stdin=DEVNULL: `adb shell` reads stdin, and would otherwise swallow the caller's console
+        # input (keys typed during the call, or piped answers to a later input())
+        process = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, _ = process.communicate()
         if binary:
             return stdout
@@ -62,7 +64,7 @@ class AdbUtils:
     # adb server-level command (no -s); stdout + stderr text, as connect / pair report errors on either
     def _run_host(self, *args, timeout=20):
         try:
-            r = subprocess.run([self.adb_path, *args], capture_output=True, timeout=timeout)
+            r = subprocess.run([self.adb_path, *args], stdin=subprocess.DEVNULL, capture_output=True, timeout=timeout)
         except subprocess.TimeoutExpired:
             return f'timed out after {timeout}s'
         return (r.stdout + r.stderr).decode('utf-8', errors='replace').strip()

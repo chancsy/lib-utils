@@ -319,28 +319,28 @@ L250    display_img(img)  - Display raw image bytes inline in a Jupyter notebook
 ## utils/standalone/adb_utils.py  [needs: cv2, numpy]
 ```
 L18   class AdbUtils(adb_path=None)
-L46     get_devices()  - Serials of connected devices in 'device' state (unauthorized / offline ones skipped)
-L57     set_device(serial)  - Send every later adb call to this serial (None: adb's only connected device)
-L71     @staticmethod is_wireless(serial)  - True for a Wi-Fi serial: 'host:port', or an mDNS one ('adb-<id>._adb-tls-connect._tcp').
-L75     connect(address, port=5555, wait=5.0)  - Connect to a device over Wi-Fi; returns its serial ('host:port') once it's usable, else None.
-L97     disconnect(address=None)  - Disconnect a Wi-Fi device ('host:port'), or every Wi-Fi device when None; returns adb's message.
-L101    pair(address, code)  - Android 11+ Wireless debugging: pair with the 'host:port' and 6-digit code from the "Pair device with pairing…
-L111    mdns_services()  - Devices advertised over mDNS: list of (name, service, 'host:port').
-L123    get_wifi_ip()  - The current device's Wi-Fi IPv4 address, or None (Wi-Fi off / not found).
-L131    switch_to_wifi(port=5555)  - Move the current USB device to Wi-Fi: `adb tcpip <port>`, then connect() to its Wi-Fi IP.
-L151    get_hardware_serial()  - The device's own serial (ro.serialno) - the same over USB and Wi-Fi, unlike the adb serial ('host:port' over…
-L158    get_api_level()  - Android SDK level as int (e.g. 34); None if unparsable
-L179    get_current_activity_name()  - Focused 'package/activity' from dumpsys; None if not found (e.g. screen locked)
-L199    get_screen_size()  - (width, height) in px from `wm size`; None if unparsable
-L211    take_screenshot()  - Screen as a BGR numpy image (cv2); None on failure
-L223    save_screenshot(path='screenshot.png')  - take_screenshot + cv2.imwrite(path); returns the image (None on failure)
-L231    tap(x, y, jitter_px=10)  - Tap near (x, y) with a random +-jitter_px offset, clamped to the screen
-L241    tap_in_region(x1, y1, x2, y2, margin=0.25)  - Tap a random point in the box (x1, y1)-(x2, y2), margin (fraction) away from its edges
-L248    swipe(x1, y1, x2, y2, duration_ms=300)
-L258    list_latest_files(remote_dir, count=1, exclude_exts=None)  - Device paths of the newest count files in remote_dir (ls -t); [] if none or no access
-L270    pull_files(remote_paths, dest_dir, move=False)  - adb pull each path into dest_dir (~ expanded) -> local paths; move=True deletes them on the device
-L286    pull_latest_files(remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None)  - Pull the newest count files of remote_dir -> local paths ([] if none)
-L302    pull_latest_media_files(dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False)  - Pull the newest count photos / videos from the first common DCIM folder that has any
+L48     get_devices()  - Serials of connected devices in 'device' state (unauthorized / offline ones skipped)
+L59     set_device(serial)  - Send every later adb call to this serial (None: adb's only connected device)
+L73     @staticmethod is_wireless(serial)  - True for a Wi-Fi serial: 'host:port', or an mDNS one ('adb-<id>._adb-tls-connect._tcp').
+L77     connect(address, port=5555, wait=5.0)  - Connect to a device over Wi-Fi; returns its serial ('host:port') once it's usable, else None.
+L99     disconnect(address=None)  - Disconnect a Wi-Fi device ('host:port'), or every Wi-Fi device when None; returns adb's message.
+L103    pair(address, code)  - Android 11+ Wireless debugging: pair with the 'host:port' and 6-digit code from the "Pair device with pairing…
+L113    mdns_services()  - Devices advertised over mDNS: list of (name, service, 'host:port').
+L125    get_wifi_ip()  - The current device's Wi-Fi IPv4 address, or None (Wi-Fi off / not found).
+L133    switch_to_wifi(port=5555)  - Move the current USB device to Wi-Fi: `adb tcpip <port>`, then connect() to its Wi-Fi IP.
+L153    get_hardware_serial()  - The device's own serial (ro.serialno) - the same over USB and Wi-Fi, unlike the adb serial ('host:port' over…
+L160    get_api_level()  - Android SDK level as int (e.g. 34); None if unparsable
+L181    get_current_activity_name()  - Focused 'package/activity' from dumpsys; None if not found (e.g. screen locked)
+L201    get_screen_size()  - (width, height) in px from `wm size`; None if unparsable
+L213    take_screenshot()  - Screen as a BGR numpy image (cv2); None on failure
+L225    save_screenshot(path='screenshot.png')  - take_screenshot + cv2.imwrite(path); returns the image (None on failure)
+L233    tap(x, y, jitter_px=10)  - Tap near (x, y) with a random +-jitter_px offset, clamped to the screen
+L243    tap_in_region(x1, y1, x2, y2, margin=0.25)  - Tap a random point in the box (x1, y1)-(x2, y2), margin (fraction) away from its edges
+L250    swipe(x1, y1, x2, y2, duration_ms=300)
+L260    list_latest_files(remote_dir, count=1, exclude_exts=None)  - Device paths of the newest count files in remote_dir (ls -t); [] if none or no access
+L272    pull_files(remote_paths, dest_dir, move=False)  - adb pull each path into dest_dir (~ expanded) -> local paths; move=True deletes them on the device
+L288    pull_latest_files(remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None)  - Pull the newest count files of remote_dir -> local paths ([] if none)
+L304    pull_latest_media_files(dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False)  - Pull the newest count photos / videos from the first common DCIM folder that has any
 ```
 
 ## utils/standalone/clipboard_utils.py  [needs: pyperclip]
