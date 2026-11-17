@@ -29,44 +29,44 @@ utils/_internal/util_text.py  [stdlib]  L251-271  UtilityTextMixin
 utils/_internal/util_threads.py  [stdlib]  L273-276  UtilityThreadMixin
 utils/_internal/util_time.py  [stdlib]  L278-296  UtilityTimeMixin
 utils/_internal/util_web.py  [needs: IPython, requests, truststore]  L298-317  UtilityWebMixin
-utils/standalone/adb_utils.py  [needs: cv2, numpy]  L319-336  AdbUtils
-utils/standalone/clipboard_utils.py  [needs: pyperclip]  L338-343  Clipboard
-utils/standalone/cryptography_utils.py  [needs: cryptography]  L345-354  Cryptography
-utils/standalone/electronics_utils.py  [needs: eseries]  L356-367  Electronics
-utils/standalone/elevate_utils.py  [needs: pythoncom, pywintypes, win32api, win32com, win32con, win32cred, win32event, win32process]  L369-378  ElevationError, is_admin, current_user, ask_password, params, call  - On-demand elevation: run a batch of a module's own calls in a short-lived…
-utils/standalone/git_actions.py  [stdlib]  L380-400  git_clone_bare, git_fetch, git_fetch_all, git_last_commit_info, git_archive_zip, git_checkout, … (+11)  - Thin subprocess wrappers for driving git as an action against an arbitrary repo…
-utils/standalone/log_actions.py  [stdlib]  L402-414  new_log, latest_log, add_lines, PrintLogger, print_logging_start, print_logging_end, … (+1)  - Generic session-wide print() logging to disk.
-utils/standalone/math_utils.py  [needs: numpy, sympy]  L416-435  IntegerLimits, MathUtils, EquationSolver
-utils/standalone/pdf_utils.py  [needs: pikepdf]  L437-446  PdfUtils
-utils/standalone/playwright_actions.py  [needs: playwright]  L448-455  PlaywrightUtils
-utils/standalone/scrcpy_utils.py  [needs: cv2]  L457-469  find_scrcpy, scrcpy_adb, resolve_adb, ScrcpyCapture, launch_scrcpy  - scrcpy (Android screen mirroring) helpers: find scrcpy and the adb to pair with…
-utils/standalone/selenium_utils.py  [needs: selenium, webdriver_manager]  L471-486  SeleniumUtils
-utils/standalone/slack_utils.py  [needs: slack_sdk]  L488-493  SlackUtils
-utils/standalone/solidworks_pdm_utils.py  [needs: pythoncom, win32com]  L495-512  SolidWorksPDM  - SolidWorks PDM Vault utilities.
-utils/standalone/sql_utils.py  [needs: pandas, pyodbc]  L514-521  SQL
-utils/standalone/sqlite_utils.py  [stdlib]  L523-537  SQLite
-utils/standalone/ui_utils.py  [stdlib]  L539-547  UIUtils
-utils/standalone/widget_utils.py  [needs: IPython, ipywidgets]  L549-573  Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, build_lib_demo_widget, WidgetStdout, FileBrowser
-utils/standalone/win_automation_utils.py  [needs: cv2, mss, numpy, pyautogui, pycaw, pygetwindow, pynput, win32gui]  L575-599  WindowSize, WindowPos, MousePos, WindowInfo, WindowManager, InputSimulator
-utils/standalone/win_service_utils.py  [needs: pywintypes, servicemanager, win32api, win32con, win32security, win32service, win32serviceutil]  L601-635  ServiceError, set_notify, ServiceInfo, host_exe, dll_dirs, check_password, … (+17)  - Windows services in Python (pywin32, Windows only): install / uninstall, start…
-utils/tools/env_path_editor/__init__.py  [stdlib]  L637-644  in_path, update_user_path, add_user_path, remove_user_path  - Env Path Editor - view, check and edit the Windows User / System PATH.
-utils/tools/env_path_editor/_winpath.py  [stdlib]  L646-667  Scope, PathWriteError, is_admin, expand, normalize, EntryCheck, … (+11)
-utils/tools/env_path_editor/env_path_editor.py  [needs: IPython]  L669-674  EnvPathEditorGUI, show_gui  - Env Path Editor View, check and edit the Windows **User** and **System** PATH…
-utils/tools/launcher.py  [needs: IPython]  L676-683  ToolSpec, discover_tools, show_gui  - Find the tools under utils/tools and launch them from one widget (embedded by…
-utils/tools/pdm_file_downloader/__init__.py  [stdlib]  L685-691  pdm_missing, is_markup, download_files  - PDM File Downloader - search a SolidWorks PDM vault by file name and download…
-utils/tools/pdm_file_downloader/pdm_file_downloader.py  [needs: IPython]  L693-698  PdmFileDownloaderGUI, show_gui  - PDM File Downloader Search a SolidWorks PDM vault by item name (several at…
-utils/tools/portable_apps_manager/_catalog.py  [stdlib]  L700-706  CatalogEntry, load_catalog, recipe, save_to_catalog
-utils/tools/portable_apps_manager/_config.py  [stdlib]  L708-726  AppSpec, AppsConfig
-utils/tools/portable_apps_manager/_http.py  [needs: requests, truststore]  L728-731  PrerequisiteError
-utils/tools/portable_apps_manager/_installer.py  [needs: requests]  L733-741  InstallError, Plan
-utils/tools/portable_apps_manager/_manifest.py  [stdlib]  L743-747  Manifest
-utils/tools/portable_apps_manager/_sources.py  [needs: requests]  L749-762  SourceError, parse_repo, match_assets, suggest_name, suggest_pattern, UrlProbe, … (+3)
-utils/tools/portable_apps_manager/_updater.py  [stdlib]  L764-772  ManifestWriteError, check, prepare, finish, untrack, folder_missing
-utils/tools/portable_apps_manager/portable_apps_manager.py  [needs: IPython]  L774-779  PortableAppsGUI, show_gui  - Portable Apps Manager Deploy, track, update and remove portable Windows apps…
-utils/tools/region_setup.py  [needs: PIL, cv2, numpy]  L781-785  RegionSetupTool
-utils/tools/task_scheduler/__init__.py  [stdlib]  L787-792  default_python, add_python_script  - Task Scheduler - add, list, enable / disable, run / stop and remove Windows…
-utils/tools/task_scheduler/_winsched.py  [needs: pythoncom, pywintypes, win32api, win32com]  L794-823  TaskSchedulerError, ask_password, needs_admin, set_notify, result_text, Trigger, … (+18)
-utils/tools/task_scheduler/task_scheduler.py  [needs: IPython]  L825-830  TaskSchedulerGUI, show_gui  - Task Scheduler List, add, enable / disable, run, stop and remove Windows…
+utils/standalone/adb_utils.py  [needs: cv2, numpy]  L319-344  AdbUtils
+utils/standalone/clipboard_utils.py  [needs: pyperclip]  L346-351  Clipboard
+utils/standalone/cryptography_utils.py  [needs: cryptography]  L353-362  Cryptography
+utils/standalone/electronics_utils.py  [needs: eseries]  L364-375  Electronics
+utils/standalone/elevate_utils.py  [needs: pythoncom, pywintypes, win32api, win32com, win32con, win32cred, win32event, win32process]  L377-386  ElevationError, is_admin, current_user, ask_password, params, call  - On-demand elevation: run a batch of a module's own calls in a short-lived…
+utils/standalone/git_actions.py  [stdlib]  L388-408  git_clone_bare, git_fetch, git_fetch_all, git_last_commit_info, git_archive_zip, git_checkout, … (+11)  - Thin subprocess wrappers for driving git as an action against an arbitrary repo…
+utils/standalone/log_actions.py  [stdlib]  L410-422  new_log, latest_log, add_lines, PrintLogger, print_logging_start, print_logging_end, … (+1)  - Generic session-wide print() logging to disk.
+utils/standalone/math_utils.py  [needs: numpy, sympy]  L424-443  IntegerLimits, MathUtils, EquationSolver
+utils/standalone/pdf_utils.py  [needs: pikepdf]  L445-454  PdfUtils
+utils/standalone/playwright_actions.py  [needs: playwright]  L456-463  PlaywrightUtils
+utils/standalone/scrcpy_utils.py  [needs: cv2]  L465-477  find_scrcpy, scrcpy_adb, resolve_adb, ScrcpyCapture, launch_scrcpy  - scrcpy (Android screen mirroring) helpers: find scrcpy and the adb to pair with…
+utils/standalone/selenium_utils.py  [needs: selenium, webdriver_manager]  L479-494  SeleniumUtils
+utils/standalone/slack_utils.py  [needs: slack_sdk]  L496-501  SlackUtils
+utils/standalone/solidworks_pdm_utils.py  [needs: pythoncom, win32com]  L503-520  SolidWorksPDM  - SolidWorks PDM Vault utilities.
+utils/standalone/sql_utils.py  [needs: pandas, pyodbc]  L522-529  SQL
+utils/standalone/sqlite_utils.py  [stdlib]  L531-545  SQLite
+utils/standalone/ui_utils.py  [stdlib]  L547-555  UIUtils
+utils/standalone/widget_utils.py  [needs: IPython, ipywidgets]  L557-581  Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, build_lib_demo_widget, WidgetStdout, FileBrowser
+utils/standalone/win_automation_utils.py  [needs: cv2, mss, numpy, pyautogui, pycaw, pygetwindow, pynput, win32gui]  L583-607  WindowSize, WindowPos, MousePos, WindowInfo, WindowManager, InputSimulator
+utils/standalone/win_service_utils.py  [needs: pywintypes, servicemanager, win32api, win32con, win32security, win32service, win32serviceutil]  L609-643  ServiceError, set_notify, ServiceInfo, host_exe, dll_dirs, check_password, … (+17)  - Windows services in Python (pywin32, Windows only): install / uninstall, start…
+utils/tools/env_path_editor/__init__.py  [stdlib]  L645-652  in_path, update_user_path, add_user_path, remove_user_path  - Env Path Editor - view, check and edit the Windows User / System PATH.
+utils/tools/env_path_editor/_winpath.py  [stdlib]  L654-675  Scope, PathWriteError, is_admin, expand, normalize, EntryCheck, … (+11)
+utils/tools/env_path_editor/env_path_editor.py  [needs: IPython]  L677-682  EnvPathEditorGUI, show_gui  - Env Path Editor View, check and edit the Windows **User** and **System** PATH…
+utils/tools/launcher.py  [needs: IPython]  L684-691  ToolSpec, discover_tools, show_gui  - Find the tools under utils/tools and launch them from one widget (embedded by…
+utils/tools/pdm_file_downloader/__init__.py  [stdlib]  L693-699  pdm_missing, is_markup, download_files  - PDM File Downloader - search a SolidWorks PDM vault by file name and download…
+utils/tools/pdm_file_downloader/pdm_file_downloader.py  [needs: IPython]  L701-706  PdmFileDownloaderGUI, show_gui  - PDM File Downloader Search a SolidWorks PDM vault by item name (several at…
+utils/tools/portable_apps_manager/_catalog.py  [stdlib]  L708-714  CatalogEntry, load_catalog, recipe, save_to_catalog
+utils/tools/portable_apps_manager/_config.py  [stdlib]  L716-734  AppSpec, AppsConfig
+utils/tools/portable_apps_manager/_http.py  [needs: requests, truststore]  L736-739  PrerequisiteError
+utils/tools/portable_apps_manager/_installer.py  [needs: requests]  L741-749  InstallError, Plan
+utils/tools/portable_apps_manager/_manifest.py  [stdlib]  L751-755  Manifest
+utils/tools/portable_apps_manager/_sources.py  [needs: requests]  L757-770  SourceError, parse_repo, match_assets, suggest_name, suggest_pattern, UrlProbe, … (+3)
+utils/tools/portable_apps_manager/_updater.py  [stdlib]  L772-780  ManifestWriteError, check, prepare, finish, untrack, folder_missing
+utils/tools/portable_apps_manager/portable_apps_manager.py  [needs: IPython]  L782-787  PortableAppsGUI, show_gui  - Portable Apps Manager Deploy, track, update and remove portable Windows apps…
+utils/tools/region_setup.py  [needs: PIL, cv2, numpy]  L789-793  RegionSetupTool
+utils/tools/task_scheduler/__init__.py  [stdlib]  L795-800  default_python, add_python_script  - Task Scheduler - add, list, enable / disable, run / stop and remove Windows…
+utils/tools/task_scheduler/_winsched.py  [needs: pythoncom, pywintypes, win32api, win32com]  L802-831  TaskSchedulerError, ask_password, needs_admin, set_notify, result_text, Trigger, … (+18)
+utils/tools/task_scheduler/task_scheduler.py  [needs: IPython]  L833-838  TaskSchedulerGUI, show_gui  - Task Scheduler List, add, enable / disable, run, stop and remove Windows…
 ```
 
 ## utils/utilities.py  [stdlib]
@@ -318,21 +318,29 @@ L250    display_img(img)  - Display raw image bytes inline in a Jupyter notebook
 
 ## utils/standalone/adb_utils.py  [needs: cv2, numpy]
 ```
-L17   class AdbUtils(adb_path=None)
-L45     get_devices()  - Serials of connected devices in 'device' state (unauthorized / offline ones skipped)
-L56     set_device(serial)  - Send every later adb call to this serial (None: adb's only connected device)
-L60     get_api_level()  - Android SDK level as int (e.g. 34); None if unparsable
-L81     get_current_activity_name()  - Focused 'package/activity' from dumpsys; None if not found (e.g. screen locked)
-L101    get_screen_size()  - (width, height) in px from `wm size`; None if unparsable
-L113    take_screenshot()  - Screen as a BGR numpy image (cv2); None on failure
-L125    save_screenshot(path='screenshot.png')  - take_screenshot + cv2.imwrite(path); returns the image (None on failure)
-L133    tap(x, y, jitter_px=10)  - Tap near (x, y) with a random +-jitter_px offset, clamped to the screen
-L143    tap_in_region(x1, y1, x2, y2, margin=0.25)  - Tap a random point in the box (x1, y1)-(x2, y2), margin (fraction) away from its edges
-L150    swipe(x1, y1, x2, y2, duration_ms=300)
-L160    list_latest_files(remote_dir, count=1, exclude_exts=None)  - Device paths of the newest count files in remote_dir (ls -t); [] if none or no access
-L172    pull_files(remote_paths, dest_dir, move=False)  - adb pull each path into dest_dir (~ expanded) -> local paths; move=True deletes them on the device
-L188    pull_latest_files(remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None)  - Pull the newest count files of remote_dir -> local paths ([] if none)
-L204    pull_latest_media_files(dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False)  - Pull the newest count photos / videos from the first common DCIM folder that has any
+L18   class AdbUtils(adb_path=None)
+L46     get_devices()  - Serials of connected devices in 'device' state (unauthorized / offline ones skipped)
+L57     set_device(serial)  - Send every later adb call to this serial (None: adb's only connected device)
+L71     @staticmethod is_wireless(serial)  - True for a Wi-Fi serial: 'host:port', or an mDNS one ('adb-<id>._adb-tls-connect._tcp').
+L75     connect(address, port=5555, wait=5.0)  - Connect to a device over Wi-Fi; returns its serial ('host:port') once it's usable, else None.
+L97     disconnect(address=None)  - Disconnect a Wi-Fi device ('host:port'), or every Wi-Fi device when None; returns adb's message.
+L101    pair(address, code)  - Android 11+ Wireless debugging: pair with the 'host:port' and 6-digit code from the "Pair device with pairing…
+L111    mdns_services()  - Devices advertised over mDNS: list of (name, service, 'host:port').
+L123    get_wifi_ip()  - The current device's Wi-Fi IPv4 address, or None (Wi-Fi off / not found).
+L131    switch_to_wifi(port=5555)  - Move the current USB device to Wi-Fi: `adb tcpip <port>`, then connect() to its Wi-Fi IP.
+L151    get_hardware_serial()  - The device's own serial (ro.serialno) - the same over USB and Wi-Fi, unlike the adb serial ('host:port' over…
+L158    get_api_level()  - Android SDK level as int (e.g. 34); None if unparsable
+L179    get_current_activity_name()  - Focused 'package/activity' from dumpsys; None if not found (e.g. screen locked)
+L199    get_screen_size()  - (width, height) in px from `wm size`; None if unparsable
+L211    take_screenshot()  - Screen as a BGR numpy image (cv2); None on failure
+L223    save_screenshot(path='screenshot.png')  - take_screenshot + cv2.imwrite(path); returns the image (None on failure)
+L231    tap(x, y, jitter_px=10)  - Tap near (x, y) with a random +-jitter_px offset, clamped to the screen
+L241    tap_in_region(x1, y1, x2, y2, margin=0.25)  - Tap a random point in the box (x1, y1)-(x2, y2), margin (fraction) away from its edges
+L248    swipe(x1, y1, x2, y2, duration_ms=300)
+L258    list_latest_files(remote_dir, count=1, exclude_exts=None)  - Device paths of the newest count files in remote_dir (ls -t); [] if none or no access
+L270    pull_files(remote_paths, dest_dir, move=False)  - adb pull each path into dest_dir (~ expanded) -> local paths; move=True deletes them on the device
+L286    pull_latest_files(remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None)  - Pull the newest count files of remote_dir -> local paths ([] if none)
+L302    pull_latest_media_files(dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False)  - Pull the newest count photos / videos from the first common DCIM folder that has any
 ```
 
 ## utils/standalone/clipboard_utils.py  [needs: pyperclip]

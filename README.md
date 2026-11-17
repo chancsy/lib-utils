@@ -50,6 +50,7 @@ utils/
 │   ├── util_time.py        # timing, timestamps, IntervalTimer
 │   └── util_web.py         # urllib download helpers, webhook
 ├── standalone/             # optional modules — import explicitly, check deps at load time
+│   ├── adb_utils.py            [requires: opencv-python, numpy] — Android over adb: screenshot, tap, swipe, pull files; Wi-Fi: connect, pair (Android 11+), mDNS discovery, switch a USB device to Wi-Fi
 │   ├── clipboard_utils.py      [requires: pyperclip]
 │   ├── cryptography_utils.py   [requires: cryptography]
 │   ├── electronics_utils.py    [requires: eseries, sympy]
@@ -94,6 +95,7 @@ utils.interpolate(12, [4, 20], [0, 100])   # → 50.0
 utils.uint16_to_bytes(1234, endian='BE')
 
 # Standalone modules — import explicitly
+from utils.standalone.adb_utils import AdbUtils                          # adb.connect('192.168.1.5:5555'), adb.switch_to_wifi()
 from utils.standalone.clipboard_utils import Clipboard
 from utils.standalone.cryptography_utils import Cryptography
 from utils.standalone.electronics_utils import Electronics

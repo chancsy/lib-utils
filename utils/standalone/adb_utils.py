@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import random
+import time
 import numpy as np
 
 
@@ -55,6 +56,103 @@ class AdbUtils:
     # Send every later adb call to this serial (None: adb's only connected device)
     def set_device(self, serial):
         self.device = serial
+
+    # --- Wireless (Wi-Fi) adb ---
+
+    # adb server-level command (no -s); stdout + stderr text, as connect / pair report errors on either
+    def _run_host(self, *args, timeout=20):
+        try:
+            r = subprocess.run([self.adb_path, *args], capture_output=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            return f'timed out after {timeout}s'
+        return (r.stdout + r.stderr).decode('utf-8', errors='replace').strip()
+
+    @staticmethod
+    def is_wireless(serial):
+        """True for a Wi-Fi serial: 'host:port', or an mDNS one ('adb-<id>._adb-tls-connect._tcp')."""
+        return bool(serial) and (':' in serial or '._adb-tls-connect.' in serial)
+
+    def connect(self, address, port=5555, wait=5.0):
+        """Connect to a device over Wi-Fi; returns its serial ('host:port') once it's usable, else None.
+
+        address: 'host' or 'host:port' (port defaults to 5555, the `adb tcpip` port). Android 11+
+        Wireless debugging uses the random port shown on its screen (pair first, see pair()).
+        Waits up to `wait` seconds for the device to leave the offline / unauthorized state.
+        """
+        if ':' not in address:
+            address = f'{address}:{port}'
+        out = self._run_host('connect', address, timeout=10)
+        if not out.startswith(('connected to', 'already connected to')):
+            print(f'connect: {out}')
+            return None
+        t0 = time.perf_counter()
+        while True:
+            if address in self.get_devices():
+                return address
+            if time.perf_counter() - t0 >= wait:
+                print(f'connect: {address} connected but not ready (unauthorized? accept the prompt on the device)')
+                return None
+            time.sleep(0.5)
+
+    def disconnect(self, address=None):
+        """Disconnect a Wi-Fi device ('host:port'), or every Wi-Fi device when None; returns adb's message."""
+        return self._run_host('disconnect', *([address] if address else []))
+
+    def pair(self, address, code):
+        """Android 11+ Wireless debugging: pair with the 'host:port' and 6-digit code from the
+        "Pair device with pairing code" dialog. Once per PC; then connect() to the port shown on the
+        Wireless debugging screen (not the pairing port). Returns True on success."""
+        out = self._run_host('pair', address, str(code))
+        ok = 'Successfully paired' in out
+        if not ok:
+            print(f'pair: {out}')
+        return ok
+
+    def mdns_services(self):
+        """Devices advertised over mDNS: list of (name, service, 'host:port').
+
+        '_adb-tls-connect._tcp' entries are Wireless debugging devices ready for connect()
+        (only devices already paired with this PC will accept)."""
+        services = []
+        for line in self._run_host('mdns', 'services').splitlines()[1:]:  # skip "List of discovered mdns services"
+            parts = line.split()
+            if len(parts) >= 3 and ':' in parts[-1]:
+                services.append((parts[0], parts[1], parts[-1]))
+        return services
+
+    def get_wifi_ip(self):
+        """The current device's Wi-Fi IPv4 address, or None (Wi-Fi off / not found)."""
+        out = self._run('shell', 'ip', '-f', 'inet', 'addr', 'show', 'wlan0')
+        m = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', out)
+        if not m:  # interface not named wlan0: take the source address of the default route
+            m = re.search(r'src (\d+\.\d+\.\d+\.\d+)', self._run('shell', 'ip', 'route'))
+        return m.group(1) if m else None
+
+    def switch_to_wifi(self, port=5555):
+        """Move the current USB device to Wi-Fi: `adb tcpip <port>`, then connect() to its Wi-Fi IP.
+
+        Works on any Android version; lasts until the device reboots. Returns the new serial
+        ('ip:port', also set as the current device) or None. The USB cable can then be unplugged.
+        """
+        ip = self.get_wifi_ip()
+        if ip is None:
+            print('switch_to_wifi: no Wi-Fi IP found - is the device on Wi-Fi?')
+            return None
+        out = self._run('tcpip', str(port))
+        if 'restarting' not in out:
+            print(f'switch_to_wifi: tcpip failed: {out}')
+            return None
+        time.sleep(2.0)  # adbd restarts in TCP mode
+        serial = self.connect(ip, port)
+        if serial:
+            self.set_device(serial)
+        return serial
+
+    def get_hardware_serial(self):
+        """The device's own serial (ro.serialno) - the same over USB and Wi-Fi, unlike the adb
+        serial ('host:port' over Wi-Fi). Falls back to the adb serial if the property is empty."""
+        out = self._run('shell', 'getprop', 'ro.serialno').strip()
+        return out or self.device
 
     # Android SDK level as int (e.g. 34); None if unparsable
     def get_api_level(self):
@@ -215,6 +313,18 @@ class AdbUtils:
         {'key': 'b', 'name': 'Get Screen Size', 'function': 'get_screen_size', 'inputs': []},
         {'key': 'i', 'name': 'Get Current Activity Name', 'function': 'get_current_activity_name', 'inputs': []},
         {'key': 'j', 'name': 'Get API Level', 'function': 'get_api_level', 'inputs': []},
+        {'key': 'k', 'name': 'Switch USB Device to Wi-Fi', 'function': 'switch_to_wifi', 'inputs': [
+            {'label': 'Port', 'name': 'port', 'type': int, 'default': 5555},
+        ]},
+        {'key': 'l', 'name': 'Connect over Wi-Fi', 'function': 'connect', 'inputs': [
+            {'label': 'host[:port]', 'name': 'address', 'type': str, 'default': '192.168.1.2:5555', 'width': '180px'},
+        ]},
+        {'key': 'm', 'name': 'Pair (Android 11+)', 'function': 'pair', 'inputs': [
+            {'label': 'host:port', 'name': 'address', 'type': str, 'default': '192.168.1.2:37000', 'width': '180px'},
+            {'label': 'Code', 'name': 'code', 'type': str, 'default': '', 'width': '90px'},
+        ]},
+        {'key': 'n', 'name': 'mDNS Services', 'function': 'mdns_services', 'inputs': []},
+        {'key': 'o', 'name': 'Disconnect Wi-Fi', 'function': 'disconnect', 'inputs': []},
         {'key': 'c', 'name': 'Save Screenshot', 'function': 'save_screenshot', 'inputs': [
             {'label': 'Output path', 'name': 'path', 'type': str, 'default': 'screenshot.png', 'width': '200px'},
         ]},
