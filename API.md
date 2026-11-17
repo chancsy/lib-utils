@@ -14,58 +14,59 @@ explicitly, e.g. `from utils.standalone.sqlite_utils import SQLite`.
 
 ## Contents (path  [deps]  API.md lines  top-level names)
 ```
-utils/utilities.py  [stdlib]  L71-89  UtilityFunctions, TestClass
-utils/_internal/util_binary.py  [stdlib]  L91-116  UtilityBinaryMixin
-utils/_internal/util_collections.py  [stdlib]  L118-126  UtilityCollectionsMixin
-utils/_internal/util_dataframe.py  [needs: pandas]  L128-135  UtilityDataFrameMixin
-utils/_internal/util_demo.py  [stdlib]  L137-146  resolve_demo_input, call_demo_function, UtilityDemoMixin  - Coerce a single raw user value (from CLI or widget) according to an inp-dict…
-utils/_internal/util_filesystem.py  [stdlib]  L148-171  UtilityFilesystemMixin
-utils/_internal/util_ipython.py  [needs: IPython]  L173-190  UtilityIPythonMixin
-utils/_internal/util_lan_monitor.py  [stdlib]  L192-202  LanMonitorClient, LanMonitorServer
-utils/_internal/util_output.py  [stdlib]  L204-215  TeeStringIO, UtilityOutputMixin
-utils/_internal/util_runtime.py  [needs: gitinfo, requests]  L217-242  UtilityRuntimeMixin
-utils/_internal/util_testing.py  [stdlib]  L244-248  UtilityTestingMixin
-utils/_internal/util_text.py  [stdlib]  L250-270  UtilityTextMixin
-utils/_internal/util_threads.py  [stdlib]  L272-275  UtilityThreadMixin
-utils/_internal/util_time.py  [stdlib]  L277-295  UtilityTimeMixin
-utils/_internal/util_web.py  [needs: IPython, requests, truststore]  L297-316  UtilityWebMixin
-utils/standalone/adb_utils.py  [needs: cv2, numpy]  L318-335  AdbUtils
-utils/standalone/clipboard_utils.py  [needs: pyperclip]  L337-342  Clipboard
-utils/standalone/cryptography_utils.py  [needs: cryptography]  L344-353  Cryptography
-utils/standalone/electronics_utils.py  [needs: eseries]  L355-366  Electronics
-utils/standalone/elevate_utils.py  [needs: pythoncom, pywintypes, win32api, win32com, win32con, win32cred, win32event, win32process]  L368-377  ElevationError, is_admin, current_user, ask_password, params, call  - On-demand elevation: run a batch of a module's own calls in a short-lived…
-utils/standalone/git_actions.py  [stdlib]  L379-399  git_clone_bare, git_fetch, git_fetch_all, git_last_commit_info, git_archive_zip, git_checkout, … (+11)  - Thin subprocess wrappers for driving git as an action against an arbitrary repo…
-utils/standalone/log_actions.py  [stdlib]  L401-413  new_log, latest_log, add_lines, PrintLogger, print_logging_start, print_logging_end, … (+1)  - Generic session-wide print() logging to disk.
-utils/standalone/math_utils.py  [needs: numpy, sympy]  L415-434  IntegerLimits, MathUtils, EquationSolver
-utils/standalone/pdf_utils.py  [needs: pikepdf]  L436-445  PdfUtils
-utils/standalone/playwright_actions.py  [needs: playwright]  L447-454  PlaywrightUtils
-utils/standalone/selenium_utils.py  [needs: selenium, webdriver_manager]  L456-471  SeleniumUtils
-utils/standalone/slack_utils.py  [needs: slack_sdk]  L473-478  SlackUtils
-utils/standalone/solidworks_pdm_utils.py  [needs: pythoncom, win32com]  L480-497  SolidWorksPDM  - SolidWorks PDM Vault utilities.
-utils/standalone/sql_utils.py  [needs: pandas, pyodbc]  L499-506  SQL
-utils/standalone/sqlite_utils.py  [stdlib]  L508-522  SQLite
-utils/standalone/ui_utils.py  [stdlib]  L524-532  UIUtils
-utils/standalone/widget_utils.py  [needs: IPython, ipywidgets]  L534-558  Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, build_lib_demo_widget, WidgetStdout, FileBrowser
-utils/standalone/win_automation_utils.py  [needs: cv2, mss, numpy, pyautogui, pycaw, pygetwindow, pynput, win32gui]  L560-584  WindowSize, WindowPos, MousePos, WindowInfo, WindowManager, InputSimulator
-utils/standalone/win_service_utils.py  [needs: pywintypes, servicemanager, win32api, win32con, win32security, win32service, win32serviceutil]  L586-620  ServiceError, set_notify, ServiceInfo, host_exe, dll_dirs, check_password, … (+17)  - Windows services in Python (pywin32, Windows only): install / uninstall, start…
-utils/tools/env_path_editor/__init__.py  [stdlib]  L622-629  in_path, update_user_path, add_user_path, remove_user_path  - Env Path Editor - view, check and edit the Windows User / System PATH.
-utils/tools/env_path_editor/_winpath.py  [stdlib]  L631-652  Scope, PathWriteError, is_admin, expand, normalize, EntryCheck, … (+11)
-utils/tools/env_path_editor/env_path_editor.py  [needs: IPython]  L654-659  EnvPathEditorGUI, show_gui  - Env Path Editor View, check and edit the Windows **User** and **System** PATH…
-utils/tools/launcher.py  [needs: IPython]  L661-668  ToolSpec, discover_tools, show_gui  - Find the tools under utils/tools and launch them from one widget (embedded by…
-utils/tools/pdm_file_downloader/__init__.py  [stdlib]  L670-676  pdm_missing, is_markup, download_files  - PDM File Downloader - search a SolidWorks PDM vault by file name and download…
-utils/tools/pdm_file_downloader/pdm_file_downloader.py  [needs: IPython]  L678-683  PdmFileDownloaderGUI, show_gui  - PDM File Downloader Search a SolidWorks PDM vault by item name (several at…
-utils/tools/portable_apps_manager/_catalog.py  [stdlib]  L685-691  CatalogEntry, load_catalog, recipe, save_to_catalog
-utils/tools/portable_apps_manager/_config.py  [stdlib]  L693-711  AppSpec, AppsConfig
-utils/tools/portable_apps_manager/_http.py  [needs: requests, truststore]  L713-716  PrerequisiteError
-utils/tools/portable_apps_manager/_installer.py  [needs: requests]  L718-726  InstallError, Plan
-utils/tools/portable_apps_manager/_manifest.py  [stdlib]  L728-732  Manifest
-utils/tools/portable_apps_manager/_sources.py  [needs: requests]  L734-747  SourceError, parse_repo, match_assets, suggest_name, suggest_pattern, UrlProbe, … (+3)
-utils/tools/portable_apps_manager/_updater.py  [stdlib]  L749-757  ManifestWriteError, check, prepare, finish, untrack, folder_missing
-utils/tools/portable_apps_manager/portable_apps_manager.py  [needs: IPython]  L759-764  PortableAppsGUI, show_gui  - Portable Apps Manager Deploy, track, update and remove portable Windows apps…
-utils/tools/region_setup.py  [needs: PIL, cv2, numpy]  L766-770  RegionSetupTool
-utils/tools/task_scheduler/__init__.py  [stdlib]  L772-777  default_python, add_python_script  - Task Scheduler - add, list, enable / disable, run / stop and remove Windows…
-utils/tools/task_scheduler/_winsched.py  [needs: pythoncom, pywintypes, win32api, win32com]  L779-808  TaskSchedulerError, ask_password, needs_admin, set_notify, result_text, Trigger, … (+18)
-utils/tools/task_scheduler/task_scheduler.py  [needs: IPython]  L810-815  TaskSchedulerGUI, show_gui  - Task Scheduler List, add, enable / disable, run, stop and remove Windows…
+utils/utilities.py  [stdlib]  L72-90  UtilityFunctions, TestClass
+utils/_internal/util_binary.py  [stdlib]  L92-117  UtilityBinaryMixin
+utils/_internal/util_collections.py  [stdlib]  L119-127  UtilityCollectionsMixin
+utils/_internal/util_dataframe.py  [needs: pandas]  L129-136  UtilityDataFrameMixin
+utils/_internal/util_demo.py  [stdlib]  L138-147  resolve_demo_input, call_demo_function, UtilityDemoMixin  - Coerce a single raw user value (from CLI or widget) according to an inp-dict…
+utils/_internal/util_filesystem.py  [stdlib]  L149-172  UtilityFilesystemMixin
+utils/_internal/util_ipython.py  [needs: IPython]  L174-191  UtilityIPythonMixin
+utils/_internal/util_lan_monitor.py  [stdlib]  L193-203  LanMonitorClient, LanMonitorServer
+utils/_internal/util_output.py  [stdlib]  L205-216  TeeStringIO, UtilityOutputMixin
+utils/_internal/util_runtime.py  [needs: gitinfo, requests]  L218-243  UtilityRuntimeMixin
+utils/_internal/util_testing.py  [stdlib]  L245-249  UtilityTestingMixin
+utils/_internal/util_text.py  [stdlib]  L251-271  UtilityTextMixin
+utils/_internal/util_threads.py  [stdlib]  L273-276  UtilityThreadMixin
+utils/_internal/util_time.py  [stdlib]  L278-296  UtilityTimeMixin
+utils/_internal/util_web.py  [needs: IPython, requests, truststore]  L298-317  UtilityWebMixin
+utils/standalone/adb_utils.py  [needs: cv2, numpy]  L319-336  AdbUtils
+utils/standalone/clipboard_utils.py  [needs: pyperclip]  L338-343  Clipboard
+utils/standalone/cryptography_utils.py  [needs: cryptography]  L345-354  Cryptography
+utils/standalone/electronics_utils.py  [needs: eseries]  L356-367  Electronics
+utils/standalone/elevate_utils.py  [needs: pythoncom, pywintypes, win32api, win32com, win32con, win32cred, win32event, win32process]  L369-378  ElevationError, is_admin, current_user, ask_password, params, call  - On-demand elevation: run a batch of a module's own calls in a short-lived…
+utils/standalone/git_actions.py  [stdlib]  L380-400  git_clone_bare, git_fetch, git_fetch_all, git_last_commit_info, git_archive_zip, git_checkout, … (+11)  - Thin subprocess wrappers for driving git as an action against an arbitrary repo…
+utils/standalone/log_actions.py  [stdlib]  L402-414  new_log, latest_log, add_lines, PrintLogger, print_logging_start, print_logging_end, … (+1)  - Generic session-wide print() logging to disk.
+utils/standalone/math_utils.py  [needs: numpy, sympy]  L416-435  IntegerLimits, MathUtils, EquationSolver
+utils/standalone/pdf_utils.py  [needs: pikepdf]  L437-446  PdfUtils
+utils/standalone/playwright_actions.py  [needs: playwright]  L448-455  PlaywrightUtils
+utils/standalone/scrcpy_utils.py  [needs: cv2]  L457-469  find_scrcpy, scrcpy_adb, resolve_adb, ScrcpyCapture, launch_scrcpy  - scrcpy (Android screen mirroring) helpers: find scrcpy and the adb to pair with…
+utils/standalone/selenium_utils.py  [needs: selenium, webdriver_manager]  L471-486  SeleniumUtils
+utils/standalone/slack_utils.py  [needs: slack_sdk]  L488-493  SlackUtils
+utils/standalone/solidworks_pdm_utils.py  [needs: pythoncom, win32com]  L495-512  SolidWorksPDM  - SolidWorks PDM Vault utilities.
+utils/standalone/sql_utils.py  [needs: pandas, pyodbc]  L514-521  SQL
+utils/standalone/sqlite_utils.py  [stdlib]  L523-537  SQLite
+utils/standalone/ui_utils.py  [stdlib]  L539-547  UIUtils
+utils/standalone/widget_utils.py  [needs: IPython, ipywidgets]  L549-573  Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, build_lib_demo_widget, WidgetStdout, FileBrowser
+utils/standalone/win_automation_utils.py  [needs: cv2, mss, numpy, pyautogui, pycaw, pygetwindow, pynput, win32gui]  L575-599  WindowSize, WindowPos, MousePos, WindowInfo, WindowManager, InputSimulator
+utils/standalone/win_service_utils.py  [needs: pywintypes, servicemanager, win32api, win32con, win32security, win32service, win32serviceutil]  L601-635  ServiceError, set_notify, ServiceInfo, host_exe, dll_dirs, check_password, … (+17)  - Windows services in Python (pywin32, Windows only): install / uninstall, start…
+utils/tools/env_path_editor/__init__.py  [stdlib]  L637-644  in_path, update_user_path, add_user_path, remove_user_path  - Env Path Editor - view, check and edit the Windows User / System PATH.
+utils/tools/env_path_editor/_winpath.py  [stdlib]  L646-667  Scope, PathWriteError, is_admin, expand, normalize, EntryCheck, … (+11)
+utils/tools/env_path_editor/env_path_editor.py  [needs: IPython]  L669-674  EnvPathEditorGUI, show_gui  - Env Path Editor View, check and edit the Windows **User** and **System** PATH…
+utils/tools/launcher.py  [needs: IPython]  L676-683  ToolSpec, discover_tools, show_gui  - Find the tools under utils/tools and launch them from one widget (embedded by…
+utils/tools/pdm_file_downloader/__init__.py  [stdlib]  L685-691  pdm_missing, is_markup, download_files  - PDM File Downloader - search a SolidWorks PDM vault by file name and download…
+utils/tools/pdm_file_downloader/pdm_file_downloader.py  [needs: IPython]  L693-698  PdmFileDownloaderGUI, show_gui  - PDM File Downloader Search a SolidWorks PDM vault by item name (several at…
+utils/tools/portable_apps_manager/_catalog.py  [stdlib]  L700-706  CatalogEntry, load_catalog, recipe, save_to_catalog
+utils/tools/portable_apps_manager/_config.py  [stdlib]  L708-726  AppSpec, AppsConfig
+utils/tools/portable_apps_manager/_http.py  [needs: requests, truststore]  L728-731  PrerequisiteError
+utils/tools/portable_apps_manager/_installer.py  [needs: requests]  L733-741  InstallError, Plan
+utils/tools/portable_apps_manager/_manifest.py  [stdlib]  L743-747  Manifest
+utils/tools/portable_apps_manager/_sources.py  [needs: requests]  L749-762  SourceError, parse_repo, match_assets, suggest_name, suggest_pattern, UrlProbe, … (+3)
+utils/tools/portable_apps_manager/_updater.py  [stdlib]  L764-772  ManifestWriteError, check, prepare, finish, untrack, folder_missing
+utils/tools/portable_apps_manager/portable_apps_manager.py  [needs: IPython]  L774-779  PortableAppsGUI, show_gui  - Portable Apps Manager Deploy, track, update and remove portable Windows apps…
+utils/tools/region_setup.py  [needs: PIL, cv2, numpy]  L781-785  RegionSetupTool
+utils/tools/task_scheduler/__init__.py  [stdlib]  L787-792  default_python, add_python_script  - Task Scheduler - add, list, enable / disable, run / stop and remove Windows…
+utils/tools/task_scheduler/_winsched.py  [needs: pythoncom, pywintypes, win32api, win32com]  L794-823  TaskSchedulerError, ask_password, needs_admin, set_notify, result_text, Trigger, … (+18)
+utils/tools/task_scheduler/task_scheduler.py  [needs: IPython]  L825-830  TaskSchedulerGUI, show_gui  - Task Scheduler List, add, enable / disable, run, stop and remove Windows…
 ```
 
 ## utils/utilities.py  [stdlib]
@@ -451,6 +452,20 @@ L44     new_browser(headless=True, persistent=True, user_data_dir=None, cdp_port
 L80     close_browser()  - Close the browser and Playwright, and delete the temporary profile folder if one was made
 L92     dismiss_modal_button(button_name, timeout=8000)  - Repeatedly click a named button (e.g. a modal's close/dismiss control) until no matching button is left…
 L123    click_dismissing_modals(locator, dismiss_button_names=('Close', 'Later'), attempts=4, click_timeout=8000)  - Click a locator that's occasionally covered by a modal, re-dismissing (trying each of dismiss_button_names)…
+```
+
+## utils/standalone/scrcpy_utils.py  [needs: cv2]
+scrcpy (Android screen mirroring) helpers: find scrcpy and the adb to pair with it, launch or attach to its window, and grab frames from that window - a fast alternative to `adb screencap`.
+```
+L33   find_scrcpy(exe=None) -> str | None  - Full path of scrcpy: `exe` if it exists (a file, or a folder holding scrcpy), else `scrcpy` on PATH.
+L49   scrcpy_adb(scrcpy_exe=None) -> str | None  - The adb bundled next to scrcpy (the Windows release ships one), or None.
+L61   resolve_adb(adb_path=None, scrcpy_exe=None) -> str  - The adb to use: `adb_path` if given (always wins) > the adb bundled with scrcpy > 'adb' on PATH.
+L77   class ScrcpyCapture(window_title='scrcpy', process=None)  - Grabs frames from a scrcpy mirror window via mss; drop-in for AdbUtils.take_screenshot().
+L90     launched_by_us -> bool  (property)  - True if launch_scrcpy started this scrcpy (stop() will close it).
+L100    is_running() -> bool  - True if the scrcpy window is open.
+L104    stop() -> None  - Close scrcpy if we launched it; no-op for a window that was already open.
+L110    take_screenshot()  - BGR numpy array of the window's client area, or None if the window isn't found.
+L118  launch_scrcpy(window_title='scrcpy', exe=None, serial=None, adb_path=None, video_bitrate='16M', extra_args=None, launch_timeout=10.0, settle=2.0) -> ScrcpyCapture  - Attach to the scrcpy window titled `window_title`, or launch scrcpy with that title; returns a ScrcpyCapture.
 ```
 
 ## utils/standalone/selenium_utils.py  [needs: selenium, webdriver_manager]

@@ -86,6 +86,13 @@ win = [
     "pycaw>=20251023",
 ]
 
+# pip install "lib-utils[scrcpy]"  (Windows only) — standalone/scrcpy_utils: window capture via WindowManager + mss
+scrcpy = [
+    "lib-utils[win]",
+    "lib-utils[cv]",
+    "mss>=10.2",
+]
+
 # pip install "lib-utils[tools]"  (Windows only) — what utils/tools need: pywin32 (Windows APIs, UAC helper) and ipywidgets (UIs)
 tools = [
     "pywin32>=311",

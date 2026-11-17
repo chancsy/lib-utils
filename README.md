@@ -25,6 +25,7 @@ pip install -e "lib-utils[pdf,slack]"
 pip install -e "lib-utils[all]"        # all extras except win
 pip install -e "lib-utils[all,win]"    # include Windows automation
 pip install -e "lib-utils[tools]"      # the tools under utils/tools (Windows): pywin32, ipywidgets
+pip install -e "lib-utils[scrcpy]"     # standalone/scrcpy_utils (Windows): [win] + [cv] + mss
 ```
 
 ## Package layout
@@ -60,6 +61,7 @@ utils/
 │   ├── slack_utils.py          [requires: slack_sdk]
 │   ├── solidworks_pdm_utils.py [requires: pywin32] (Windows only — SolidWorks PDM must be installed)
 │   ├── sql_utils.py            [requires: pyodbc]
+│   ├── scrcpy_utils.py         [requires: mss, opencv-python, numpy + win_automation_utils deps] (Windows) — find scrcpy and the adb to pair with it, launch / attach to its window, grab frames (fast alternative to adb screencap)
 │   ├── sqlite_utils.py         [stdlib only]
 │   ├── ui_utils.py             [stdlib only — tkinter]
 │   ├── widget_utils.py         [requires: ipywidgets, IPython] (Jupyter only)
@@ -102,6 +104,7 @@ from utils.standalone.selenium_utils import SeleniumUtils
 from utils.standalone.slack_utils import SlackUtils
 from utils.standalone.solidworks_pdm_utils import SolidWorksPDM          # Windows only
 from utils.standalone.sql_utils import SQL
+from utils.standalone.scrcpy_utils import find_scrcpy, resolve_adb, launch_scrcpy, ScrcpyCapture  # Windows only
 from utils.standalone.sqlite_utils import SQLite
 from utils.standalone.ui_utils import UIUtils
 from utils.standalone.widget_utils import Widgets, MultiSelectMoveButtons, TabbedTextareaPanel, WidgetStdout, FileBrowser, build_lib_demo_widget  # Jupyter only
