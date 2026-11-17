@@ -8,6 +8,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 
 class UtilityRuntimeMixin:
+    # Windows: os.getlogin() (OSError without a logon session, e.g. in a service); else getpass.getuser() or None
     def get_logon_username(self):
         if os.name == 'nt':
             return os.getlogin()
@@ -21,12 +22,15 @@ class UtilityRuntimeMixin:
     def get_hostname(self):
         return socket.gethostname()
 
+    # platform.platform(), e.g. 'Windows-11-10.0.26200-SP0'
     def os_info(self):
         return platform.platform()
 
+    # platform.system(): 'Windows', 'Linux' or 'Darwin'
     def os_platform(self):
         return platform.system()
 
+    # e.g. 'Windows 11, version 24H2' from the build number; builds not in its table -> 'Unknown Windows version'
     def os_version_win(self):
         platform_name = self.os_platform()
         if platform_name == 'Windows':
@@ -54,12 +58,15 @@ class UtilityRuntimeMixin:
             return build_map.get(build_number, 'Unknown Windows version')
         return 'Unknown OS version'
 
+    # NOTE: platform.node() - the hostname, not a hardware serial number
     def get_serial_number(self):
         return platform.node()
 
+    # platform.processor() (can be '' on Linux)
     def get_cpu_info(self):
         return platform.processor()
 
+    # Days since boot as a float (Windows: PowerShell LastBootUpTime, else `uptime -s`)
     def get_up_time_days(self):
         if os.name == 'nt':
             boot_time_output = self.run_powershell_command('Get-CimInstance Win32_OperatingSystem | select -ExpandProperty LastBootUpTime | Get-Date -UFormat "%Y-%m-%d %H:%M:%S"')
@@ -86,12 +93,14 @@ class UtilityRuntimeMixin:
     def get_python_exe_path(self):
         return os.path.realpath(sys.executable)
 
+    # e.g. '3.12.4'; detailed=True -> the full sys.version string
     def get_python_version(self, detailed=False):
         if detailed:
             return sys.version
         else:
             return platform.python_version()
 
+    # True if the pip *distribution* is installed (e.g. 'pyserial', not 'serial'); prints a pip hint if not
     def module_exists(self, module_name, print_error_on_missing=True):
         try:
             version(module_name)
@@ -101,6 +110,7 @@ class UtilityRuntimeMixin:
                 print(f'{module_name} is not installed. To install, please run:\n  pip install {module_name}')
             return False
 
+    # Installed version of a pip distribution, else the string 'Package not found'
     def get_python_pkg_version(self, pkg_name):
         try:
             return version(pkg_name)
@@ -119,6 +129,7 @@ class UtilityRuntimeMixin:
             kwargs.setdefault(param_name, param_value)
         return kwargs
 
+    # python-git-info dict (or one field, e.g. 'commit') for the cwd's repo as of gitinfo's first import; None if unavailable
     def get_git_info(self, info=None):
         if not self.module_exists('python-git-info'):
             return

@@ -55,10 +55,12 @@ class UtilityFunctions(
     def do_nothing(self, *args, **kwargs):
         pass
 
+    # sys.exit(1) (a silent stop in Jupyter) if the pip distribution isn't installed; module_exists prints the hint
     def exit_if_module_missing(self, module_name):
         if not self.module_exists(module_name):
             sys.exit(1)
 
+    # Run a PowerShell command string and return its stdout, stripped; stderr goes to the console, the exit code is ignored
     def run_powershell_command(self, command):
         process=subprocess.Popen(["powershell","& {" + command+ "}"], stdout=subprocess.PIPE)
         stdout_value = process.communicate()[0].decode("utf-8", errors='replace').strip()
@@ -190,6 +192,7 @@ class UtilityFunctions(
             print(f'Invalid input, expected {data_type.__name__}')
             return None
 
+# Test-script helper: test name (default Test_<timestamp>), PC-uptime guard, environment / git banner
 class TestClass:
     def __init__(self, test_name, utils=None):
         self.utils = utils or UtilityFunctions() # Use the provided utils or create a new instance if None
@@ -197,6 +200,7 @@ class TestClass:
             test_name = f'Test_{self.utils.get_datetimestamp(date_time_delim="_")}' # Use a default test name with timestamp if not provided
         self.test_name = test_name
 
+    # sys.exit(1) (or only a warning) if the PC has been up for >= pc_up_time_days
     def exit_if_up_time_exceeds(self, pc_up_time_days, warn_only=False):
         up_time = self.utils.get_up_time_days()
         if up_time >= pc_up_time_days:
@@ -204,6 +208,7 @@ class TestClass:
             if not warn_only:
                 sys.exit(1)
 
+    # print_test_environment + the current git commit + the test name
     def print_test_info(self, print_test_env=True, print_git_info=True, pkg_list=[]):
         if print_test_env:
             self.utils.print_test_environment(pkg_list=pkg_list)

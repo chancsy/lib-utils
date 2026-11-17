@@ -108,6 +108,7 @@ class WindowManager:
         # pygetwindow.getWindowsWithTitle does substring matching; filter to exact title.
         return [w for w in self._gw.getWindowsWithTitle(title) if w.title == title]
 
+    # Position of the window with exactly this title (handle picks among duplicates); None if not found
     def get_window_pos(self, name: str, handle: int = 0) -> WindowPos | None:
         matches = self._get_windows_exact(name)
         if not matches:

@@ -5,6 +5,7 @@ All notable changes to this project will be documented here.
 ## [Unreleased]
 
 ### Fixed
+- `SQLite.create_table()` — its docstring came after a `_sql_id()` call, so Python didn't treat it as a docstring (no `help()` text, no API.md summary); the call now follows the docstring, same behaviour
 - `find_smallest_gte()` — removed stray debug `print(v, value)` in the linear scan path
 - `dec_to_hex_str()` — `NameError` when `byte_size=0` (hex_str was conditionally assigned then always read)
 - `send_webhook()` — status code check had `201` duplicated; corrected to `200 or 201 or 202`
@@ -30,6 +31,7 @@ All notable changes to this project will be documented here.
 - `README.md` — package layout, install instructions, usage examples
 
 ### Changed
+- One-line `#` comments above 148 public functions / classes whose name doesn't tell their behaviour: return values on failure (`None` vs `[]` vs a status string), side effects (`write_file()` appends unless `overwrite=True`, `UtilityFunctions()` replaces `sys.exit` in Jupyter, `SQLite.query()` doesn't commit), formats and units (timestamp styles, relative error as a fraction), and gotchas (`get_serial_number()` returns the hostname, `module_exists()` takes the pip distribution name, `send_webhook()` skips TLS verification). Self-explanatory helpers (`set_bit`, `get_hostname`, ...) and widget callbacks are left without one. API.md picks them up as summaries
 - `tools/task_scheduler` — the elevated helper moved to the shared `standalone/elevate_utils`; `_elevated.py` now only lists the calls it may make (`OPS`, `run_op`). Same API and behaviour; the password dialog and `is_admin()` / `current_user()` come from `elevate_utils`
 - `requires-python` raised to `>=3.11` (`tools/launcher.py` reads `tool.toml` with the standard-library `tomllib`)
 - `requirements.txt` — rewritten as a flat `>=` mirror of the `pyproject.toml` dependencies (same floors), replacing the stale pip-freeze pins (`cryptography==45.0.7` contradicted pyproject's `>=48.0.1`); added previously missing sections (`ipython` core, `[sql]`, `[cv]`, `[clipboard]`, `[pillow]`, `[widgets]`); dropped transitive `pywin32-ctypes`. `pip-audit` re-run 2026-07-18 on the full resolved set (73 packages incl. transitives): no known vulnerabilities

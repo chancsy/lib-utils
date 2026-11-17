@@ -1,4 +1,5 @@
 class UtilityTestingMixin:
+    # Print a banner for test logs: PC name / OS / uptime, Python (and JupyterLab) and pkg_list versions
     def print_test_environment(self, pkg_list=[]):
         print(self.pad_char('Test Environment'))
         print(

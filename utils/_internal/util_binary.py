@@ -16,6 +16,7 @@ class UtilityBinaryMixin:
         'string': (None, None, str, 1),
     }
 
+    # True if value has data_type's Python type and range (keys of data_type_properties, e.g. 'uint16'); False if unknown
     def is_data_type_valid(self, data_type, value):
         if data_type not in self.data_type_properties:
             return False
@@ -28,6 +29,7 @@ class UtilityBinaryMixin:
                 return False
         return True
 
+    # Size in bytes of data_type (a data_type_properties key); 0 if unknown
     def get_data_type_length(self, data_type):
         return self.data_type_properties.get(data_type, (None, None, None, 0))[3]
 
@@ -93,6 +95,7 @@ class UtilityBinaryMixin:
     def float_to_half(self, x):
         return struct.unpack('e', struct.pack('e', x))[0]
 
+    # The masked bit: 0 or 2**bit_index (use get_normalized_bit for 0 / 1)
     def get_bit(self, value, bit_index):
         return value & (1 << bit_index)
 
@@ -108,11 +111,13 @@ class UtilityBinaryMixin:
     def toggle_bit(self, value, bit_index):
         return value ^ (1 << bit_index)
 
+    # bytes -> uppercase hex per byte, e.g. prefix='0x', delim=' ' -> '0x01 0xAB'; None -> ''
     def bytes_to_hex_str(self, bytes, prefix='', delim=''):
         if bytes is None:
             return ''
         return delim.join([f'{prefix}{x:02X}' for x in bytes])
 
+    # Inverse of bytes_to_hex_str: removes delim and any 0x / 0X prefixes, then bytes.fromhex
     def hex_str_to_bytes(self, hex_string, delim=''):
         hex_string = hex_string.replace(delim, '')
         hex_string = hex_string.replace('0x', '').replace('0X', '')
@@ -121,6 +126,7 @@ class UtilityBinaryMixin:
     def string_to_bytes(self, string):
         return string.encode()
 
+    # UTF-8 decode; invalid bytes become U+FFFD instead of raising
     def bytes_to_string(self, bytes):
         return bytes.decode(errors='replace')
 
@@ -134,6 +140,7 @@ class UtilityBinaryMixin:
             data = data.encode('utf-8')
         return base64.b64decode(data).decode('utf-8')
 
+    # int -> uppercase hex, zero-padded to at least byte_size bytes (0: no fixed width); prefix goes per byte only with a delim
     def dec_to_hex_str(self, dec, prefix='', delim='', pad=True, byte_size=1):
         hex_str = f'{dec:0{byte_size*2}X}' if byte_size else f'{dec:X}'
 
@@ -150,22 +157,26 @@ class UtilityBinaryMixin:
                 hex_str = f'{prefix}{hex_str}'
         return hex_str
 
+    # JAMCRC (CRC-32 with inverted output) of data_bytes, returned as 4 little-endian bytes
     def crc32_jamcrc(self, data_bytes):
         import zlib
         crc32 = zlib.crc32(data_bytes)
         crc32_jamcrc = 2**32-1 - crc32
         return self.uint32_to_bytes(crc32_jamcrc, endian='LE')
 
+    # XOR of all bytes -> int 0-255
     def XOR_checksum(self, bytes):
         checksum = 0
         for byte in bytes:
             checksum ^= byte
         return checksum
 
+    # Format num to sf significant figures ('g' format: may switch to exponent notation)
     def float_to_str_sf(self, num, sf):
         format_string = "{:." + str(sf) + "g}"
         return format_string.format(num)
 
+    # True if s parses as a number with no fractional part ('3', '3.0'), else False; None raises TypeError
     def is_integer(self, s):
         try:
             float_val = float(s)
@@ -173,6 +184,7 @@ class UtilityBinaryMixin:
         except ValueError:
             return False
 
+    # str -> int, also from whole floats ('3.0' -> 3); None if not whole; a float arg is truncated, None raises TypeError
     def int_whole_number(self, s):
         try:
             return int(s)
@@ -184,6 +196,7 @@ class UtilityBinaryMixin:
             except ValueError:
                 return None
 
+    # True if float(s) succeeds (ints, 'nan' and 'inf' included), else False; None raises TypeError
     def is_float(self, s):
         try:
             float(s)

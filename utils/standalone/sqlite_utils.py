@@ -130,7 +130,6 @@ class SQLite():
         return cursor.fetchone() is not None
 
     def create_table(self, conn: sqlite3.Connection, table_name: str, column_names: Optional[list] = None, column_constraints: Optional[list] = None):
-        _sql_id(table_name)
         """Create a table with an auto-increment 'id' primary key plus caller-defined columns.
 
         column_names and column_constraints are paired by position — they must have the same length.
@@ -141,6 +140,7 @@ class SQLite():
             db.create_table(conn, 'sensors', ['serial', 'temp'], ['TEXT UNIQUE', 'REAL'])
             # CREATE TABLE sensors (id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, serial TEXT UNIQUE, temp REAL)
         """
+        _sql_id(table_name)
         cursor = conn.cursor()
         t = _sql_id(table_name)
         cols = ', '.join([f'{_sql_id(name)} {constraint}' for name, constraint in zip(column_names, column_constraints)])
@@ -321,6 +321,7 @@ class SQLite():
 
         return rows
 
+    # Run any SQL and fetchall(); no parameters and no commit (use insert() etc. for writes)
     def query(self, conn: sqlite3.Connection, query_string: str) -> list:
         cursor = conn.cursor()
         cursor.execute(query_string)

@@ -12,30 +12,37 @@ class UtilityTimeMixin:
     def get_current_datetime(self):
         return datetime.now()
 
+    # True once duration seconds have passed since start_time (a time.time() value)
     def is_TimePassed(self, start_time, duration):
         return time.time() - start_time >= duration
 
+    # Block until duration s after start_time, polling every 10 ms (tick_s is currently ignored)
     def wait_TimePassed(self, start_time, duration, tick_s=0.01):
         while not self.is_TimePassed(start_time, duration):
             time.sleep(0.01)
 
+    # Like time.sleep, but by polling every 10 ms (wait_TimePassed)
     def sleep(self, duration_s=1):
         t_start = time.time()
         self.wait_TimePassed(t_start, duration_s)
 
+    # Sleep duration whole seconds with a same-line countdown
     def sleep_progress(self, duration):
         t_start = time.time()
         for n in range(duration):
             self.wait_TimePassed(t_start, n+1)
             self.print_time_left(n+1, duration)
 
+    # 12 datetimes: the last day of each month of year
     def get_last_day_of_month(self, year):
         return [datetime(year, month, calendar.monthrange(year, month)[1]) for month in range(1, 13)]
 
+    # 'YYYYMMDD' of time_now (default now), date_delim between the parts
     def get_date(self, time_now=None, date_delim=''):
         time_now = time_now or self.get_current_datetime()
         return time_now.strftime(f'%Y{date_delim}%m{date_delim}%d')
 
+    # 'HHMMSS' of time_now (default now); style 0 -> 'HH:MM:SS', 1 -> 'HH:MM:SS.mmm'
     def get_timestamp(self, time_now=None, style=None, time_delim='', show_ms=False, ms_delim='', ms_digits=3):
         time_now = time_now or self.get_current_datetime()
         style_map = {
@@ -54,6 +61,7 @@ class UtilityTimeMixin:
             return time_now.strftime(f'%H{time_delim}%M{time_delim}%S{ms_delim}{milliseconds_str}')
         return time_now.strftime(f'%H{time_delim}%M{time_delim}%S')
 
+    # 'YYYYMMDD' with date_delim; style 0 -> 'YYYY-MM-DD'
     def get_datestamp(self, time_now=None, style=None, date_delim=''):
         time_now = time_now or self.get_current_datetime()
         style_map = {
@@ -63,6 +71,7 @@ class UtilityTimeMixin:
         date_delim = style_map.get(style, date_delim)
         return self.get_date(time_now, date_delim)
 
+    # Default 'YYYYMMDDHHMMSS'; style 0 'YYYY-MM-DD HH:MM:SS', 1 adds '.mmm', 2 'YYYY-MM-DD HH-MM-SS'
     def get_datetimestamp(self, time_now=None, style=None, date_delim='', date_time_delim='', time_delim='', show_ms=False, ms_delim='', ms_digits=3):
         time_now = time_now or self.get_current_datetime()
         style_map = {
@@ -77,6 +86,7 @@ class UtilityTimeMixin:
         time_part = self.get_timestamp(time_now=time_now, style=style, show_ms=show_ms, time_delim=time_delim, ms_delim=ms_delim, ms_digits=ms_digits)
         return f'{date_part}{date_time_delim}{time_part}'
 
+    # First YYYYMM[DD] or YYYYH1/H2 in string -> datetime (no day: 1st; H2: Jul 1), else None; needs a non-digit before it
     def extract_date_from_string(self, string):
         pattern = r'\D((?:19|20)\d{2})(\d{2})(\d{2})?\D|\D((?:19|20)\d{2})H([12])\D?'
         match = re.search(pattern, string)
@@ -97,6 +107,7 @@ class UtilityTimeMixin:
                 return None
         return None
 
+    # start..end inclusive, stepping by 'day' / 'month' / 'year' (anything else never ends); datetimes, or str with return_as_str
     def get_date_range(self, start_date_str, end_date_str, date_format='%Y-%m-%d', increment='day', return_as_str=False):
             start_date = datetime.strptime(start_date_str, date_format)
             end_date = datetime.strptime(end_date_str, date_format)
@@ -117,6 +128,7 @@ class UtilityTimeMixin:
                 date_list = [date.strftime(date_format) for date in date_list]
             return date_list
 
+    # end - start in 'seconds' / 'minutes' / 'hours' / 'days'; None if negative or not datetimes
     def get_datetime_difference(self, start_time, end_time, output_format='seconds'):
         if isinstance(start_time, datetime) and isinstance(end_time, datetime):
             diff = end_time - start_time
@@ -237,6 +249,7 @@ class UtilityTimeMixin:
                 return 0
             return max(0, self.timeout_sec)
 
+    # -> (hours, minutes, seconds)
     def seconds_to_time(self, seconds):
         hr = seconds // 3600
         min = (seconds % 3600) // 60

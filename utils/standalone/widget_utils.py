@@ -38,6 +38,7 @@ class Widgets:
         for widget in widget_array:
             widget.disabled = 1
 
+    # Show msg in an Output widget (str as text, else rich display); clears it first unless append
     def print_to_output(self, output_widget, msg, append=False):
         if not append:
             output_widget.outputs = ()

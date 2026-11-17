@@ -356,6 +356,7 @@ class Plan:
     def has_manifest(self) -> bool:
         return self.old_files is not None
 
+    # One line of what finish() would do: '3 new, 1 changed, 40 unchanged, 2 stale, ...'
     def summary(self) -> str:
         parts = [f'{len(self.new)} new', f'{len(self.changed)} changed', f'{len(self.unchanged)} unchanged']
         for n, label in ((len(self.preserved), 'preserved'), (len(self.modified), 'modified locally'),
@@ -385,6 +386,7 @@ class Plan:
                     out[rel] = self.old_files[rel.lower()]
         return out
 
+    # Delete the plan's download / work folder (finish() does this itself)
     def cleanup(self):
         shutil.rmtree(self.work_dir, ignore_errors=True)
 

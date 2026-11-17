@@ -39,6 +39,7 @@ class AppSpec:
     def is_installed(self) -> bool:
         return bool(self.installed_version)
 
+    # The GitHub repo (source 'github') or the download URL (source 'url')
     @property
     def origin(self) -> str:
         return self.repo if self.source == 'github' else self.url
@@ -164,9 +165,11 @@ class AppsConfig:
         os.replace(tmp, self.path)
         self._stamp = self._disk_stamp()
 
+    # A value from the ini's [settings] section
     def setting(self, key: str, default: str = '') -> str:
         return self._settings.get(key, default)
 
+    # Track spec in memory only (ValueError on a name / folder clash); save_app() writes it to the ini
     def add(self, spec: AppSpec):
         same = next((n for n in self.apps if n.lower() == spec.name.lower()), None)   # case-insensitive:
         if same:                                                                     # names are manifest file names
@@ -176,6 +179,7 @@ class AppsConfig:
             raise ValueError(f'Folder "{spec.folder}" is already used by "{clash}".')
         self.apps[spec.name] = spec
 
+    # Forget the app in memory only; delete_app() also removes it from the ini
     def remove(self, name: str):
         self.apps.pop(name, None)
 

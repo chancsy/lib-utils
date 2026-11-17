@@ -23,12 +23,14 @@ class ManifestWriteError(InstallError):
     """finish() installed and recorded the app, but couldn't write its manifest."""
 
 
+# Latest release and the asset to download -> (ReleaseInfo, Asset); only queries the source, no asset download
 def check(spec: AppSpec) -> tuple[ReleaseInfo, Asset]:
     src = get_source(spec.source)
     release = src.release_for(spec)
     return release, src.resolve(spec, release)
 
 
+# Download the asset and plan the install / update against the app folder -> Plan; changes nothing yet
 def prepare(cfg: AppsConfig, spec: AppSpec, release: ReleaseInfo, asset: Asset,
             progress: ProgressCb | None = None) -> Plan:
     # GitHub apps keep the release tag as their version; url apps resolve it per spec.version_from
@@ -72,6 +74,7 @@ def finish(cfg: AppsConfig, spec: AppSpec, plan: Plan, remove: list[str], overwr
         raise ManifestWriteError(f'{spec.name}: installed, but its install manifest could not be written: {manifest_error}')
 
 
+# Stop tracking the app (ini section + manifest); delete_folder=True also deletes its files
 def untrack(cfg: AppsConfig, name: str, delete_folder: bool = False) -> None:
     spec = cfg.apps[name]
     if delete_folder:
@@ -80,5 +83,6 @@ def untrack(cfg: AppsConfig, name: str, delete_folder: bool = False) -> None:
     _manifest.delete(cfg.root, name)
 
 
+# True if the app is recorded as installed but its folder is gone
 def folder_missing(cfg: AppsConfig, spec: AppSpec) -> bool:
     return spec.is_installed and not os.path.isdir(spec.folder_path(cfg.root))

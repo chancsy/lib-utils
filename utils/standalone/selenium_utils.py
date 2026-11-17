@@ -48,6 +48,7 @@ class SeleniumUtils:
         self.default_locator = SeleniumUtils.LocatorType.CSS_SELECTOR
         self.driver = None
 
+    # Chrome WebDriver (downloads to ~/Downloads, PDFs saved not opened), set as self.driver; None on error
     def new_driver(self, headless=False, auto_install_driver=False, socks5_proxy=None):
         download_dir = os.path.expanduser("~/Downloads/")
 
@@ -94,6 +95,7 @@ class SeleniumUtils:
         if driver is None:  # only clear instance state when using self.driver
             self.driver = None
 
+    # Plain sleep (utils.sleep), not a WebDriver wait
     def wait(self, wait_s, driver=None):
         # TBD driver wait instead of system wide wait
         utils.sleep(wait_s)
@@ -121,6 +123,7 @@ class SeleniumUtils:
             SeleniumUtils.LocatorType.PARTIAL_LINK_TEXT: By.PARTIAL_LINK_TEXT,
         }[lt]
 
+    # Click via JavaScript (works on covered / off-screen elements); default locator: self.default_locator
     def css_element_click(self, selector, locator_type=None, driver=None):
         d = driver or self.driver
         e = d.find_element(self._resolve_locator(locator_type), selector)
@@ -130,12 +133,14 @@ class SeleniumUtils:
         d = driver or self.driver
         return d.find_element(self._resolve_locator(locator_type), selector).text
 
+    # Clear the field, then type value
     def css_element_field_entry(self, selector, value, locator_type=None, driver=None):
         d = driver or self.driver
         e = d.find_element(self._resolve_locator(locator_type), selector)
         e.clear()
         e.send_keys(value)
 
+    # find_element, or None if not found
     def css_element(self, selector, locator_type=None, driver=None):
         try:
             return (driver or self.driver).find_element(self._resolve_locator(locator_type), selector)

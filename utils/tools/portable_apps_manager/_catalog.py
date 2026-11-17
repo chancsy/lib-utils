@@ -38,6 +38,7 @@ def _parser() -> configparser.ConfigParser:
     return cp
 
 
+# The apps_catalog.ini recipes by app name; {} if the file is missing
 def load_catalog(path: str = CATALOG_PATH) -> dict[str, CatalogEntry]:
     if not os.path.isfile(path):
         return {}

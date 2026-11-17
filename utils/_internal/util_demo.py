@@ -109,6 +109,7 @@ class UtilityDemoMixin:
 
         return call_demo_function(instance, entry, kwargs)
 
+    # Interactive CLI demo of a class from its lib_demo_params (else lib_demo_dict / lib_demo); returns the last result
     def demo(self, _class):
         instr_has_lib_demo_params = hasattr(_class, 'lib_demo_params')
         instr_has_lib_demo_dict   = hasattr(_class, 'lib_demo_dict')

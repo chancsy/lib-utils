@@ -362,6 +362,7 @@ def uninstall(name: str, timeout_s: float = 30, missing_ok: bool = False, elevat
 
 # --- start / stop / query -----------------------------------------------------------------------------------------
 
+# True if a service with this name is installed
 def exists(name: str) -> bool:
     hscm = _scm()
     try:
@@ -437,6 +438,7 @@ def stop(name: str, timeout_s: float = 30, elevate='auto') -> ServiceInfo:
     return info
 
 
+# The service's state and configuration as a ServiceInfo; ServiceError (code 1060) if it doesn't exist
 def query(name: str) -> ServiceInfo:
     with _Handle(name, win32service.SERVICE_QUERY_STATUS | win32service.SERVICE_QUERY_CONFIG, 'Query') as h:
         try:
@@ -493,6 +495,7 @@ def set_preshutdown_timeout(name: str, seconds: int, elevate='auto') -> None:
             _fail(f'Set the pre-shutdown time of {name}', e)
 
 
+# Pre-shutdown time in seconds; None if it can't be read
 def preshutdown_timeout_s(name: str) -> float | None:
     with _Handle(name, win32service.SERVICE_QUERY_CONFIG, 'Query') as h:
         try:
@@ -524,6 +527,7 @@ def allow_user_control(name: str, account: str, rights: int = USER_CONTROL_RIGHT
 
 # --- ServiceBase ---------------------------------------------------------------------------------------------------
 
+# Subclass it: set _svc_name_ / _svc_display_name_, override main() (return once stop_event is set)
 class ServiceBase(win32serviceutil.ServiceFramework):
     _svc_name_ = ''
     _svc_display_name_ = ''

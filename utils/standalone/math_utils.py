@@ -57,6 +57,7 @@ class MathUtils:
         factor = 10 ** n
         return _round_int(x * factor) / factor
 
+    # Random int in start..end, end included
     def random_integer(self, start=0, end=100):
         # from random import randrange
         # return randrange(start, end+1)
@@ -73,6 +74,7 @@ class MathUtils:
     def rad_to_deg(self, rad):
         return rad * 180 / np.pi
 
+    # np.clip: also works on arrays; None leaves that side unbounded
     def clip(self, val, clip_low=None, clip_high=None):
         # if clip_low:
         #     val = max(val, clip_low)
@@ -81,11 +83,13 @@ class MathUtils:
         # return val
         return np.clip(val, clip_low, clip_high)
 
+    # (val - ref) / ref as a fraction (not %); nan if ref is 0
     def calc_relative_error(self, ref, val):
         if ref != 0:
             return (val-ref)/ref
         return float("nan")
 
+    # llim <= measurement <= ulim (inclusive)
     def is_within_limits(self, measurement, llim, ulim):
         return llim <= measurement <= ulim
 
@@ -144,6 +148,7 @@ class MathUtils:
                     best_combination = list(combo)
         return best_combination, best_sum
 
+    # Call callback() read_count times, printing running n / min / max / avg (/ stdev) on one line
     def print_data_stats(self, read_count, callback, x_min=np.inf, x_max=-np.inf, interval_s=0, calc_stdev=False):
         try:
             timer = utils.IntervalTimer(interval_s) if interval_s > 0 else None
@@ -276,6 +281,7 @@ class EquationSolver:
         # Find all variable names in the equation string
         return set(re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*', equation_str))
 
+    # Give every variable but one as keyword args -> the remaining one's value (first sympy solution)
     def solve(self, **kwargs):
         knowns = {self.symbols[var]: value for var, value in kwargs.items() if value is not None}
         unknowns = [self.symbols[var] for var in self.symbols if kwargs.get(var) is None]

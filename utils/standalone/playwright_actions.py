@@ -76,6 +76,7 @@ class PlaywrightUtils:
 
         return self._playwright, self.browser, self.page
 
+    # Close the browser and Playwright, and delete the temporary profile folder if one was made
     def close_browser(self):
         if self.browser is not None:
             self.browser.close()

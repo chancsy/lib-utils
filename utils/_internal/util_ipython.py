@@ -17,6 +17,7 @@ except ImportError:
 class UtilityIPythonMixin:
     HTML = HTML
 
+    # True in a Jupyter kernel (ipykernel loaded); False in a plain IPython terminal too
     def in_ipython(self, print_warning=False):
         if 'ipykernel' in sys.modules:
             return True
@@ -24,16 +25,19 @@ class UtilityIPythonMixin:
             print('Not in IPython environment')
         return False
 
+    # Jupyter: show only each cell's last expression value (the default)
     def ipython_print_default_expr(self):
         if self.in_ipython(print_warning=True):
             from IPython.core.interactiveshell import InteractiveShell
             InteractiveShell.ast_node_interactivity = 'last_expr'
 
+    # Jupyter: show the value of every expression in a cell, not only the last
     def ipython_print_all_exprs(self):
         if self.in_ipython(print_warning=True):
             from IPython.core.interactiveshell import InteractiveShell
             InteractiveShell.ast_node_interactivity = 'all'
 
+    # Run %magic_name line in the kernel; no-op (with a warning) outside Jupyter
     def ipython_run_magic_command(self, magic_name, line):
         if self.in_ipython(print_warning=True):
             self.ipython.run_line_magic(magic_name, line)
@@ -130,6 +134,7 @@ class UtilityIPythonMixin:
             target.update({k: v for k, v in ns.items() if k not in _skip})
         return ns
 
+    # %autoreload 2: re-import edited modules before each cell; None outside Jupyter
     def ipython_auto_reload_modules(self, print_warning=True):
         if not self.in_ipython(print_warning=True):
             return None
@@ -139,6 +144,7 @@ class UtilityIPythonMixin:
             print('Auto reload is enabled. Not recommended for production code. Be careful with side effects.')
         return True
 
+    # %reset -f: delete every user variable in the kernel; None outside Jupyter
     def ipython_reset_namespace(self):
         if not self.in_ipython(print_warning=True):
             return None
@@ -151,6 +157,7 @@ class UtilityIPythonMixin:
             print('This script is intended to be run in IPython environment')
             sys.exit(1)
 
+    # Stop the script: in Jupyter ends the cell without a traceback, elsewhere sys.exit(message)
     def exit_silent(self, message=''):
         class StopExecution(Exception):
             def _render_traceback_(self):
@@ -163,21 +170,25 @@ class UtilityIPythonMixin:
         else:
             sys.exit(message)
 
+    # In Jupyter, replace sys.exit with exit_silent (no traceback); UtilityFunctions() calls it, once per process
     def override_sys_exit_in_ipython(self):
         if self.in_ipython() and not type(self)._sys_exit_overridden:
             sys.exit = self.exit_silent
             print('sys.exit() is overridden to exit silently in IPython environment.')
             type(self)._sys_exit_overridden = True
 
+    # Jupyter: show a clickable link to a local file; ImportError without IPython
     def display_filelink(self, link, prefix=''):
         if display is None or FileLink is None:
             raise ImportError('IPython is required for display_filelink()')
         display(FileLink(link, result_html_prefix=prefix))
 
+    # IPython clear_output(); no-op outside Jupyter
     def clear_output(self, wait=True):
         if self.in_ipython() and clear_output is not None:
             clear_output(wait=wait)
 
+    # IPython display(); no-op (prints nothing) outside Jupyter
     def display(self, obj):
         if self.in_ipython() and display is not None:
             display(obj)

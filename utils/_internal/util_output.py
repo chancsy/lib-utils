@@ -31,6 +31,7 @@ class TeeStringIO(io.StringIO):
 
 
 class UtilityOutputMixin:
+    # Overwrite the current console line (\r, no newline); end it with print_same_line_end() or self.print()
     def print_same_line(self, msg):
         if self.in_ipython():
             padding = ' ' * max(0, self._last_line_length - len(msg))
@@ -45,6 +46,7 @@ class UtilityOutputMixin:
             print()
             self._progress_line_active = False
 
+    # Same-line 'Progress: x %' for 0-based step n of total; ends the line at 100 %
     def print_progress(self, n, total):
         progress = (n+1)/total*100
         if progress >= 100:
@@ -53,10 +55,12 @@ class UtilityOutputMixin:
         if progress == 100:
             self.print_same_line_end()
 
+    # print() that first ends an active same-line progress line
     def print(self, *args, **kwargs):
         self.print_same_line_end()
         print(*args, **kwargs)
 
+    # Same-line countdown 'Waiting for {total}s... ({total-n}s)'
     def print_time_left(self, n, total):
         self.print_same_line(f'Waiting for {total}s... ({total-n}s)')
         if n >= total:

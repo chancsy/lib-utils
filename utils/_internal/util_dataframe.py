@@ -2,6 +2,7 @@ import pandas as pd
 
 
 class UtilityDataFrameMixin:
+    # Rename duplicates by suffix: ['a', 'a', 'b'] -> ['a', 'a_1', 'b']
     def unique_names(self, names):
         names = list(names)
         seen = {}
@@ -13,6 +14,7 @@ class UtilityDataFrameMixin:
                 seen[col] = 0
         return names
 
+    # 2D list -> DataFrame; has_header=True takes column names from the first row
     def array_to_df(self, array, has_header=True, column_names=None):
         if has_header:
             df = pd.DataFrame(array[1:], columns=array[0])
@@ -25,11 +27,13 @@ class UtilityDataFrameMixin:
                 df = pd.DataFrame(array)
         return df
 
+    # Rename duplicate column names in place (a, a_1, ...) and return df
     def df_unique_columns(self, df):
         unique_header = self.unique_names(df.columns)
         df.columns = unique_header
         return df
 
+    # pd.to_numeric per column (after de-duplicating names); a column that fails is printed and left as is
     def df_to_numeric(self, df):
         # Create new header with unique column names
         df = self.df_unique_columns(df)

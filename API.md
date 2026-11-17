@@ -72,66 +72,66 @@ utils/tools/task_scheduler/task_scheduler.py  [needs: IPython]  L810-815  TaskSc
 ```
 L27   class UtilityFunctions()
 L55     do_nothing(*args, **kwargs)
-L58     exit_if_module_missing(module_name)
-L62     run_powershell_command(command)
-L71     run_powershell_script(script_path, *args, check=True)  - Run a .ps1 script file, streaming its stdout/stderr live (inherited, not captured) - unlike…
-L78     normalize_lookup_key(key) -> str  - Normalize keys for stable text matching across sources.
-L85     find_override_file(source_path, suffix='.override.csv', fallback_name='override.csv') -> str | None  - Discover a sidecar file near the source file, with an optional fallback name.
-L99     read_key_value_override_csv(file_path, key_column='key', value_column='value') -> dict[str, str]  - Read a two-column (key, value) override CSV into a normalized map.
-L120    write_dict_rows_to_csv(file_path, rows, fieldnames, encoding='utf-8') -> None  - Persist a list of dict rows to CSV using explicit field ordering.
-L130    write_json_file(file_path, data, encoding='utf-8') -> None  - Persist JSON using stable formatting to reduce commit noise.
-L139    read_json_file(file_path, default=None, encoding='utf-8') -> object  - Read JSON, returning 'default' if the file doesn't exist (caller decides whether that's a valid empty-config…
-L146    wait_user_enter_key(msg=None)
-L152    get_user_input(msg, data_type, default_val=None, show_default_value=True, allow_empty=False)  - get user input int/float/str, display 'default_val' if show_default_value is True if 'default_val' is…
-L193  class TestClass(test_name, utils=None)
-L200    exit_if_up_time_exceeds(pc_up_time_days, warn_only=False)
-L207    print_test_info(print_test_env=True, print_git_info=True, pkg_list=[])
+L59     exit_if_module_missing(module_name)  - sys.exit(1) (a silent stop in Jupyter) if the pip distribution isn't installed; module_exists prints the hint
+L64     run_powershell_command(command)  - Run a PowerShell command string and return its stdout, stripped; stderr goes to the console, the exit code is…
+L73     run_powershell_script(script_path, *args, check=True)  - Run a .ps1 script file, streaming its stdout/stderr live (inherited, not captured) - unlike…
+L80     normalize_lookup_key(key) -> str  - Normalize keys for stable text matching across sources.
+L87     find_override_file(source_path, suffix='.override.csv', fallback_name='override.csv') -> str | None  - Discover a sidecar file near the source file, with an optional fallback name.
+L101    read_key_value_override_csv(file_path, key_column='key', value_column='value') -> dict[str, str]  - Read a two-column (key, value) override CSV into a normalized map.
+L122    write_dict_rows_to_csv(file_path, rows, fieldnames, encoding='utf-8') -> None  - Persist a list of dict rows to CSV using explicit field ordering.
+L132    write_json_file(file_path, data, encoding='utf-8') -> None  - Persist JSON using stable formatting to reduce commit noise.
+L141    read_json_file(file_path, default=None, encoding='utf-8') -> object  - Read JSON, returning 'default' if the file doesn't exist (caller decides whether that's a valid empty-config…
+L148    wait_user_enter_key(msg=None)
+L154    get_user_input(msg, data_type, default_val=None, show_default_value=True, allow_empty=False)  - get user input int/float/str, display 'default_val' if show_default_value is True if 'default_val' is…
+L196  class TestClass(test_name, utils=None)  - Test-script helper: test name (default Test_<timestamp>), PC-uptime guard, environment / git banner
+L204    exit_if_up_time_exceeds(pc_up_time_days, warn_only=False)  - sys.exit(1) (or only a warning) if the PC has been up for >= pc_up_time_days
+L212    print_test_info(print_test_env=True, print_git_info=True, pkg_list=[])  - print_test_environment + the current git commit + the test name
 ```
 
 ## utils/_internal/util_binary.py  [stdlib]
 ```
 L5    class UtilityBinaryMixin()
-L19     is_data_type_valid(data_type, value)
-L31     get_data_type_length(data_type)
-L89     float_to_single(x)  - Convert float to binary32 (single precision) format (caution - lose precision)
-L93     float_to_half(x)  - Convert float to binary16 (half precision) format (caution - lose precision)
-L96     get_bit(value, bit_index)
-L99     get_normalized_bit(value, bit_index)
-L102    set_bit(value, bit_index)
-L105    clear_bit(value, bit_index)
-L108    toggle_bit(value, bit_index)
-L111    bytes_to_hex_str(bytes, prefix='', delim='')
-L116    hex_str_to_bytes(hex_string, delim='')
-L121    string_to_bytes(string)
-L124    bytes_to_string(bytes)
-L128    base64_encode(text) -> bytes  - Encode a text string to a Base64 bytes object.
-L132    base64_decode(data) -> str  - Decode a Base64 bytes or string back to a UTF-8 text string.
-L137    dec_to_hex_str(dec, prefix='', delim='', pad=True, byte_size=1)
-L153    crc32_jamcrc(data_bytes)
-L159    XOR_checksum(bytes)
-L165    float_to_str_sf(num, sf)
-L169    is_integer(s)
-L176    int_whole_number(s)
-L187    is_float(s)
+L20     is_data_type_valid(data_type, value)  - True if value has data_type's Python type and range (keys of data_type_properties, e.g. 'uint16'); False if…
+L33     get_data_type_length(data_type)  - Size in bytes of data_type (a data_type_properties key); 0 if unknown
+L91     float_to_single(x)  - Convert float to binary32 (single precision) format (caution - lose precision)
+L95     float_to_half(x)  - Convert float to binary16 (half precision) format (caution - lose precision)
+L99     get_bit(value, bit_index)  - The masked bit: 0 or 2**bit_index (use get_normalized_bit for 0 / 1)
+L102    get_normalized_bit(value, bit_index)
+L105    set_bit(value, bit_index)
+L108    clear_bit(value, bit_index)
+L111    toggle_bit(value, bit_index)
+L115    bytes_to_hex_str(bytes, prefix='', delim='')  - bytes -> uppercase hex per byte, e.g. prefix='0x', delim=' ' -> '0x01 0xAB'; None -> ''
+L121    hex_str_to_bytes(hex_string, delim='')  - Inverse of bytes_to_hex_str: removes delim and any 0x / 0X prefixes, then bytes.fromhex
+L126    string_to_bytes(string)
+L130    bytes_to_string(bytes)  - UTF-8 decode; invalid bytes become U+FFFD instead of raising
+L134    base64_encode(text) -> bytes  - Encode a text string to a Base64 bytes object.
+L138    base64_decode(data) -> str  - Decode a Base64 bytes or string back to a UTF-8 text string.
+L144    dec_to_hex_str(dec, prefix='', delim='', pad=True, byte_size=1)  - int -> uppercase hex, zero-padded to at least byte_size bytes (0: no fixed width); prefix goes per byte only…
+L161    crc32_jamcrc(data_bytes)  - JAMCRC (CRC-32 with inverted output) of data_bytes, returned as 4 little-endian bytes
+L168    XOR_checksum(bytes)  - XOR of all bytes -> int 0-255
+L175    float_to_str_sf(num, sf)  - Format num to sf significant figures ('g' format: may switch to exponent notation)
+L180    is_integer(s)  - True if s parses as a number with no fractional part ('3', '3.0'), else False; None raises TypeError
+L188    int_whole_number(s)  - str -> int, also from whole floats ('3.0' -> 3); None if not whole; a float arg is truncated, None raises…
+L200    is_float(s)  - True if float(s) succeeds (ints, 'nan' and 'inf' included), else False; None raises TypeError
 ```
 
 ## utils/_internal/util_collections.py  [stdlib]
 ```
 L1    class UtilityCollectionsMixin()
-L2      get_unique_elements(input_list, sorted=True, preserve_order=False)
-L18     list_to_csv(data, delim=',', na_str='nan')
-L23     dict_reverse_lookup(dict, lookup_value)
-L29     dict_list_lookup(dict_list, lookup_key, lookup_value, return_key=None)
-L37     find_smallest_gte(value, values, use_bisect=False)
+L3      get_unique_elements(input_list, sorted=True, preserve_order=False)  - Deduplicate: sorted=True -> sorted list; else preserve_order keeps first-seen order (otherwise arbitrary)
+L20     list_to_csv(data, delim=',', na_str='nan')  - Join values with delim; None (and 'nan' strings when na_str isn't 'nan') become na_str
+L26     dict_reverse_lookup(dict, lookup_value)  - First key whose value == lookup_value; None if none
+L33     dict_list_lookup(dict_list, lookup_key, lookup_value, return_key=None)  - First dict with d[lookup_key] == lookup_value (or that dict's return_key value); None if none
+L42     find_smallest_gte(value, values, use_bisect=False)  - Smallest of values >= value; None if every value is smaller
 ```
 
 ## utils/_internal/util_dataframe.py  [needs: pandas]
 ```
 L4    class UtilityDataFrameMixin()
-L5      unique_names(names)
-L16     array_to_df(array, has_header=True, column_names=None)
-L28     df_unique_columns(df)
-L33     df_to_numeric(df)
+L6      unique_names(names)  - Rename duplicates by suffix: ['a', 'a', 'b'] -> ['a', 'a_1', 'b']
+L18     array_to_df(array, has_header=True, column_names=None)  - 2D list -> DataFrame; has_header=True takes column names from the first row
+L31     df_unique_columns(df)  - Rename duplicate column names in place (a, a_1, ...) and return df
+L37     df_to_numeric(df)  - pd.to_numeric per column (after de-duplicating names); a column that fails is printed and left as is
 ```
 
 ## utils/_internal/util_demo.py  [stdlib]
@@ -142,63 +142,63 @@ L24   call_demo_function(instance, entry, kwargs)  - Dispatch a lib_demo_params 
 L32   class UtilityDemoMixin()
 L33     show_demo_menu(menu_dict, max_columns=8, max_width=80)
 L77     get_demo_desc(menu_dict, key)
-L112    demo(_class)
+L113    demo(_class)  - Interactive CLI demo of a class from its lib_demo_params (else lib_demo_dict / lib_demo); returns the last…
 ```
 
 ## utils/_internal/util_filesystem.py  [stdlib]
 ```
 L7    class UtilityFilesystemMixin()
-L8      create_directory(path)
-L14     remove_directory(path, force=False)
-L25     remove_file(path)
-L33     read_file(path, binary=False)
-L38     write_file(path, content, overwrite=False, auto_create_dir=True)
-L62     list_dir_contents(directory='.', ext='', recursive=False)
-L79     list_files(directory='.', ext='', recursive=False) -> list[str]  - Return only the files list from list_dir_contents.
-L83     file_exists(path, verbose=False) -> bool  - Check if a file exists, optionally printing a message when missing.
-L91     list_folders(path='.', recursive=False) -> list[str]  - List subdirectories under path; wraps list_files to reuse its walk logic.
-L95     get_filename(file_path) -> str  - Return the filename (with extension) from a path.
-L99     get_basename(file_path) -> str  - Return the filename without extension from a path.
-L103    get_extension(file_path) -> str  - Return the file extension (including dot) from a path.
-L107    get_abs_path(file_path) -> str  - Return the absolute path.
-L111    get_dir_path(file_path) -> str  - Return the directory component of a path.
-L114    create_temp_dir()
-L119    remove_temp_dir(temp_dir)
-L124    remove_all_temp_dirs()
-L132    unwrap_single_dir_archive(extract_dir) -> str  - If a directory contains exactly one subdirectory and no loose files, return that subdirectory — handles…
-L139    find_orphaned_files(source_dir, dest_dir) -> list[str]  - Returns files present in dest_dir but absent in source_dir (relative paths).
-L152    calculate_file_hash(file_path, hash_algorithm='md5')
+L9      create_directory(path)  - makedirs(exist_ok=True); FileExistsError if a file has that name
+L16     remove_directory(path, force=False)  - force=True deletes contents (rmtree), else only an empty dir; FileNotFoundError if missing or a file
+L28     remove_file(path)  - FileNotFoundError if missing or a directory
+L37     read_file(path, binary=False)  - Whole file as str (platform default encoding, not UTF-8) or bytes with binary=True
+L43     write_file(path, content, overwrite=False, auto_create_dir=True)  - APPENDS unless overwrite=True (adding a newline first if the file doesn't end in one); str or bytes
+L68     list_dir_contents(directory='.', ext='', recursive=False)  - -> (files, dirs) namedtuple of full paths; ext: case-insensitive suffix; top level only unless recursive
+L85     list_files(directory='.', ext='', recursive=False) -> list[str]  - Return only the files list from list_dir_contents.
+L89     file_exists(path, verbose=False) -> bool  - Check if a file exists, optionally printing a message when missing.
+L97     list_folders(path='.', recursive=False) -> list[str]  - List subdirectories under path; wraps list_files to reuse its walk logic.
+L101    get_filename(file_path) -> str  - Return the filename (with extension) from a path.
+L105    get_basename(file_path) -> str  - Return the filename without extension from a path.
+L109    get_extension(file_path) -> str  - Return the file extension (including dot) from a path.
+L113    get_abs_path(file_path) -> str  - Return the absolute path.
+L117    get_dir_path(file_path) -> str  - Return the directory component of a path.
+L121    create_temp_dir()  - mkdtemp(), remembered for remove_temp_dir / remove_all_temp_dirs
+L127    remove_temp_dir(temp_dir)  - Deletes temp_dir only if create_temp_dir made it; otherwise does nothing
+L132    remove_all_temp_dirs()
+L140    unwrap_single_dir_archive(extract_dir) -> str  - If a directory contains exactly one subdirectory and no loose files, return that subdirectory — handles…
+L147    find_orphaned_files(source_dir, dest_dir) -> list[str]  - Returns files present in dest_dir but absent in source_dir (relative paths).
+L161    calculate_file_hash(file_path, hash_algorithm='md5')  - Hex digest of the file; hash_algorithm: any hashlib name (md5, sha256, ...)
 ```
 
 ## utils/_internal/util_ipython.py  [needs: IPython]
 ```
 L17   class UtilityIPythonMixin()
-L20     in_ipython(print_warning=False)
-L27     ipython_print_default_expr()
-L32     ipython_print_all_exprs()
-L37     ipython_run_magic_command(magic_name, line)
-L41     runpy_run_path(py_path, run_name='__main__', argv=None, into_namespace=False, in_thread=False)  - Run a .py file the way ``python <path>`` / IPython's ``%run`` would, but as a plain function call.
-L133    ipython_auto_reload_modules(print_warning=True)
-L142    ipython_reset_namespace()
-L149    exit_if_not_in_ipython()
-L154    exit_silent(message='')
-L166    override_sys_exit_in_ipython()
-L172    display_filelink(link, prefix='')
-L177    clear_output(wait=True)
-L181    display(obj)
-L185    get_ipython_handle()
+L21     in_ipython(print_warning=False)  - True in a Jupyter kernel (ipykernel loaded); False in a plain IPython terminal too
+L29     ipython_print_default_expr()  - Jupyter: show only each cell's last expression value (the default)
+L35     ipython_print_all_exprs()  - Jupyter: show the value of every expression in a cell, not only the last
+L41     ipython_run_magic_command(magic_name, line)  - Run %magic_name line in the kernel; no-op (with a warning) outside Jupyter
+L45     runpy_run_path(py_path, run_name='__main__', argv=None, into_namespace=False, in_thread=False)  - Run a .py file the way ``python <path>`` / IPython's ``%run`` would, but as a plain function call.
+L138    ipython_auto_reload_modules(print_warning=True)  - %autoreload 2: re-import edited modules before each cell; None outside Jupyter
+L148    ipython_reset_namespace()  - %reset -f: delete every user variable in the kernel; None outside Jupyter
+L155    exit_if_not_in_ipython()
+L161    exit_silent(message='')  - Stop the script: in Jupyter ends the cell without a traceback, elsewhere sys.exit(message)
+L174    override_sys_exit_in_ipython()  - In Jupyter, replace sys.exit with exit_silent (no traceback); UtilityFunctions() calls it, once per process
+L181    display_filelink(link, prefix='')  - Jupyter: show a clickable link to a local file; ImportError without IPython
+L187    clear_output(wait=True)  - IPython clear_output(); no-op outside Jupyter
+L192    display(obj)  - IPython display(); no-op (prints nothing) outside Jupyter
+L196    get_ipython_handle()
 ```
 
 ## utils/_internal/util_lan_monitor.py  [stdlib]
 ```
-L6    class LanMonitorClient(port=None, heartbeat_interval=0, status_callback=None)
-L65     start()
-L74     stop()
-L79   class LanMonitorServer(port=None, ping_interval=10, offline_timeout=60, watch=None)
-L142    start()
-L151    stop()
-L155    get_status()
-L175    print_status()
+L7    class LanMonitorClient(port=None, heartbeat_interval=0, status_callback=None)  - Runs on each monitored PC: answers LanMonitorServer pings by UDP broadcast (+ heartbeats if interval set)
+L67     start()  - Start the listen + heartbeat threads (daemon, returns at once); stop() ends them
+L76     stop()
+L82   class LanMonitorServer(port=None, ping_interval=10, offline_timeout=60, watch=None)  - Pings LanMonitorClients by UDP broadcast; get_status() says which hosts were seen within offline_timeout s
+L146    start()  - Start the listen + ping threads (daemon, returns at once); stop() ends them
+L155    stop()
+L160    get_status()  - {hostname: {status, ip, is_online, last_seen, seconds_since_seen}}; watched hosts never seen are 'offline'
+L180    print_status()
 ```
 
 ## utils/_internal/util_output.py  [stdlib]
@@ -207,66 +207,66 @@ L5    class TeeStringIO(real_stdout=None)  [bases: io.StringIO]  - A stdout-comp
 L24     write(s)
 L28     flush()
 L33   class UtilityOutputMixin()
-L34     print_same_line(msg)
-L43     print_same_line_end()
-L48     print_progress(n, total)
-L56     print(*args, **kwargs)
-L60     print_time_left(n, total)
+L35     print_same_line(msg)  - Overwrite the current console line (\r, no newline); end it with print_same_line_end() or self.print()
+L44     print_same_line_end()
+L50     print_progress(n, total)  - Same-line 'Progress: x %' for 0-based step n of total; ends the line at 100 %
+L59     print(*args, **kwargs)  - print() that first ends an active same-line progress line
+L64     print_time_left(n, total)  - Same-line countdown 'Waiting for {total}s... ({total-n}s)'
 ```
 
 ## utils/_internal/util_runtime.py  [needs: gitinfo, requests]
 ```
 L10   class UtilityRuntimeMixin()
-L11     get_logon_username()
-L21     get_hostname()
-L24     os_info()
-L27     os_platform()
-L30     os_version_win()
-L57     get_serial_number()
-L60     get_cpu_info()
-L63     get_up_time_days()
-L76     get_user_home_directory()
-L80     os_path_join(*paths)  - Join path and replace with os specific path separator
-L83     in_virtualenv()
-L86     get_python_exe_path()
-L89     get_python_version(detailed=False)
-L95     module_exists(module_name, print_error_on_missing=True)
-L104    get_python_pkg_version(pkg_name)
-L111    confirm(prompt)  - prompt a Y/N question via input(); returns True only on an exact 'y'/'Y' reply
-L115    update_kwargs_param(kwargs, param_name, param_value, overwrite=False)  - append param to kwargs if not already set, or update value if overwrite argument is true
-L122    get_git_info(info=None)
-L132    get_github_latest_release(repo_owner, repo_name)  - fetch the latest release info of a github repo
-L142    get_github_release_download_url(release_info, filter_name='browser_download_url', filter_value='')  - get the release binary download url with specified filters
-L154    beep(freq=1000, duration_ms=1000) -> None  - Emit a system beep at the given frequency and duration.
-L170    beep_multi(count, gap_ms=100, freq=1000, duration_ms=100) -> None  - Emit multiple beeps with a gap between each.
+L12     get_logon_username()  - Windows: os.getlogin() (OSError without a logon session, e.g. in a service); else getpass.getuser() or None
+L22     get_hostname()
+L26     os_info()  - platform.platform(), e.g. 'Windows-11-10.0.26200-SP0'
+L30     os_platform()  - platform.system(): 'Windows', 'Linux' or 'Darwin'
+L34     os_version_win()  - e.g. 'Windows 11, version 24H2' from the build number; builds not in its table -> 'Unknown Windows version'
+L62     get_serial_number()  - NOTE: platform.node() - the hostname, not a hardware serial number
+L66     get_cpu_info()  - platform.processor() (can be '' on Linux)
+L70     get_up_time_days()  - Days since boot as a float (Windows: PowerShell LastBootUpTime, else `uptime -s`)
+L83     get_user_home_directory()
+L87     os_path_join(*paths)  - Join path and replace with os specific path separator
+L90     in_virtualenv()
+L93     get_python_exe_path()
+L97     get_python_version(detailed=False)  - e.g. '3.12.4'; detailed=True -> the full sys.version string
+L104    module_exists(module_name, print_error_on_missing=True)  - True if the pip *distribution* is installed (e.g. 'pyserial', not 'serial'); prints a pip hint if not
+L114    get_python_pkg_version(pkg_name)  - Installed version of a pip distribution, else the string 'Package not found'
+L121    confirm(prompt)  - prompt a Y/N question via input(); returns True only on an exact 'y'/'Y' reply
+L125    update_kwargs_param(kwargs, param_name, param_value, overwrite=False)  - append param to kwargs if not already set, or update value if overwrite argument is true
+L133    get_git_info(info=None)  - python-git-info dict (or one field, e.g. 'commit') for the cwd's repo as of gitinfo's first import; None if…
+L143    get_github_latest_release(repo_owner, repo_name)  - fetch the latest release info of a github repo
+L153    get_github_release_download_url(release_info, filter_name='browser_download_url', filter_value='')  - get the release binary download url with specified filters
+L165    beep(freq=1000, duration_ms=1000) -> None  - Emit a system beep at the given frequency and duration.
+L181    beep_multi(count, gap_ms=100, freq=1000, duration_ms=100) -> None  - Emit multiple beeps with a gap between each.
 ```
 
 ## utils/_internal/util_testing.py  [stdlib]
 ```
 L1    class UtilityTestingMixin()
-L2      print_test_environment(pkg_list=[])
+L3      print_test_environment(pkg_list=[])  - Print a banner for test logs: PC name / OS / uptime, Python (and JupyterLab) and pkg_list versions
 ```
 
 ## utils/_internal/util_text.py  [stdlib]
 ```
 L6    class UtilityTextMixin()
-L7      remove_non_printable_ascii(a_str)
-L11     contains_non_printable_ascii(a_str)
-L14     contains_digits(string)
-L17     contains_uppercase(string)
-L20     contains_lowercase(string)
-L23     pad_char(text, char='-', length=80)
-L28     pad_left(text, char=' ', length=80)
-L31     pad_right(text, char=' ', length=80)
-L34     str2float(val)
-L40     str2int(val)
-L47     natural_sort_key(text)  - natural sort key for sorting strings with numbers
-L50     capitalize_title(title)
-L59     generate_html_link(url, text=None, new_window=True)  - Generates an HTML anchor tag
-L67     extract_lines(lines, string1, string2, include_matching_string_line=False)
-L85     extract_lines_from_file(file_path, string1, string2, include_matching_string_line=False)
-L96     parse_range_string(range_str, range_sep='~')
-L118    range_to_string(numbers, range_sep='~')
+L8      remove_non_printable_ascii(a_str)  - Keep only string.printable characters (drops all non-ASCII, e.g. accented letters)
+L12     contains_non_printable_ascii(a_str)
+L15     contains_digits(string)
+L18     contains_uppercase(string)
+L21     contains_lowercase(string)
+L25     pad_char(text, char='-', length=80)  - ' text ' centred in a line of char, length wide (a banner); text unchanged if too long
+L30     pad_left(text, char=' ', length=80)
+L33     pad_right(text, char=' ', length=80)
+L37     str2float(val)  - float(val), or None if val isn't a number; None itself raises TypeError
+L44     str2int(val)  - int via float, truncating ('3.9' -> 3); None if val isn't a number; None itself raises TypeError
+L51     natural_sort_key(text)  - natural sort key for sorting strings with numbers
+L55     capitalize_title(title)  - Title case, small words (of, the, and, a, ...) lowercase except the first word
+L64     generate_html_link(url, text=None, new_window=True)  - Generates an HTML anchor tag
+L73     extract_lines(lines, string1, string2, include_matching_string_line=False)  - Lines between the first line containing string1 and the next containing string2 (both excluded by default)
+L92     extract_lines_from_file(file_path, string1, string2, include_matching_string_line=False)  - extract_lines on a local file or an http(s) URL; local lines keep their trailing newline, URL lines don't
+L104    parse_range_string(range_str, range_sep='~')  - '1~3,5' -> [1, 2, 3, 5] (sorted, deduplicated); invalid parts are skipped
+L127    range_to_string(numbers, range_sep='~')  - Inverse of parse_range_string: [1, 2, 3, 5] -> '1~3,5'
 ```
 
 ## utils/_internal/util_threads.py  [stdlib]
@@ -279,59 +279,59 @@ L4    class UtilityThreadMixin()
 L8    class UtilityTimeMixin()
 L9      get_current_time()
 L12     get_current_datetime()
-L15     is_TimePassed(start_time, duration)
-L18     wait_TimePassed(start_time, duration, tick_s=0.01)
-L22     sleep(duration_s=1)
-L26     sleep_progress(duration)
-L32     get_last_day_of_month(year)
-L35     get_date(time_now=None, date_delim='')
-L39     get_timestamp(time_now=None, style=None, time_delim='', show_ms=False, ms_delim='', ms_digits=3)
-L57     get_datestamp(time_now=None, style=None, date_delim='')
-L66     get_datetimestamp(time_now=None, style=None, date_delim='', date_time_delim='', time_delim='', show_ms=False, ms_delim='', ms_digits=3)
-L80     extract_date_from_string(string)
-L100    get_date_range(start_date_str, end_date_str, date_format='%Y-%m-%d', increment='day', return_as_str=False)
-L120    get_datetime_difference(start_time, end_time, output_format='seconds')
-L240    seconds_to_time(seconds)
+L16     is_TimePassed(start_time, duration)  - True once duration seconds have passed since start_time (a time.time() value)
+L20     wait_TimePassed(start_time, duration, tick_s=0.01)  - Block until duration s after start_time, polling every 10 ms (tick_s is currently ignored)
+L25     sleep(duration_s=1)  - Like time.sleep, but by polling every 10 ms (wait_TimePassed)
+L30     sleep_progress(duration)  - Sleep duration whole seconds with a same-line countdown
+L37     get_last_day_of_month(year)  - 12 datetimes: the last day of each month of year
+L41     get_date(time_now=None, date_delim='')  - 'YYYYMMDD' of time_now (default now), date_delim between the parts
+L46     get_timestamp(time_now=None, style=None, time_delim='', show_ms=False, ms_delim='', ms_digits=3)  - 'HHMMSS' of time_now (default now); style 0 -> 'HH:MM:SS', 1 -> 'HH:MM:SS.mmm'
+L65     get_datestamp(time_now=None, style=None, date_delim='')  - 'YYYYMMDD' with date_delim; style 0 -> 'YYYY-MM-DD'
+L75     get_datetimestamp(time_now=None, style=None, date_delim='', date_time_delim='', time_delim='', show_ms=False, ms_delim='', ms_digits=3)  - Default 'YYYYMMDDHHMMSS'; style 0 'YYYY-MM-DD HH:MM:SS', 1 adds '.mmm', 2 'YYYY-MM-DD HH-MM-SS'
+L90     extract_date_from_string(string)  - First YYYYMM[DD] or YYYYH1/H2 in string -> datetime (no day: 1st; H2: Jul 1), else None; needs a non-digit…
+L111    get_date_range(start_date_str, end_date_str, date_format='%Y-%m-%d', increment='day', return_as_str=False)  - start..end inclusive, stepping by 'day' / 'month' / 'year' (anything else never ends); datetimes, or str with…
+L132    get_datetime_difference(start_time, end_time, output_format='seconds')  - end - start in 'seconds' / 'minutes' / 'hours' / 'days'; None if negative or not datetimes
+L253    seconds_to_time(seconds)  - -> (hours, minutes, seconds)
 ```
 
 ## utils/_internal/util_web.py  [needs: IPython, requests]
 ```
 L13   class UtilityWebMixin()
-L31     fetch_content(url)
-L35     extract_urls(url, ext='', params={})
-L44     list_files_http(url, recursive=False, ignore_first_link=False, ext='')
-L62     download_file(url, download_dir='.', overwrite=False, show_abs_path=True, suppress_output=False)
-L78     download_file_to_memory(url)
-L86     download_files(urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1)
-L138    post_to_teams(webhook_url, text)
-L145    send_webhook(webhook_url, json_data)
-L155    get_public_ip()
-L164    get_location_from_ip(ip)
-L174    extract_host_from_url(url)
-L180    is_host_reachable(host, port=80, timeout=5)
-L189    img_to_base64(img)  - Convert raw image bytes to a Base64 string for embedding in HTML or JSON.
-L195    base64_to_img(img_base64_str) -> bytes  - Decode a Base64 string back to raw image bytes.
-L201    display_img_from_base64(img_base64_str)  - Display an image in Jupyter Notebook from a Base64 string.
-L209    display_img(img)  - Display raw image bytes inline in a Jupyter notebook.
+L32     fetch_content(url)  - GET url -> text (UTF-8, invalid bytes replaced); raises on HTTP errors
+L37     extract_urls(url, ext='', params={})  - URLs of the <a href> links ending in ext on the page; relative links resolve against the site root, not the…
+L47     list_files_http(url, recursive=False, ignore_first_link=False, ext='')  - Crawl a web directory listing -> (files, dirs) namedtuple of URLs; dirs are links ending in '/'
+L66     download_file(url, download_dir='.', overwrite=False, show_abs_path=True, suppress_output=False)  - Save url into download_dir under its last path segment -> 'downloaded' / 'skipped' (exists) / 'failed'
+L83     download_file_to_memory(url)  - -> bytes, or None on error (the error is printed)
+L92     download_files(urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1)  - Download urls in threads, retrying failures auto_retry_count times; output_type progress/full/quiet; -> None
+L145    post_to_teams(webhook_url, text)  - Post text to a Teams incoming webhook (newlines doubled so Teams keeps them)
+L153    send_webhook(webhook_url, json_data)  - POST json_data with requests, TLS verification OFF; prints if status isn't 200-202; None without requests
+L164    get_public_ip()  - This machine's public IP via api.ipify.org (needs requests)
+L174    get_location_from_ip(ip)  - (city, country) of ip via ipinfo.io (needs requests)
+L185    extract_host_from_url(url)  - netloc of a URL ('https://a.com:8080/x' -> 'a.com:8080'); other input returned unchanged
+L192    is_host_reachable(host, port=80, timeout=5)  - True if a TCP connection to host:port opens within timeout s (host may be a URL)
+L201    img_to_base64(img)  - Convert raw image bytes to a Base64 string for embedding in HTML or JSON.
+L207    base64_to_img(img_base64_str) -> bytes  - Decode a Base64 string back to raw image bytes.
+L213    display_img_from_base64(img_base64_str)  - Display an image in Jupyter Notebook from a Base64 string.
+L221    display_img(img)  - Display raw image bytes inline in a Jupyter notebook.
 ```
 
 ## utils/standalone/adb_utils.py  [needs: cv2, numpy]
 ```
 L17   class AdbUtils(adb_path=None)
-L44     get_devices()
-L54     set_device(serial)
-L57     get_api_level()
-L77     get_current_activity_name()
-L96     get_screen_size()
-L107    take_screenshot()
-L118    save_screenshot(path='screenshot.png')
-L125    tap(x, y, jitter_px=10)
-L134    tap_in_region(x1, y1, x2, y2, margin=0.25)
-L141    swipe(x1, y1, x2, y2, duration_ms=300)
-L150    list_latest_files(remote_dir, count=1, exclude_exts=None)
-L161    pull_files(remote_paths, dest_dir, move=False)
-L176    pull_latest_files(remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None)
-L191    pull_latest_media_files(dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False)
+L45     get_devices()  - Serials of connected devices in 'device' state (unauthorized / offline ones skipped)
+L56     set_device(serial)  - Send every later adb call to this serial (None: adb's only connected device)
+L60     get_api_level()  - Android SDK level as int (e.g. 34); None if unparsable
+L81     get_current_activity_name()  - Focused 'package/activity' from dumpsys; None if not found (e.g. screen locked)
+L101    get_screen_size()  - (width, height) in px from `wm size`; None if unparsable
+L113    take_screenshot()  - Screen as a BGR numpy image (cv2); None on failure
+L125    save_screenshot(path='screenshot.png')  - take_screenshot + cv2.imwrite(path); returns the image (None on failure)
+L133    tap(x, y, jitter_px=10)  - Tap near (x, y) with a random +-jitter_px offset, clamped to the screen
+L143    tap_in_region(x1, y1, x2, y2, margin=0.25)  - Tap a random point in the box (x1, y1)-(x2, y2), margin (fraction) away from its edges
+L150    swipe(x1, y1, x2, y2, duration_ms=300)
+L160    list_latest_files(remote_dir, count=1, exclude_exts=None)  - Device paths of the newest count files in remote_dir (ls -t); [] if none or no access
+L172    pull_files(remote_paths, dest_dir, move=False)  - adb pull each path into dest_dir (~ expanded) -> local paths; move=True deletes them on the device
+L188    pull_latest_files(remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None)  - Pull the newest count files of remote_dir -> local paths ([] if none)
+L204    pull_latest_media_files(dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False)  - Pull the newest count photos / videos from the first common DCIM folder that has any
 ```
 
 ## utils/standalone/clipboard_utils.py  [needs: pyperclip]
@@ -416,21 +416,21 @@ L263  log_demo()  - Demonstrate print logging: start a session, print some lines
 ```
 L14   class IntegerLimits()  - C-style integer limits for common fixed-width types.
 L45   class MathUtils()
-L60     random_integer(start=0, end=100)
-L65     random_float(start=0, end=100)
-L70     deg_to_rad(degree)
-L73     rad_to_deg(rad)
-L76     clip(val, clip_low=None, clip_high=None)
-L84     calc_relative_error(ref, val)
-L89     is_within_limits(measurement, llim, ulim)
-L102    interpolate(value, source_range, target_range, extrapolate=True)  - Linear interpolation & extrapolation Example: interpolate(12, [4, 20], [0, 100]) returns 50 (mA to %)…
-L112    polyfit(known_x, known_y, degree, prevent_overfit=True)  - Fit polynomial coefficients; optionally cap degree to len(points)-1.
-L122    trend(known_x, known_y, x, degree=1, extrapolate=True, prevent_overfit=True) -> float  - Polynomial regression; degree=1 delegates to interpolate() for accuracy
-L132    find_best_combo_sum(numbers, target_sum, max_len=None, allow_exceed=True) -> tuple  - Find the combination of numbers whose sum is closest to target_sum
-L147    print_data_stats(read_count, callback, x_min=np.inf, x_max=-np.inf, interval_s=0, calc_stdev=False)
-L254  class EquationSolver(equation_str)  - Solve equations with one unknown variable
-L274    extract_symbols(equation_str)
-L279    solve(**kwargs)
+L61     random_integer(start=0, end=100)  - Random int in start..end, end included
+L66     random_float(start=0, end=100)
+L71     deg_to_rad(degree)
+L74     rad_to_deg(rad)
+L78     clip(val, clip_low=None, clip_high=None)  - np.clip: also works on arrays; None leaves that side unbounded
+L87     calc_relative_error(ref, val)  - (val - ref) / ref as a fraction (not %); nan if ref is 0
+L93     is_within_limits(measurement, llim, ulim)  - llim <= measurement <= ulim (inclusive)
+L106    interpolate(value, source_range, target_range, extrapolate=True)  - Linear interpolation & extrapolation Example: interpolate(12, [4, 20], [0, 100]) returns 50 (mA to %)…
+L116    polyfit(known_x, known_y, degree, prevent_overfit=True)  - Fit polynomial coefficients; optionally cap degree to len(points)-1.
+L126    trend(known_x, known_y, x, degree=1, extrapolate=True, prevent_overfit=True) -> float  - Polynomial regression; degree=1 delegates to interpolate() for accuracy
+L136    find_best_combo_sum(numbers, target_sum, max_len=None, allow_exceed=True) -> tuple  - Find the combination of numbers whose sum is closest to target_sum
+L152    print_data_stats(read_count, callback, x_min=np.inf, x_max=-np.inf, interval_s=0, calc_stdev=False)  - Call callback() read_count times, printing running n / min / max / avg (/ stdev) on one line
+L259  class EquationSolver(equation_str)  - Solve equations with one unknown variable
+L279    extract_symbols(equation_str)
+L285    solve(**kwargs)  - Give every variable but one as keyword args -> the remaining one's value (first sympy solution)
 ```
 
 ## utils/standalone/pdf_utils.py  [needs: pikepdf]
@@ -448,26 +448,26 @@ L196    split(file=None, output_dir=None, pages=None, ui=False) -> None  - Split
 ```
 L17   class PlaywrightUtils()  - Thin bootstrap around Playwright's sync API.
 L44     new_browser(headless=True, persistent=True, user_data_dir=None, cdp_port=None, viewport=None, channel=None)  - persistent=True runs a real on-disk browser profile (needed for sites relying on native Windows SSO -…
-L79     close_browser()
-L91     dismiss_modal_button(button_name, timeout=8000)  - Repeatedly click a named button (e.g. a modal's close/dismiss control) until no matching button is left…
-L122    click_dismissing_modals(locator, dismiss_button_names=('Close', 'Later'), attempts=4, click_timeout=8000)  - Click a locator that's occasionally covered by a modal, re-dismissing (trying each of dismiss_button_names)…
+L80     close_browser()  - Close the browser and Playwright, and delete the temporary profile folder if one was made
+L92     dismiss_modal_button(button_name, timeout=8000)  - Repeatedly click a named button (e.g. a modal's close/dismiss control) until no matching button is left…
+L123    click_dismissing_modals(locator, dismiss_button_names=('Close', 'Later'), attempts=4, click_timeout=8000)  - Click a locator that's occasionally covered by a modal, re-dismissing (trying each of dismiss_button_names)…
 ```
 
 ## utils/standalone/selenium_utils.py  [needs: selenium, webdriver_manager]
 ```
 L14   class SeleniumUtils()
-L51     new_driver(headless=False, auto_install_driver=False, socks5_proxy=None)
-L86     open_url(site_url, driver=None)
-L89     quit_driver(driver=None)
-L97     wait(wait_s, driver=None)
-L124    css_element_click(selector, locator_type=None, driver=None)
-L129    css_element_text(selector, locator_type=None, driver=None)
-L133    css_element_field_entry(selector, value, locator_type=None, driver=None)
-L139    css_element(selector, locator_type=None, driver=None)
-L149    wait_css_element(selector, timeout, locator_type=None, driver=None)  - def css_element_present(selector): return len(driver.find_elements(By.CSS_SELECTOR, selector)) > 0 TODO need…
-L157    wait_for_page_load(driver=None)  - TODO need more testing
-L164    wait_till_clickable(selector, timeout, locator_type=None, driver=None)  - TODO need more testing
-L168    wait_till_text_matched(selector, text_to_match, timeout, driver=None)  - TODO need more testing
+L52     new_driver(headless=False, auto_install_driver=False, socks5_proxy=None)  - Chrome WebDriver (downloads to ~/Downloads, PDFs saved not opened), set as self.driver; None on error
+L87     open_url(site_url, driver=None)
+L90     quit_driver(driver=None)
+L99     wait(wait_s, driver=None)  - Plain sleep (utils.sleep), not a WebDriver wait
+L127    css_element_click(selector, locator_type=None, driver=None)  - Click via JavaScript (works on covered / off-screen elements); default locator: self.default_locator
+L132    css_element_text(selector, locator_type=None, driver=None)
+L137    css_element_field_entry(selector, value, locator_type=None, driver=None)  - Clear the field, then type value
+L144    css_element(selector, locator_type=None, driver=None)  - find_element, or None if not found
+L154    wait_css_element(selector, timeout, locator_type=None, driver=None)  - def css_element_present(selector): return len(driver.find_elements(By.CSS_SELECTOR, selector)) > 0 TODO need…
+L162    wait_for_page_load(driver=None)  - TODO need more testing
+L169    wait_till_clickable(selector, timeout, locator_type=None, driver=None)  - TODO need more testing
+L173    wait_till_text_matched(selector, text_to_match, timeout, driver=None)  - TODO need more testing
 ```
 
 ## utils/standalone/slack_utils.py  [needs: slack_sdk]
@@ -512,13 +512,13 @@ L95     connect(db_path) -> sqlite3.Connection  - Open and return a new SQLite c
 L110    disconnect(conn) -> None  - Close a database connection.
 L119    list_tables(conn) -> list
 L124    if_table_exists(conn, table_name) -> bool
-L132    create_table(conn, table_name, column_names=None, column_constraints=None)
+L132    create_table(conn, table_name, column_names=None, column_constraints=None)  - Create a table with an auto-increment 'id' primary key plus caller-defined columns.
 L155    drop_table(conn, table_name)
 L160    get_row_count(conn, table_name) -> int
 L166    find_columns_with_constraint(conn, table_name, constraint) -> list  - Return column names whose definition contains the given constraint keyword.
 L194    insert(conn, table_name, column_names, column_values, replace=False, unique_columns=None)  - Insert a row and return a string result: 'inserted', 'updated', 'ignored', or 'error'.
 L278    get_rows(conn, table_name, column_names=None, column_values=None, return_column_names=None, start_date=None, end_date=None, time_column='log_time') -> Optional[list]  - Retrieve rows with optional column filtering and date range.
-L324    query(conn, query_string) -> list
+L325    query(conn, query_string) -> list  - Run any SQL and fetchall(); no parameters and no commit (use insert() etc. for writes)
 ```
 
 ## utils/standalone/ui_utils.py  [stdlib]
@@ -538,23 +538,23 @@ L27     demo()
 L30     default_cb(sender=None)
 L33     enable_widget_group(widget_array)
 L37     disable_widget_group(widget_array)
-L41     print_to_output(output_widget, msg, append=False)
-L134  class MultiSelectMoveButtons(select_L_onchange_cb=None, select_R_onchange_cb=None, R_options_onchange_cb=None, sanitize_cb=None, show=False)  - widget class that contains two multi-select widgets, and buttons to move items between the two widgets, move…
-L177    add(sender)
-L185    remove(sender)
-L189    move_up(sender)
-L202    move_down(sender)
-L215    sort_select_R(sender)
-L217    clear_select_R(sender)
-L221  class TabbedTextareaPanel(w, tab_titles='Text', min_width='300px')  - A Tab widget containing one scrollable Textarea per tab.
-L270  build_lib_demo_widget(instance, lib_demo_params, extra_tabs=None, title=None, no_interface_wrap=True)  - Build a Jupyter widget GUI driven by a lib_demo_params list.
-L548  class WidgetStdout(output_widget)  - File-like stdout replacement that writes directly to an ipywidgets widget.
-L578    write(s)
-L586    flush()
-L589    isatty()
-L594  class FileBrowser(start=None, patterns=('*',), on_pick=None, home=None, home_label='Home', skip_dirs=SKIP_DIRS, show_hidden=False, rows=10, …)  - Pick a file by browsing folders, in plain ipywidgets (no extra package).
-L663    browse_to(folder)  - Show `folder`'s subfolders and matching files (ValueError if it isn't a folder or can't be read).
-L689    clear_selection()  - Forget the picked file and unselect the list (the folder stays).
+L42     print_to_output(output_widget, msg, append=False)  - Show msg in an Output widget (str as text, else rich display); clears it first unless append
+L135  class MultiSelectMoveButtons(select_L_onchange_cb=None, select_R_onchange_cb=None, R_options_onchange_cb=None, sanitize_cb=None, show=False)  - widget class that contains two multi-select widgets, and buttons to move items between the two widgets, move…
+L178    add(sender)
+L186    remove(sender)
+L190    move_up(sender)
+L203    move_down(sender)
+L216    sort_select_R(sender)
+L218    clear_select_R(sender)
+L222  class TabbedTextareaPanel(w, tab_titles='Text', min_width='300px')  - A Tab widget containing one scrollable Textarea per tab.
+L271  build_lib_demo_widget(instance, lib_demo_params, extra_tabs=None, title=None, no_interface_wrap=True)  - Build a Jupyter widget GUI driven by a lib_demo_params list.
+L549  class WidgetStdout(output_widget)  - File-like stdout replacement that writes directly to an ipywidgets widget.
+L579    write(s)
+L587    flush()
+L590    isatty()
+L595  class FileBrowser(start=None, patterns=('*',), on_pick=None, home=None, home_label='Home', skip_dirs=SKIP_DIRS, show_hidden=False, rows=10, …)  - Pick a file by browsing folders, in plain ipywidgets (no extra package).
+L664    browse_to(folder)  - Show `folder`'s subfolders and matching files (ValueError if it isn't a folder or can't be read).
+L690    clear_selection()  - Forget the picked file and unselect the list (the folder stays).
 ```
 
 ## utils/standalone/win_automation_utils.py  [needs: cv2, mss, numpy, pyautogui, pycaw, pygetwindow, pynput, win32gui]
@@ -570,17 +570,17 @@ L81     get_foreground_window_title() -> str  - Return the title of the currentl
 L85     focus_window(handle) -> None  - Bring the window with the given handle to the foreground.
 L92     get_all_windows() -> list[WindowInfo]  - Return all visible windows as a list of WindowInfo.
 L103    get_all_window_titles() -> list[str]  - Return sorted list of all visible window titles.
-L111    get_window_pos(name, handle=0) -> WindowPos | None
-L140    declare_dpi_aware() -> None  - Set Windows process DPI awareness to per-monitor mode.
-L143    capture_window(title) -> 'np.ndarray | None'  - Capture a window's client area (excludes title bar and window borders) and return a BGR numpy array…
-L207    get_system_volume() -> float  - Return the current master volume level (0.0 – 1.0).
-L211    set_system_volume(volume) -> None  - Set the master volume level (0.0 – 1.0).
-L216  class InputSimulator(win_manager=None)  - Mouse movement and click simulation with optional input blocking.
-L240    get_mouse_pos() -> MousePos  - Return the current mouse cursor position.
-L245    block_input() -> None  - Block all keyboard and mouse input (Windows only).
-L249    allow_input() -> None  - Re-enable keyboard and mouse input (Windows only).
-L253    mouse_move(pos) -> None  - Move the mouse cursor to the given position.
-L278    mouse_click(pos, delay_s_during=0.01, delay_s_after=0.01, target_window_handle=0, blocking=True, restore_pos=True, restore_focus=True) -> None  - Perform a left mouse click at pos with optional blocking and focus/position restore.
+L112    get_window_pos(name, handle=0) -> WindowPos | None  - Position of the window with exactly this title (handle picks among duplicates); None if not found
+L141    declare_dpi_aware() -> None  - Set Windows process DPI awareness to per-monitor mode.
+L144    capture_window(title) -> 'np.ndarray | None'  - Capture a window's client area (excludes title bar and window borders) and return a BGR numpy array…
+L208    get_system_volume() -> float  - Return the current master volume level (0.0 – 1.0).
+L212    set_system_volume(volume) -> None  - Set the master volume level (0.0 – 1.0).
+L217  class InputSimulator(win_manager=None)  - Mouse movement and click simulation with optional input blocking.
+L241    get_mouse_pos() -> MousePos  - Return the current mouse cursor position.
+L246    block_input() -> None  - Block all keyboard and mouse input (Windows only).
+L250    allow_input() -> None  - Re-enable keyboard and mouse input (Windows only).
+L254    mouse_move(pos) -> None  - Move the mouse cursor to the given position.
+L279    mouse_click(pos, delay_s_during=0.01, delay_s_after=0.01, target_window_handle=0, blocking=True, restore_pos=True, restore_focus=True) -> None  - Perform a left mouse click at pos with optional blocking and focus/position restore.
 ```
 
 ## utils/standalone/win_service_utils.py  [needs: pywintypes, servicemanager, win32api, win32con, win32security, win32service, win32serviceutil]
@@ -597,26 +597,26 @@ L243  ask_password(user, name, retry=False) -> str  - The Windows password dialo
 L263  grant_logon_as_service(account, elevate='auto') -> None  - Give `account` "Log on as a service" (services.msc does this itself when an account is set there; an install…
 L283  install(name, class_string, display_name='', description='', *, user=None, password=None, start='auto', …) -> ServiceInfo  - Install a Python service class (administrator rights: a UAC prompt with elevate='auto').
 L346  uninstall(name, timeout_s=30, missing_ok=False, elevate='auto') -> None  - Stop the service if it runs, then remove it (administrator rights: a UAC prompt with elevate='auto').
-L365  exists(name) -> bool
-L400  start(name, timeout_s=30, elevate='auto') -> ServiceInfo  - Start the service and wait until it runs (or stops again, e.g. a logon failure).
-L423  stop(name, timeout_s=30, elevate='auto') -> ServiceInfo  - Stop the service and wait until it has stopped.
-L440  query(name) -> ServiceInfo
-L460  environment(name) -> dict[str, str]  - The service's own environment variables, as install() set them.
-L467  set_recovery(name, restart_after_s=60, reset_after_s=86400, times=3, elevate='auto') -> None  - Restart the service `restart_after_s` after a crash, or after it stops with a non-zero exit code; up to…
-L484  set_preshutdown_timeout(name, seconds, elevate='auto') -> None  - How long Windows waits for the service's pre-shutdown work before going on with the shutdown.
-L496  preshutdown_timeout_s(name) -> float | None
-L504  allow_user_control(name, account, rights=USER_CONTROL_RIGHTS, elevate='auto') -> None  - Let `account` start, stop and query the service without administrator rights (an entry in its DACL).
-L527  class ServiceBase(args)  [bases: win32serviceutil.ServiceFramework]
-L541    main()  - The service's work; return when `stop_event` is set.
-L545    on_preshutdown()  - Called in its own thread when Windows announces a shutdown / restart, before `stop_event` is set.
-L548    log_error(text)  - Write to the Application event log (source = the service name).
-L554    GetAcceptedControls()
-L570    SvcStop()
-L573    SvcShutdown()
-L576    SvcOtherEx(control, event_type, data)
-L602    SvcDoRun()
-L612  run_in_console(cls, seconds=None)  - Run a ServiceBase subclass's main() in this process, without the Service Control Manager (development)…
-L641  run_op(op, kwargs) -> None  - One call, in the elevated helper.
+L366  exists(name) -> bool  - True if a service with this name is installed
+L401  start(name, timeout_s=30, elevate='auto') -> ServiceInfo  - Start the service and wait until it runs (or stops again, e.g. a logon failure).
+L424  stop(name, timeout_s=30, elevate='auto') -> ServiceInfo  - Stop the service and wait until it has stopped.
+L442  query(name) -> ServiceInfo  - The service's state and configuration as a ServiceInfo; ServiceError (code 1060) if it doesn't exist
+L462  environment(name) -> dict[str, str]  - The service's own environment variables, as install() set them.
+L469  set_recovery(name, restart_after_s=60, reset_after_s=86400, times=3, elevate='auto') -> None  - Restart the service `restart_after_s` after a crash, or after it stops with a non-zero exit code; up to…
+L486  set_preshutdown_timeout(name, seconds, elevate='auto') -> None  - How long Windows waits for the service's pre-shutdown work before going on with the shutdown.
+L499  preshutdown_timeout_s(name) -> float | None  - Pre-shutdown time in seconds; None if it can't be read
+L507  allow_user_control(name, account, rights=USER_CONTROL_RIGHTS, elevate='auto') -> None  - Let `account` start, stop and query the service without administrator rights (an entry in its DACL).
+L531  class ServiceBase(args)  [bases: win32serviceutil.ServiceFramework]  - Subclass it: set _svc_name_ / _svc_display_name_, override main() (return once stop_event is set)
+L545    main()  - The service's work; return when `stop_event` is set.
+L549    on_preshutdown()  - Called in its own thread when Windows announces a shutdown / restart, before `stop_event` is set.
+L552    log_error(text)  - Write to the Application event log (source = the service name).
+L558    GetAcceptedControls()
+L574    SvcStop()
+L577    SvcShutdown()
+L580    SvcOtherEx(control, event_type, data)
+L606    SvcDoRun()
+L616  run_in_console(cls, seconds=None)  - Run a ServiceBase subclass's main() in this process, without the Service Control Manager (development)…
+L645  run_op(op, kwargs) -> None  - One call, in the elevated helper.
 ```
 
 ## utils/tools/env_path_editor/__init__.py  [stdlib]
@@ -640,15 +640,15 @@ L65   dataclass EntryCheck(entry, expanded, key, problems=…, duplicate_of=None
 L74     ok -> bool  (property)
 L78   check_entries(entries, other=None) -> list[EntryCheck]  - Flag empty / unresolved-variable / relative / missing-folder / duplicate entries.
 L115  remove_duplicates(entries, other=None) -> list[str]  - Drop empty entries, later duplicates (same normalized path), and entries already in `other`.
-L127  contains(entries, path) -> bool
-L133  split(raw) -> list[str]  - Raw value -> entries. A single trailing ';' is not counted as an empty entry.
-L147  read_raw(scope) -> tuple[str, int]  - (raw value, registry type). A missing value is ('', REG_EXPAND_SZ).
-L157  read(scope) -> list[str]
-L161  backup(scopes, folder=BACKUP_DIR) -> str  - Write the current raw values of `scopes` to a timestamped text file; returns its path.
-L179  write(scope, entries, expected_raw=None, backup_scopes=None, notify=True) -> str | None  - Write `entries` to the scope's Path value; returns the backup file path (if a backup was made).
-L211  broadcast_change() -> bool  - Tell running programs (Explorer) the environment changed, so programs started from now on see it.
-L221  read_backup(path) -> dict[str, str]  - {scope name: raw value} from a backup file.
-L234  restore_backup(path, scopes=(USER,), notify=True) -> list[str]  - Write the raw values saved in a backup file back to the registry, exactly as saved; returns the scope names…
+L128  contains(entries, path) -> bool  - True if path is among entries, compared expanded, case- and trailing-backslash-insensitive
+L134  split(raw) -> list[str]  - Raw value -> entries. A single trailing ';' is not counted as an empty entry.
+L148  read_raw(scope) -> tuple[str, int]  - (raw value, registry type). A missing value is ('', REG_EXPAND_SZ).
+L159  read(scope) -> list[str]  - The scope's PATH entries (USER / SYSTEM) as stored in the registry, %VARS% unexpanded
+L163  backup(scopes, folder=BACKUP_DIR) -> str  - Write the current raw values of `scopes` to a timestamped text file; returns its path.
+L181  write(scope, entries, expected_raw=None, backup_scopes=None, notify=True) -> str | None  - Write `entries` to the scope's Path value; returns the backup file path (if a backup was made).
+L213  broadcast_change() -> bool  - Tell running programs (Explorer) the environment changed, so programs started from now on see it.
+L223  read_backup(path) -> dict[str, str]  - {scope name: raw value} from a backup file.
+L236  restore_backup(path, scopes=(USER,), notify=True) -> list[str]  - Write the raw values saved in a backup file back to the registry, exactly as saved; returns the scope names…
 ```
 
 ## utils/tools/env_path_editor/env_path_editor.py  [needs: IPython]
@@ -685,29 +685,29 @@ L231  show_gui(**kwargs)  - Build the PDM File Downloader UI and return its top-
 ## utils/tools/portable_apps_manager/_catalog.py  [stdlib]  (re-exported by utils.tools.portable_apps_manager)
 ```
 L29   dataclass CatalogEntry(spec, note='', add_to_path=False)
-L41   load_catalog(path=CATALOG_PATH) -> dict[str, CatalogEntry]
-L68   recipe(spec) -> AppSpec  - Copy of spec without install state (what goes into / comes out of the catalog).
-L73   save_to_catalog(spec, note=None, add_to_path=None, path=CATALOG_PATH) -> bool  - Add or replace spec's entry. note / add_to_path = None keep the existing entry's value. Returns True if…
+L42   load_catalog(path=CATALOG_PATH) -> dict[str, CatalogEntry]  - The apps_catalog.ini recipes by app name; {} if the file is missing
+L69   recipe(spec) -> AppSpec  - Copy of spec without install state (what goes into / comes out of the catalog).
+L74   save_to_catalog(spec, note=None, add_to_path=None, path=CATALOG_PATH) -> bool  - Add or replace spec's entry. note / add_to_path = None keep the existing entry's value. Returns True if…
 ```
 
 ## utils/tools/portable_apps_manager/_config.py  [stdlib]  (re-exported by utils.tools.portable_apps_manager)
 ```
 L18   dataclass AppSpec(name, folder, source='github', repo='', asset='', url='', check_by='', version_from='', …)
 L39     is_installed -> bool  (property)
-L43     origin -> str  (property)
-L46     folder_path(root) -> str
-L49     to_section() -> dict[str, str]
-L67     @classmethod from_section(name, sec) -> 'AppSpec'
-L80   class AppsConfig(root)  - Loads/saves <root>/portable_apps.ini.
-L96     exists() -> bool
-L106    changed_on_disk() -> bool
-L115    load() -> 'AppsConfig'  - Read the ini; a missing ini is an empty registry (the file is only written by a save).
-L124    save()  - Write the whole in-memory registry (overwrites changes made on disk since load).
-L132    save_app(spec)  - Add or replace spec's section in the ini as it is on disk now; other sections are kept as they are there, and…
-L144    delete_app(name)  - Remove name's section from the ini as it is on disk now (other sections kept).
-L167    setting(key, default='') -> str
-L170    add(spec)
-L179    remove(name)
+L44     origin -> str  (property)  - The GitHub repo (source 'github') or the download URL (source 'url')
+L47     folder_path(root) -> str
+L50     to_section() -> dict[str, str]
+L68     @classmethod from_section(name, sec) -> 'AppSpec'
+L81   class AppsConfig(root)  - Loads/saves <root>/portable_apps.ini.
+L97     exists() -> bool
+L107    changed_on_disk() -> bool
+L116    load() -> 'AppsConfig'  - Read the ini; a missing ini is an empty registry (the file is only written by a save).
+L125    save()  - Write the whole in-memory registry (overwrites changes made on disk since load).
+L133    save_app(spec)  - Add or replace spec's section in the ini as it is on disk now; other sections are kept as they are there, and…
+L145    delete_app(name)  - Remove name's section from the ini as it is on disk now (other sections kept).
+L169    setting(key, default='') -> str  - A value from the ini's [settings] section
+L173    add(spec)  - Track spec in memory only (ValueError on a name / folder clash); save_app() writes it to the ini
+L183    remove(name)  - Forget the app in memory only; delete_app() also removes it from the ini
 ```
 
 ## utils/tools/portable_apps_manager/_http.py  [needs: requests, truststore]  (re-exported by utils.tools.portable_apps_manager)
@@ -720,9 +720,9 @@ L14   class PrerequisiteError()  [bases: RuntimeError]
 L45   class InstallError()  [bases: Exception]
 L335  dataclass Plan(dest, version, marker, asset, work_dir, archive, entries, all_entries=…, …)
 L356    has_manifest -> bool  (property)
-L359    summary() -> str
-L370    file_records(removed) -> dict[str, FileRec]  - The new manifest's files after apply: every archive file as shipped, plus the stale files that were kept…
-L388    cleanup()
+L360    summary() -> str  - One line of what finish() would do: '3 new, 1 changed, 40 unchanged, 2 stale, ...'
+L371    file_records(removed) -> dict[str, FileRec]  - The new manifest's files after apply: every archive file as shipped, plus the stale files that were kept…
+L390    cleanup()  - Delete the plan's download / work folder (finish() does this itself)
 ```
 
 ## utils/tools/portable_apps_manager/_manifest.py  [stdlib]  (re-exported by utils.tools.portable_apps_manager)
@@ -749,11 +749,11 @@ L248  up_to_date(spec, release) -> bool | None  - True/False, or None when the s
 ## utils/tools/portable_apps_manager/_updater.py  [stdlib]  (re-exported by utils.tools.portable_apps_manager)
 ```
 L22   class ManifestWriteError()  [bases: InstallError]  - finish() installed and recorded the app, but couldn't write its manifest.
-L26   check(spec) -> tuple[ReleaseInfo, Asset]
-L32   prepare(cfg, spec, release, asset, progress=None) -> Plan
-L42   finish(cfg, spec, plan, remove, overwrite=()) -> None  - Apply the plan (remove = stale files to delete, overwrite = modified files to replace), write the app's…
-L75   untrack(cfg, name, delete_folder=False) -> None
-L83   folder_missing(cfg, spec) -> bool
+L27   check(spec) -> tuple[ReleaseInfo, Asset]  - Latest release and the asset to download -> (ReleaseInfo, Asset); only queries the source, no asset download
+L34   prepare(cfg, spec, release, asset, progress=None) -> Plan  - Download the asset and plan the install / update against the app folder -> Plan; changes nothing yet
+L44   finish(cfg, spec, plan, remove, overwrite=()) -> None  - Apply the plan (remove = stale files to delete, overwrite = modified files to replace), write the app's…
+L78   untrack(cfg, name, delete_folder=False) -> None  - Stop tracking the app (ini section + manifest); delete_folder=True also deletes its files
+L87   folder_missing(cfg, spec) -> bool  - True if the app is recorded as installed but its folder is gone
 ```
 
 ## utils/tools/portable_apps_manager/portable_apps_manager.py  [needs: IPython]

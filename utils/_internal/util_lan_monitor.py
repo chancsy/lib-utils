@@ -3,6 +3,7 @@ import threading
 import time
 
 
+# Runs on each monitored PC: answers LanMonitorServer pings by UDP broadcast (+ heartbeats if interval set)
 class LanMonitorClient:
     DEFAULT_PORT = 47777
     _MSG_PING = 'LMON_PING'
@@ -62,6 +63,7 @@ class LanMonitorClient:
         finally:
             sock.close()
 
+    # Start the listen + heartbeat threads (daemon, returns at once); stop() ends them
     def start(self):
         self._stop.clear()
         self._threads.clear()
@@ -76,6 +78,7 @@ class LanMonitorClient:
         print(f'[LanMonitorClient] {self.hostname} stopped.')
 
 
+# Pings LanMonitorClients by UDP broadcast; get_status() says which hosts were seen within offline_timeout s
 class LanMonitorServer:
     DEFAULT_PORT = 47777
     _MSG_PING = 'LMON_PING'
@@ -139,6 +142,7 @@ class LanMonitorServer:
         finally:
             sock.close()
 
+    # Start the listen + ping threads (daemon, returns at once); stop() ends them
     def start(self):
         self._stop.clear()
         self._threads.clear()
@@ -152,6 +156,7 @@ class LanMonitorServer:
         self._stop.set()
         print('[LanMonitorServer] stopped.')
 
+    # {hostname: {status, ip, is_online, last_seen, seconds_since_seen}}; watched hosts never seen are 'offline'
     def get_status(self):
         now = time.time()
         with self._lock:

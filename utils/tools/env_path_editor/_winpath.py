@@ -124,6 +124,7 @@ def remove_duplicates(entries: list[str], other: list[str] | None = None) -> lis
     return out
 
 
+# True if path is among entries, compared expanded, case- and trailing-backslash-insensitive
 def contains(entries: list[str], path: str) -> bool:
     k = normalize(path)
     return any(normalize(e) == k for e in entries)
@@ -154,6 +155,7 @@ def read_raw(scope: Scope) -> tuple[str, int]:
         return '', winreg.REG_EXPAND_SZ
 
 
+# The scope's PATH entries (USER / SYSTEM) as stored in the registry, %VARS% unexpanded
 def read(scope: Scope) -> list[str]:
     return split(read_raw(scope)[0])
 

@@ -28,10 +28,12 @@ class UtilityWebMixin:
         def feed(self, data):
             self.html_parser.feed(data)
 
+    # GET url -> text (UTF-8, invalid bytes replaced); raises on HTTP errors
     def fetch_content(self, url):
         with urllib.request.urlopen(url) as response:
             return response.read().decode(errors='replace')
 
+    # URLs of the <a href> links ending in ext on the page; relative links resolve against the site root, not the page
     def extract_urls(self, url, ext='', params={}):
         query_string = urllib.parse.urlencode(params)
         full_url = f'{url}?{query_string}' if params else url
@@ -41,6 +43,7 @@ class UtilityWebMixin:
         parser.feed(response)
         return parser.urls
 
+    # Crawl a web directory listing -> (files, dirs) namedtuple of URLs; dirs are links ending in '/'
     def list_files_http(self, url, recursive=False, ignore_first_link=False, ext=''):
         FileListResult = namedtuple('FileListResult', ['files', 'dirs'])
         filelist = []
@@ -59,6 +62,7 @@ class UtilityWebMixin:
                 filelist.append(link)
         return FileListResult(files=filelist, dirs=dirlist)
 
+    # Save url into download_dir under its last path segment -> 'downloaded' / 'skipped' (exists) / 'failed'
     def download_file(self, url, download_dir='.', overwrite=False, show_abs_path=True, suppress_output=False):
         try:
             filename = urllib.parse.unquote(url.split('/')[-1])
@@ -75,6 +79,7 @@ class UtilityWebMixin:
             self.print(f'Error downloading {urllib.parse.unquote(url)}: {e}')
             return 'failed'
 
+    # -> bytes, or None on error (the error is printed)
     def download_file_to_memory(self, url):
         try:
             with urllib.request.urlopen(url) as response:
@@ -83,6 +88,7 @@ class UtilityWebMixin:
             self.print(f'Error downloading {urllib.parse.unquote(url)}: {e}')
             return None
 
+    # Download urls in threads, retrying failures auto_retry_count times; output_type progress/full/quiet; -> None
     def download_files(self, urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1):
         suppress_output = output_type == 'quiet' or output_type != 'full'
 
@@ -135,6 +141,7 @@ class UtilityWebMixin:
 
         self.print_same_line_end() if output_type == 'progress' else print(f'{get_summary_line()}')
 
+    # Post text to a Teams incoming webhook (newlines doubled so Teams keeps them)
     def post_to_teams(self, webhook_url, text):
         text_conditioned_for_teams = str(text).replace('\n', '\n\n')
         jsonData = {
@@ -142,6 +149,7 @@ class UtilityWebMixin:
         }
         return self.send_webhook(webhook_url, jsonData)
 
+    # POST json_data with requests, TLS verification OFF; prints if status isn't 200-202; None without requests
     def send_webhook(self, webhook_url, json_data):
         if not self.module_exists('requests'):
             return
@@ -152,6 +160,7 @@ class UtilityWebMixin:
             print(f'{response} - Please check')
         return response
 
+    # This machine's public IP via api.ipify.org (needs requests)
     def get_public_ip(self):
         if not self.module_exists('requests'):
             return
@@ -161,6 +170,7 @@ class UtilityWebMixin:
         ip = data['ip']
         return ip
 
+    # (city, country) of ip via ipinfo.io (needs requests)
     def get_location_from_ip(self, ip):
         if not self.module_exists('requests'):
             return
@@ -171,12 +181,14 @@ class UtilityWebMixin:
         country = data['country']
         return city, country
 
+    # netloc of a URL ('https://a.com:8080/x' -> 'a.com:8080'); other input returned unchanged
     def extract_host_from_url(self, url):
         parsed_url = urllib.parse.urlparse(url)
         if parsed_url.scheme and parsed_url.netloc:
             return parsed_url.netloc
         return url
 
+    # True if a TCP connection to host:port opens within timeout s (host may be a URL)
     def is_host_reachable(self, host, port=80, timeout=5):
         host = self.extract_host_from_url(host)
         try:

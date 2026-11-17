@@ -5,12 +5,14 @@ from collections import namedtuple
 
 
 class UtilityFilesystemMixin:
+    # makedirs(exist_ok=True); FileExistsError if a file has that name
     def create_directory(self, path):
         if os.path.exists(path):
             if os.path.isfile(path):
                 raise FileExistsError(f"A file with the name '{path}' already exists.")
         os.makedirs(path, exist_ok=True)
 
+    # force=True deletes contents (rmtree), else only an empty dir; FileNotFoundError if missing or a file
     def remove_directory(self, path, force=False):
         if os.path.exists(path):
             if os.path.isfile(path):
@@ -22,6 +24,7 @@ class UtilityFilesystemMixin:
         else:
             raise FileNotFoundError(f"Directory '{path}' does not exist.")
 
+    # FileNotFoundError if missing or a directory
     def remove_file(self, path):
         if os.path.exists(path):
             if os.path.isdir(path):
@@ -30,11 +33,13 @@ class UtilityFilesystemMixin:
         else:
             raise FileNotFoundError(f"File '{path}' does not exist.")
 
+    # Whole file as str (platform default encoding, not UTF-8) or bytes with binary=True
     def read_file(self, path, binary=False):
         mode = 'rb' if binary else 'r'
         with open(path, mode) as file:
             return file.read()
 
+    # APPENDS unless overwrite=True (adding a newline first if the file doesn't end in one); str or bytes
     def write_file(self, path, content, overwrite=False, auto_create_dir=True):
         mode = 'w' if overwrite else 'a'
 
@@ -59,6 +64,7 @@ class UtilityFilesystemMixin:
         with open(path, mode) as file:
             file.write(content)
 
+    # -> (files, dirs) namedtuple of full paths; ext: case-insensitive suffix; top level only unless recursive
     def list_dir_contents(self, directory='.', ext='', recursive=False):
         FileListResult = namedtuple('FileListResult', ['files', 'dirs'])
 
@@ -111,11 +117,13 @@ class UtilityFilesystemMixin:
     def get_dir_path(self, file_path: str) -> str:
         return os.path.dirname(file_path)
 
+    # mkdtemp(), remembered for remove_temp_dir / remove_all_temp_dirs
     def create_temp_dir(self):
         dir = tempfile.mkdtemp()
         self.temporary_dir_list.add(dir)
         return dir
 
+    # Deletes temp_dir only if create_temp_dir made it; otherwise does nothing
     def remove_temp_dir(self, temp_dir):
         if temp_dir in self.temporary_dir_list:
             shutil.rmtree(temp_dir)
@@ -149,6 +157,7 @@ class UtilityFilesystemMixin:
         dest_files = relative_files(dest_dir)
         return sorted(dest_files - source_files)
 
+    # Hex digest of the file; hash_algorithm: any hashlib name (md5, sha256, ...)
     def calculate_file_hash(self, file_path, hash_algorithm='md5'):
         import hashlib
 

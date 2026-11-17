@@ -4,6 +4,7 @@ import urllib.request
 
 
 class UtilityTextMixin:
+    # Keep only string.printable characters (drops all non-ASCII, e.g. accented letters)
     def remove_non_printable_ascii(self, a_str):
         ascii_chars = set(string.printable)
         return ''.join(x for x in a_str if x in ascii_chars)
@@ -20,6 +21,7 @@ class UtilityTextMixin:
     def contains_lowercase(self, string):
         return any(x.islower() for x in string)
 
+    # ' text ' centred in a line of char, length wide (a banner); text unchanged if too long
     def pad_char(self, text, char='-', length=80):
         if len(text) <= length-4:
             return f' {text} '.center(length, char)
@@ -31,12 +33,14 @@ class UtilityTextMixin:
     def pad_right(self, text, char=' ', length=80):
         return text.ljust(length, char)
 
+    # float(val), or None if val isn't a number; None itself raises TypeError
     def str2float(self, val):
         try:
             return float(val)
         except ValueError:
             return None
 
+    # int via float, truncating ('3.9' -> 3); None if val isn't a number; None itself raises TypeError
     def str2int(self, val):
         try:
             return int(float(val))
@@ -47,6 +51,7 @@ class UtilityTextMixin:
     def natural_sort_key(self, text):
         return [int(s) if s.isdigit() else s.lower() for s in re.split(r'(\d+)', text)]
 
+    # Title case, small words (of, the, and, a, ...) lowercase except the first word
     def capitalize_title(self, title):
         exceptions = {'of', 'the', 'and', 'in', 'on', 'at', 'to', 'for', 'with', 'a', 'an'}
         words = title.split()
@@ -64,6 +69,7 @@ class UtilityTextMixin:
         else:
             return '<a href="{}">{}</a>'.format(url, text)
 
+    # Lines between the first line containing string1 and the next containing string2 (both excluded by default)
     def extract_lines(self, lines, string1, string2, include_matching_string_line=False):
         lines_between = []
         inside_range = False
@@ -82,6 +88,7 @@ class UtilityTextMixin:
                 lines_between.append(line)
         return lines_between
 
+    # extract_lines on a local file or an http(s) URL; local lines keep their trailing newline, URL lines don't
     def extract_lines_from_file(self, file_path, string1, string2, include_matching_string_line=False):
         if file_path.startswith('https://') or file_path.startswith('http://'):
             data = urllib.request.urlopen(file_path)
@@ -93,6 +100,7 @@ class UtilityTextMixin:
             with open(file_path, 'r') as lines:
                 return self.extract_lines(lines, string1, string2, include_matching_string_line)
 
+    # '1~3,5' -> [1, 2, 3, 5] (sorted, deduplicated); invalid parts are skipped
     def parse_range_string(self, range_str, range_sep='~'):
         if not range_str:
             return []
@@ -115,6 +123,7 @@ class UtilityTextMixin:
                     pass
         return sorted(result)
 
+    # Inverse of parse_range_string: [1, 2, 3, 5] -> '1~3,5'
     def range_to_string(self, numbers, range_sep='~'):
         if not numbers:
             return ''

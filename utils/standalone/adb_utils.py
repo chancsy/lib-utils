@@ -41,6 +41,7 @@ class AdbUtils:
             return stdout
         return stdout.decode('utf-8', errors='replace').strip()
 
+    # Serials of connected devices in 'device' state (unauthorized / offline ones skipped)
     def get_devices(self):
         output = self._run('devices')
         lines = output.splitlines()
@@ -51,9 +52,11 @@ class AdbUtils:
                 serials.append(parts[0])
         return serials
 
+    # Send every later adb call to this serial (None: adb's only connected device)
     def set_device(self, serial):
         self.device = serial
 
+    # Android SDK level as int (e.g. 34); None if unparsable
     def get_api_level(self):
         output = self._run('shell', 'getprop', 'ro.build.version.sdk')
         try:
@@ -74,6 +77,7 @@ class AdbUtils:
         ('shell dumpsys activity activities', ('mResumedActivity',), 'fallback, untested range'),
     ]
 
+    # Focused 'package/activity' from dumpsys; None if not found (e.g. screen locked)
     def get_current_activity_name(self):
         for cmd, keys, _tested in self._activity_sources:
             out_lines = self._run_cmd(cmd).splitlines()
@@ -93,6 +97,7 @@ class AdbUtils:
         print(f'get_current_activity_name: no focused window info found (api level {self.get_api_level()})')
         return None
 
+    # (width, height) in px from `wm size`; None if unparsable
     def get_screen_size(self):
         output = self._run('shell', 'wm', 'size')
         # output: "Physical size: 1080x2340"
@@ -104,6 +109,7 @@ class AdbUtils:
             print(f'Error parsing screen size from "{output}": {e}')
             return None
 
+    # Screen as a BGR numpy image (cv2); None on failure
     def take_screenshot(self):
         png_bytes = self._run('exec-out', 'screencap', '-p', binary=True)
         if not png_bytes:
@@ -115,6 +121,7 @@ class AdbUtils:
             print('take_screenshot: cv2.imdecode failed — bad PNG data')
         return img
 
+    # take_screenshot + cv2.imwrite(path); returns the image (None on failure)
     def save_screenshot(self, path='screenshot.png'):
         img = self.take_screenshot()
         if img is not None:
@@ -122,6 +129,7 @@ class AdbUtils:
             print(f'Screenshot saved to {path}')
         return img
 
+    # Tap near (x, y) with a random +-jitter_px offset, clamped to the screen
     def tap(self, x, y, jitter_px=10):
         screen = self.get_screen_size()
         tx = x + random.randint(-jitter_px, jitter_px)
@@ -131,6 +139,7 @@ class AdbUtils:
             ty = max(0, min(ty, screen[1] - 1))
         self._run('shell', 'input', 'tap', str(tx), str(ty))
 
+    # Tap a random point in the box (x1, y1)-(x2, y2), margin (fraction) away from its edges
     def tap_in_region(self, x1, y1, x2, y2, margin=0.25):
         dx = (x2 - x1) * margin
         dy = (y2 - y1) * margin
@@ -147,6 +156,7 @@ class AdbUtils:
     # extension, since phone cameras produce many/growing photo formats (heic, dng, ...)
     video_exts = {'.mp4', '.mov', '.3gp', '.mkv', '.webm', '.m4v', '.avi'}
 
+    # Device paths of the newest count files in remote_dir (ls -t); [] if none or no access
     def list_latest_files(self, remote_dir, count=1, exclude_exts=None):
         # 'ls -t -1' relies on the device's toolbox/coreutils ls supporting these flags (true for modern Android)
         output = self._run('shell', 'ls', '-t', '-1', remote_dir)
@@ -158,6 +168,7 @@ class AdbUtils:
         remote_dir = remote_dir.rstrip('/')
         return [f'{remote_dir}/{name}' for name in names[:count]]
 
+    # adb pull each path into dest_dir (~ expanded) -> local paths; move=True deletes them on the device
     def pull_files(self, remote_paths, dest_dir, move=False):
         dest_dir = os.path.expanduser(dest_dir)
         os.makedirs(dest_dir, exist_ok=True)
@@ -173,6 +184,7 @@ class AdbUtils:
                 print(f'pull_files: failed to pull {remote_path}')
         return pulled
 
+    # Pull the newest count files of remote_dir -> local paths ([] if none)
     def pull_latest_files(self, remote_dir, dest_dir='~', count=1, move=False, exclude_exts=None):
         remote_paths = self.list_latest_files(remote_dir, count, exclude_exts=exclude_exts)
         if not remote_paths:
@@ -188,6 +200,7 @@ class AdbUtils:
         '/storage/emulated/0/Pictures',
     ]
 
+    # Pull the newest count photos / videos from the first common DCIM folder that has any
     def pull_latest_media_files(self, dest_dir='~', count=1, move=False, dcim_paths=None, photos_only=False):
         exclude_exts = self.video_exts if photos_only else None
         for remote_dir in dcim_paths or self.common_dcim_paths:
