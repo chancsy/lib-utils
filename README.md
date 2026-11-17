@@ -176,3 +176,27 @@ pip install -e ".[all,win]"   # editable install with all extras
 or
 pip install -e ".[all,win]" --config-settings editable_mode=compat   # needed for Jupyter
 ```
+
+### API index (`API.md`)
+
+[API.md](API.md) is a generated, signatures-only index of the public API (one line per class / function / method:
+source line, parameters, one-line summary), with a contents table giving each module's line range. Use it to find a
+helper without reading the source; it's what AI coding assistants are pointed at. Regenerate it after changing the
+public API and commit it with the change (stdlib only, any Python >= 3.11):
+
+```bash
+python scripts/gen_api_index.py           # rewrite API.md
+python scripts/gen_api_index.py --check   # exit 1 if API.md is stale (e.g. in a pre-commit hook)
+```
+
+Summaries come from the docstring's first paragraph, or else the `#` comment block directly above the `def`.
+
+A pre-commit hook keeps it current: when a commit touches `utils/` it regenerates API.md and stops the commit if
+API.md changed or isn't staged (then `git add API.md` and commit again). Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+It uses `$LIB_UTILS_PYTHON`, else the venv next to the repo (`../.venv`), else `python3` / `python` / `py` on PATH.
+`git commit --no-verify` skips it once.

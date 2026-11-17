@@ -1,0 +1,27 @@
+#!/bin/sh
+# Keep API.md in step with the code: regenerate it and stop the commit if it changed or isn't staged.
+# Enabled per clone with:  git config core.hooksPath .githooks      Skip once: git commit --no-verify
+# Python: $LIB_UTILS_PYTHON, else the venv next to this repo (../.venv), else python3 / python / py on PATH.
+
+# Only when the commit touches the library, the generator or API.md itself.
+git diff --cached --name-only --diff-filter=ACMRD | grep -qE '^(utils/.*\.py|scripts/gen_api_index\.py|API\.md)$' || exit 0
+
+for candidate in "$LIB_UTILS_PYTHON" ../.venv/Scripts/python.exe ../.venv/bin/python python3 python py; do
+    [ -n "$candidate" ] || continue
+    if command -v "$candidate" >/dev/null 2>&1 || [ -x "$candidate" ]; then
+        PYTHON=$candidate
+        break
+    fi
+done
+if [ -z "$PYTHON" ]; then
+    echo "pre-commit: no Python found to regenerate API.md (set LIB_UTILS_PYTHON); skipping the check." >&2
+    exit 0
+fi
+
+"$PYTHON" scripts/gen_api_index.py >/dev/null || { echo "pre-commit: scripts/gen_api_index.py failed." >&2; exit 1; }
+
+if ! git diff --quiet -- API.md; then
+    echo "pre-commit: API.md was out of date (or not staged) and has been regenerated." >&2
+    echo "            Review it, then: git add API.md && git commit" >&2
+    exit 1
+fi

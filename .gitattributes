@@ -2,3 +2,6 @@
 # This silences the "LF will be replaced by CRLF" warnings and keeps diffs clean
 # when the repo is used on both Windows and Mac/Linux.
 * text=auto eol=crlf
+
+# Git hooks are shell scripts: CRLF would break them (sh reads the \r as part of each command).
+.githooks/* text eol=lf
