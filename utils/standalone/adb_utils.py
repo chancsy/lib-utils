@@ -299,6 +299,17 @@ class AdbUtils:
         ty = random.randint(int(y1 + dy), int(y2 - dy))
         self._run('shell', 'input', 'tap', str(tx), str(ty))
 
+    # Tap a random point in a region given as screen fractions (x1, y1, x2, y2), as RegionSetupTool
+    # saves them; size = (w, h) in device pixels to scale by, default get_screen_size() (one adb call).
+    # Scale by the device size, not by a scrcpy frame's, which is usually smaller.
+    def tap_in_fraction_region(self, region, size=None, margin=0.25):
+        size = size or self.get_screen_size()
+        if not size:
+            raise RuntimeError('tap_in_fraction_region: device screen size unknown')
+        w, h = size
+        x1, y1, x2, y2 = region
+        self.tap_in_region(int(x1 * w), int(y1 * h), int(x2 * w), int(y2 * h), margin=margin)
+
     def swipe(self, x1, y1, x2, y2, duration_ms=300):
         self._run('shell', 'input', 'swipe',
                   str(x1), str(y1), str(x2), str(y2), str(duration_ms))

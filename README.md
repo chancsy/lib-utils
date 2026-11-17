@@ -50,7 +50,7 @@ utils/
 │   ├── util_time.py        # timing, timestamps, IntervalTimer
 │   └── util_web.py         # urllib download helpers, webhook
 ├── standalone/             # optional modules — import explicitly, check deps at load time
-│   ├── adb_utils.py            [requires: opencv-python, numpy] — Android over adb: screenshot, tap, swipe, pull files; Wi-Fi: connect, pair (Android 11+), mDNS discovery, reconnect (saved address, then mDNS), switch a USB device to Wi-Fi; pick_device (USB first, one device listed twice counts once)
+│   ├── adb_utils.py            [requires: opencv-python, numpy] — Android over adb: screenshot, tap (also in a screen-fraction region, as RegionSetupTool saves them), swipe, pull files; Wi-Fi: connect, pair (Android 11+), mDNS discovery, reconnect (saved address, then mDNS), switch a USB device to Wi-Fi; pick_device (USB first, one device listed twice counts once)
 │   ├── clipboard_utils.py      [requires: pyperclip]
 │   ├── cryptography_utils.py   [requires: cryptography]
 │   ├── electronics_utils.py    [requires: eseries, sympy]
