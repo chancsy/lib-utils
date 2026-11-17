@@ -11,11 +11,14 @@ All notable changes to this project will be documented here.
 - `get_rows()` / `insert()` / `create_table()` etc. — SQL identifier injection: table and column names now validated and double-quoted via `_sql_id()`
 - `win_automation_utils` — `ImportError` on non-Windows platforms
 - `EquationSolver` — `eval()` exposed Python builtins; restricted to `{'__builtins__': {}}` so only sympy symbols are in scope (windll imported unconditionally); now raises a clear `ImportError` on non-Windows at import time
+- `MathUtils.print_data_stats(calc_stdev=True)` — `AttributeError`: it builds a `self.Dataset()`, but the `Dataset` class had been dropped; restored (see Added)
 
 ### Added
 - `read_json_file()` — counterpart to the existing `write_json_file()`; returns a caller-supplied `default` when the file doesn't exist instead of raising
 - `pyproject.toml` — modern packaging metadata with `extras_require` groups (`requests`, `git`, `crypto`, `pdf`, `slack`, `selenium`, `math`, `win`, `all`)
 - `README.md` — package layout, install instructions, usage examples
+- `MathUtils.dew_point()` — dew point from temperature and relative humidity (Magnus-Tetens or Sensirion constants)
+- `MathUtils.Dataset` — store values and get count / min / max / sum / mean / median / std dev / variance / percentile / quantile (`None` while empty)
 
 ### Changed
 - `requirements.txt` — rewritten as a flat `>=` mirror of the `pyproject.toml` dependencies (same floors), replacing the stale pip-freeze pins (`cryptography==45.0.7` contradicted pyproject's `>=48.0.1`); added previously missing sections (`ipython` core, `[sql]`, `[cv]`, `[clipboard]`, `[pillow]`, `[widgets]`); dropped transitive `pywin32-ctypes`. `pip-audit` re-run 2026-07-18 on the full resolved set (73 packages incl. transitives): no known vulnerabilities

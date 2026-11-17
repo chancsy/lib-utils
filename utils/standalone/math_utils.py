@@ -128,6 +128,19 @@ class MathUtils:
         coefficients = np.polyfit(known_x, known_y, degree) # Fit a polynomial of the specified degree to the data points
         return float(np.polyval(coefficients, x)) # Evaluate the polynomial at the given x value
 
+    # Dew point (°C) from temperature T (°C) and relative humidity RH (%), Magnus-type approximation
+    # method=1: Magnus-Tetens constants (https://www.renkeer.com/dew-point/)
+    # method=2: Sensirion constants (https://irtfweb.ifa.hawaii.edu/~tcs3/tcs3/Misc/Dewpoint_Calculation_Humidity_Sensor_E.pdf)
+    def dew_point(self, T: float, RH: float, method: int = 2) -> float:
+        if method == 1:
+            beta = 17.27; lambda_ = 237.3
+        elif method == 2:
+            beta = 17.62; lambda_ = 243.12
+        else:
+            raise ValueError(f'Unknown method {method}; use 1 or 2')
+        H = np.log(RH / 100.0) + (beta * T) / (lambda_ + T)
+        return float(lambda_ * H / (beta - H))
+
     # Find the combination of numbers whose sum is closest to target_sum
     def find_best_combo_sum(self, numbers: list, target_sum: float, max_len: int = None, allow_exceed: bool = True) -> tuple:
         best_sum = float('-inf') if allow_exceed else 0
@@ -143,6 +156,38 @@ class MathUtils:
                     best_sum = total_sum
                     best_combination = list(combo)
         return best_combination, best_sum
+
+    # Dataset storage with summary statistics (used by print_data_stats(calc_stdev=True))
+    # Statistics return None while the dataset is empty.
+    class Dataset:
+        def __init__(self, data=None):
+            self.data = np.array(data, dtype=float) if data is not None else np.array([], dtype=float)
+        def add_data(self, value):
+            self.data = np.append(self.data, value if isinstance(value, list) else [value])
+        def get_data(self):
+            return self.data
+        def clear_data(self):
+            self.data = np.array([], dtype=float)
+        def get_count(self):
+            return len(self.data)
+        def get_max_value(self):
+            return np.max(self.data) if self.data.size else None
+        def get_min_value(self):
+            return np.min(self.data) if self.data.size else None
+        def get_sum(self):
+            return np.sum(self.data) if self.data.size else None
+        def get_mean(self):
+            return np.mean(self.data) if self.data.size else None
+        def get_median(self):
+            return np.median(self.data) if self.data.size else None
+        def get_std_dev(self):
+            return np.std(self.data) if self.data.size else None
+        def get_variance(self):
+            return np.var(self.data) if self.data.size else None
+        def get_percentile(self, percentile):
+            return np.percentile(self.data, percentile) if self.data.size else None
+        def get_quantile(self, q):
+            return np.quantile(self.data, q) if self.data.size else None
 
     def print_data_stats(self, read_count, callback, x_min=np.inf, x_max=-np.inf, interval_s=0, calc_stdev=False):
         try:
@@ -247,6 +292,11 @@ class MathUtils:
             {'label': 'Numbers', 'name': 'numbers_str', 'type': str, 'default': '1,2,3,4,5', 'width': '150px'},
             {'label': 'Target', 'name': 'target_sum', 'type': float, 'default': 7.0, 'width': '60px'},
             {'label': 'Max Len', 'name': 'max_len', 'type': int, 'default': None, 'allow_empty': True, 'width': '60px'},
+        ]},
+        {'key': 'l', 'name': 'Dew Point', 'function': 'dew_point', 'inputs': [
+            {'label': 'Temp (°C)', 'name': 'T', 'type': float, 'default': 25.0, 'width': '60px'},
+            {'label': 'RH (%)', 'name': 'RH', 'type': float, 'default': 60.0, 'width': '60px'},
+            {'label': 'Method', 'name': 'method', 'options': [1, 2], 'default': 2},
         ]},
     ]
 
