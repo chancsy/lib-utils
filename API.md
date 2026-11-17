@@ -280,7 +280,7 @@ L8    class UtilityTimeMixin()
 L9      get_current_time()
 L12     get_current_datetime()
 L16     is_TimePassed(start_time, duration)  - True once duration seconds have passed since start_time (a time.time() value)
-L20     wait_TimePassed(start_time, duration, tick_s=0.01)  - Block until duration s after start_time, polling every 10 ms (tick_s is currently ignored)
+L20     wait_TimePassed(start_time, duration, tick_s=0.01)  - Block until duration s after start_time, checking every tick_s s (never sleeping past the deadline)
 L25     sleep(duration_s=1)  - Like time.sleep, but by polling every 10 ms (wait_TimePassed)
 L30     sleep_progress(duration)  - Sleep duration whole seconds with a same-line countdown
 L37     get_last_day_of_month(year)  - 12 datetimes: the last day of each month of year

@@ -16,10 +16,10 @@ class UtilityTimeMixin:
     def is_TimePassed(self, start_time, duration):
         return time.time() - start_time >= duration
 
-    # Block until duration s after start_time, polling every 10 ms (tick_s is currently ignored)
+    # Block until duration s after start_time, checking every tick_s s (never sleeping past the deadline)
     def wait_TimePassed(self, start_time, duration, tick_s=0.01):
         while not self.is_TimePassed(start_time, duration):
-            time.sleep(0.01)
+            time.sleep(max(0.0, min(tick_s, start_time + duration - time.time())))
 
     # Like time.sleep, but by polling every 10 ms (wait_TimePassed)
     def sleep(self, duration_s=1):
