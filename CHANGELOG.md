@@ -21,6 +21,7 @@ All notable changes to this project will be documented here.
 - `MathUtils.Dataset` — store values and get count / min / max / sum / mean / median / std dev / variance / percentile / quantile (`None` while empty)
 - `Electronics.r_star_delta()` — star (Y) ↔ delta (Δ) resistor network conversion; `show_info=True` shows the naming diagram in Jupyter
 - `Electronics.voltage_divider(show_info=True)` — shows the circuit diagram in Jupyter
+- `BitPatternCheckBox` (`widget_utils`) — 8 labelled checkboxes showing the bits of a byte (MSB first, set bits in bold); read-only by default, or editable with a `cb(change, bit)` callback
 
 ### Changed
 - `requirements.txt` — rewritten as a flat `>=` mirror of the `pyproject.toml` dependencies (same floors), replacing the stale pip-freeze pins (`cryptography==45.0.7` contradicted pyproject's `>=48.0.1`); added previously missing sections (`ipython` core, `[sql]`, `[cv]`, `[clipboard]`, `[pillow]`, `[widgets]`); dropped transitive `pywin32-ctypes`. `pip-audit` re-run 2026-07-18 on the full resolved set (73 packages incl. transitives): no known vulnerabilities

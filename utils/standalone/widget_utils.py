@@ -218,6 +218,32 @@ class MultiSelectMoveButtons:
         self.select_R.options = []
 
 
+# Vertical list of 8 checkboxes showing the bits of a byte, MSB (bit 7) at the top, each labelled
+# with its bit name (bold when set). Read-only by default; with disabled=False, cb(change, bit) is
+# called when a checkbox is toggled, bit being 7..0.
+# Usage:
+#   status = BitPatternCheckBox(bit_names=['Fault', 'Busy', 'Ready', 'Reserved', 'Reserved', 'Reserved', 'Reserved', 'Reserved'],
+#                               bit_values=0xA1, show=True)
+class BitPatternCheckBox:
+    def __init__(self, disabled=True, bit_names=('Reserved',)*8, bit_values=0, cb=None, show=False):
+        self.w = Widgets()
+        self.w.show_widget_on_create = False
+        self.widget = self.create_widget(disabled, bit_names, bit_values, cb=cb)
+        if show:
+            display(self.widget)
+
+    def create_widget(self, disabled, bit_names, bit_values, cb):
+        checkboxes = []
+        for i, bit_name in enumerate(bit_names):
+            bit_value = (bit_values & (0x80 >> i)) != 0
+            checkbox = self.w.HBox([
+                self.w.Checkbox(value=bit_value, description='', disabled=disabled, cb=lambda change, bit=(7-i): cb(change, bit) if cb else None, width='15px'),
+                self.w.Label(value=bit_name, style={'font_weight': 'bold'} if bit_value else {})
+            ])
+            checkboxes.append(checkbox)
+        return self.w.VBox(checkboxes)
+
+
 class TabbedTextareaPanel:
     """A Tab widget containing one scrollable Textarea per tab.
 
