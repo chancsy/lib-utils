@@ -1,5 +1,6 @@
 import os
 import platform
+import re
 import socket
 import subprocess
 import sys
@@ -58,9 +59,45 @@ class UtilityRuntimeMixin:
             return build_map.get(build_number, 'Unknown Windows version')
         return 'Unknown OS version'
 
-    # NOTE: platform.node() - the hostname, not a hardware serial number
+    # Hardware serial number (BIOS / DMI, Mac, Raspberry Pi); None if unavailable (Linux DMI usually needs root)
     def get_serial_number(self):
-        return platform.node()
+        system = platform.system()
+        serial = ''
+        try:
+            if system == 'Windows':
+                serial = self.run_powershell_command('(Get-CimInstance Win32_BIOS).SerialNumber')
+            elif system == 'Darwin':
+                out = subprocess.check_output(['ioreg', '-c', 'IOPlatformExpertDevice', '-d', '2'],
+                                              text=True, errors='replace')
+                match = re.search(r'"IOPlatformSerialNumber"\s*=\s*"([^"]+)"', out)
+                serial = match.group(1) if match else ''
+            else:
+                # Linux / other Unix: DMI (PCs and servers; root-only on most distros), then the device
+                # tree (Raspberry Pi and other ARM boards), then /proc/cpuinfo's 'Serial' line (older Pi kernels)
+                for path in ('/sys/class/dmi/id/product_serial', '/sys/firmware/devicetree/base/serial-number'):
+                    try:
+                        with open(path, 'rb') as f:
+                            serial = f.read().decode(errors='replace').strip('\x00 \t\r\n')
+                    except OSError:
+                        continue
+                    if serial:
+                        break
+                if not serial:
+                    try:
+                        with open('/proc/cpuinfo', encoding='utf-8', errors='replace') as f:
+                            match = re.search(r'^Serial\s*:\s*(\S+)', f.read(), re.MULTILINE)
+                        serial = match.group(1) if match else ''
+                    except OSError:
+                        pass
+        except (OSError, subprocess.SubprocessError):
+            serial = ''
+        serial = (serial or '').strip()
+        # firmware placeholders that aren't real serial numbers
+        placeholders = {'', 'to be filled by o.e.m.', 'default string', 'system serial number', 'not specified',
+                        'not applicable', 'none', 'n/a', '0123456789'}
+        if serial.lower() in placeholders or set(serial) <= {'0'}:
+            return None
+        return serial
 
     # platform.processor() (can be '' on Linux)
     def get_cpu_info(self):
