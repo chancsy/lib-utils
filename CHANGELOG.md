@@ -5,6 +5,7 @@ All notable changes to this project will be documented here.
 ## [Unreleased]
 
 ### Fixed
+- `os_version_win()` — stopped at 24H2 (build 26100), so 25H2 PCs reported "Unknown Windows version". Adds 25H2 (26200), 26H1 (28000, new Arm PCs only) and 26H2 (26300); reads the build from `sys.getwindowsversion()` instead of parsing `platform.platform()`; a build not in the table now says `Unknown Windows version (build N)`
 - `wait_TimePassed()` — ignored `tick_s` and always polled every 10 ms; now checks every `tick_s` seconds, never sleeping past the deadline (a large `tick_s` doesn't overshoot `duration`). `sleep()` / `sleep_progress()` keep the 10 ms default
 - `get_serial_number()` — returned the hostname (`platform.node()`, a placeholder since the first commit), so the test banner's `SN=` was the PC name. Now the hardware serial: Windows `Win32_BIOS.SerialNumber` (CIM, as `wmic` is gone), macOS `IOPlatformSerialNumber`, Linux DMI `product_serial` (usually root-only), then the device tree / `/proc/cpuinfo` serial (Raspberry Pi and other ARM boards). `None` if unavailable or a firmware placeholder ("To Be Filled By O.E.M." etc.)
 - `SQLite.create_table()` — its docstring came after a `_sql_id()` call, so Python didn't treat it as a docstring (no `help()` text, no API.md summary); the call now follows the docstring, same behaviour

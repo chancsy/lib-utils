@@ -221,24 +221,24 @@ L13     get_logon_username()  - Windows: os.getlogin() (OSError without a logon 
 L23     get_hostname()
 L27     os_info()  - platform.platform(), e.g. 'Windows-11-10.0.26200-SP0'
 L31     os_platform()  - platform.system(): 'Windows', 'Linux' or 'Darwin'
-L35     os_version_win()  - e.g. 'Windows 11, version 24H2' from the build number; builds not in its table -> 'Unknown Windows version'
-L63     get_serial_number()  - Hardware serial number (BIOS / DMI, Mac, Raspberry Pi); None if unavailable (Linux DMI usually needs root)
-L103    get_cpu_info()  - platform.processor() (can be '' on Linux)
-L107    get_up_time_days()  - Days since boot as a float (Windows: PowerShell LastBootUpTime, else `uptime -s`)
-L120    get_user_home_directory()
-L124    os_path_join(*paths)  - Join path and replace with os specific path separator
-L127    in_virtualenv()
-L130    get_python_exe_path()
-L134    get_python_version(detailed=False)  - e.g. '3.12.4'; detailed=True -> the full sys.version string
-L141    module_exists(module_name, print_error_on_missing=True)  - True if the pip *distribution* is installed (e.g. 'pyserial', not 'serial'); prints a pip hint if not
-L151    get_python_pkg_version(pkg_name)  - Installed version of a pip distribution, else the string 'Package not found'
-L158    confirm(prompt)  - prompt a Y/N question via input(); returns True only on an exact 'y'/'Y' reply
-L162    update_kwargs_param(kwargs, param_name, param_value, overwrite=False)  - append param to kwargs if not already set, or update value if overwrite argument is true
-L170    get_git_info(info=None)  - python-git-info dict (or one field, e.g. 'commit') for the cwd's repo as of gitinfo's first import; None if…
-L180    get_github_latest_release(repo_owner, repo_name)  - fetch the latest release info of a github repo
-L190    get_github_release_download_url(release_info, filter_name='browser_download_url', filter_value='')  - get the release binary download url with specified filters
-L202    beep(freq=1000, duration_ms=1000) -> None  - Emit a system beep at the given frequency and duration.
-L218    beep_multi(count, gap_ms=100, freq=1000, duration_ms=100) -> None  - Emit multiple beeps with a gap between each.
+L35     os_version_win()  - e.g. 'Windows 11, version 25H2' from the build number; builds not in its table -> 'Unknown Windows version…
+L67     get_serial_number()  - Hardware serial number (BIOS / DMI, Mac, Raspberry Pi); None if unavailable (Linux DMI usually needs root)
+L107    get_cpu_info()  - platform.processor() (can be '' on Linux)
+L111    get_up_time_days()  - Days since boot as a float (Windows: PowerShell LastBootUpTime, else `uptime -s`)
+L124    get_user_home_directory()
+L128    os_path_join(*paths)  - Join path and replace with os specific path separator
+L131    in_virtualenv()
+L134    get_python_exe_path()
+L138    get_python_version(detailed=False)  - e.g. '3.12.4'; detailed=True -> the full sys.version string
+L145    module_exists(module_name, print_error_on_missing=True)  - True if the pip *distribution* is installed (e.g. 'pyserial', not 'serial'); prints a pip hint if not
+L155    get_python_pkg_version(pkg_name)  - Installed version of a pip distribution, else the string 'Package not found'
+L162    confirm(prompt)  - prompt a Y/N question via input(); returns True only on an exact 'y'/'Y' reply
+L166    update_kwargs_param(kwargs, param_name, param_value, overwrite=False)  - append param to kwargs if not already set, or update value if overwrite argument is true
+L174    get_git_info(info=None)  - python-git-info dict (or one field, e.g. 'commit') for the cwd's repo as of gitinfo's first import; None if…
+L184    get_github_latest_release(repo_owner, repo_name)  - fetch the latest release info of a github repo
+L194    get_github_release_download_url(release_info, filter_name='browser_download_url', filter_value='')  - get the release binary download url with specified filters
+L206    beep(freq=1000, duration_ms=1000) -> None  - Emit a system beep at the given frequency and duration.
+L222    beep_multi(count, gap_ms=100, freq=1000, duration_ms=100) -> None  - Emit multiple beeps with a gap between each.
 ```
 
 ## utils/_internal/util_testing.py  [stdlib]

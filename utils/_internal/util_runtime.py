@@ -31,7 +31,7 @@ class UtilityRuntimeMixin:
     def os_platform(self):
         return platform.system()
 
-    # e.g. 'Windows 11, version 24H2' from the build number; builds not in its table -> 'Unknown Windows version'
+    # e.g. 'Windows 11, version 25H2' from the build number; builds not in its table -> 'Unknown Windows version (build N)'
     def os_version_win(self):
         platform_name = self.os_platform()
         if platform_name == 'Windows':
@@ -54,9 +54,13 @@ class UtilityRuntimeMixin:
                 22621: 'Windows 11, version 22H2',
                 22631: 'Windows 11, version 23H2',
                 26100: 'Windows 11, version 24H2',
+                26200: 'Windows 11, version 25H2',
+                26300: 'Windows 11, version 26H2',
+                28000: 'Windows 11, version 26H1',   # only preinstalled on new Arm (Snapdragon X2) PCs
             }
-            build_number = int(self.os_info().split('.')[-1].split('-')[0])
-            return build_map.get(build_number, 'Unknown Windows version')
+            # Builds from Microsoft's release information (learn.microsoft.com/windows/release-health), Nov 2026
+            build_number = sys.getwindowsversion().build
+            return build_map.get(build_number, f'Unknown Windows version (build {build_number})')
         return 'Unknown OS version'
 
     # Hardware serial number (BIOS / DMI, Mac, Raspberry Pi); None if unavailable (Linux DMI usually needs root)
