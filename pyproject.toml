@@ -76,6 +76,12 @@ math = [
     "eseries>=1.2",
 ]
 
+# pip install "lib-utils[plot]"  (LivePlot needs Jupyter)
+plot = [
+    "matplotlib>=3.10",
+    "ipympl>=0.9",
+]
+
 # pip install "lib-utils[win]"  (Windows only)
 win = [
     "pywin32>=311",
@@ -99,6 +105,7 @@ all = [
     "lib-utils[slack]",
     "lib-utils[selenium]",
     "lib-utils[math]",
+    "lib-utils[plot]",
 ]
 
 [tool.setuptools.packages.find]

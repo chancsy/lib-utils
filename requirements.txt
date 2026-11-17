@@ -46,6 +46,10 @@ webdriver_manager>=4.0
 sympy>=1.14
 eseries>=1.2
 
+# [plot]
+matplotlib>=3.10
+ipympl>=0.9
+
 # [win] — Windows only
 pywin32>=311
 pygetwindow>=0.0.9

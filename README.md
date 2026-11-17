@@ -53,6 +53,7 @@ utils/
 │   ├── electronics_utils.py    [requires: eseries, sympy]
 │   ├── log_actions.py          [stdlib only]
 │   ├── math_utils.py           [requires: numpy, sympy]
+│   ├── matplotlib_utils.py     [requires: matplotlib, ipympl] (LivePlot: Jupyter only)
 │   ├── pdf_utils.py            [requires: pikepdf]
 │   ├── selenium_utils.py       [requires: selenium, webdriver_manager]
 │   ├── slack_utils.py          [requires: slack_sdk]
@@ -83,6 +84,7 @@ from utils.standalone.cryptography_utils import Cryptography
 from utils.standalone.electronics_utils import Electronics
 from utils.standalone.log_actions import PrintLogger, print_logging_start, print_logging_end, new_log, add_lines
 from utils.standalone.math_utils import MathUtils, EquationSolver, IntegerLimits
+from utils.standalone.matplotlib_utils import LivePlot, XY_Data                     # LivePlot: Jupyter only
 from utils.standalone.pdf_utils import PdfUtils
 from utils.standalone.selenium_utils import SeleniumUtils
 from utils.standalone.slack_utils import SlackUtils
