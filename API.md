@@ -28,7 +28,7 @@ utils/_internal/util_testing.py  [stdlib]  L244-248  UtilityTestingMixin
 utils/_internal/util_text.py  [stdlib]  L250-270  UtilityTextMixin
 utils/_internal/util_threads.py  [stdlib]  L272-275  UtilityThreadMixin
 utils/_internal/util_time.py  [stdlib]  L277-295  UtilityTimeMixin
-utils/_internal/util_web.py  [needs: IPython, requests]  L297-316  UtilityWebMixin
+utils/_internal/util_web.py  [needs: IPython, requests, truststore]  L297-316  UtilityWebMixin
 utils/standalone/adb_utils.py  [needs: cv2, numpy]  L318-335  AdbUtils
 utils/standalone/clipboard_utils.py  [needs: pyperclip]  L337-342  Clipboard
 utils/standalone/cryptography_utils.py  [needs: cryptography]  L344-353  Cryptography
@@ -294,25 +294,25 @@ L132    get_datetime_difference(start_time, end_time, output_format='seconds')  
 L253    seconds_to_time(seconds)  - -> (hours, minutes, seconds)
 ```
 
-## utils/_internal/util_web.py  [needs: IPython, requests]
+## utils/_internal/util_web.py  [needs: IPython, requests, truststore]
 ```
-L13   class UtilityWebMixin()
-L32     fetch_content(url)  - GET url -> text (UTF-8, invalid bytes replaced); raises on HTTP errors
-L37     extract_urls(url, ext='', params={})  - URLs of the <a href> links ending in ext on the page; relative links resolve against the site root, not the…
-L47     list_files_http(url, recursive=False, ignore_first_link=False, ext='')  - Crawl a web directory listing -> (files, dirs) namedtuple of URLs; dirs are links ending in '/'
-L66     download_file(url, download_dir='.', overwrite=False, show_abs_path=True, suppress_output=False)  - Save url into download_dir under its last path segment -> 'downloaded' / 'skipped' (exists) / 'failed'
-L83     download_file_to_memory(url)  - -> bytes, or None on error (the error is printed)
-L92     download_files(urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1)  - Download urls in threads, retrying failures auto_retry_count times; output_type progress/full/quiet; -> None
-L145    post_to_teams(webhook_url, text)  - Post text to a Teams incoming webhook (newlines doubled so Teams keeps them)
-L153    send_webhook(webhook_url, json_data)  - POST json_data with requests, TLS verification OFF; prints if status isn't 200-202; None without requests
-L164    get_public_ip()  - This machine's public IP via api.ipify.org (needs requests)
-L174    get_location_from_ip(ip)  - (city, country) of ip via ipinfo.io (needs requests)
-L185    extract_host_from_url(url)  - netloc of a URL ('https://a.com:8080/x' -> 'a.com:8080'); other input returned unchanged
-L192    is_host_reachable(host, port=80, timeout=5)  - True if a TCP connection to host:port opens within timeout s (host may be a URL)
-L201    img_to_base64(img)  - Convert raw image bytes to a Base64 string for embedding in HTML or JSON.
-L207    base64_to_img(img_base64_str) -> bytes  - Decode a Base64 string back to raw image bytes.
-L213    display_img_from_base64(img_base64_str)  - Display an image in Jupyter Notebook from a Base64 string.
-L221    display_img(img)  - Display raw image bytes inline in a Jupyter notebook.
+L30   class UtilityWebMixin()
+L49     fetch_content(url)  - GET url -> text (UTF-8, invalid bytes replaced); raises on HTTP errors
+L54     extract_urls(url, ext='', params={})  - URLs of the <a href> links ending in ext on the page; relative links resolve against the site root, not the…
+L64     list_files_http(url, recursive=False, ignore_first_link=False, ext='')  - Crawl a web directory listing -> (files, dirs) namedtuple of URLs; dirs are links ending in '/'
+L83     download_file(url, download_dir='.', overwrite=False, show_abs_path=True, suppress_output=False)  - Save url into download_dir under its last path segment -> 'downloaded' / 'skipped' (exists) / 'failed'
+L100    download_file_to_memory(url)  - -> bytes, or None on error (the error is printed)
+L109    download_files(urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1)  - Download urls in threads, retrying failures auto_retry_count times; output_type progress/full/quiet; -> None
+L162    post_to_teams(webhook_url, text, verify=True)  - Post text to a Teams incoming webhook (newlines doubled so Teams keeps them); verify: see send_webhook
+L170    send_webhook(webhook_url, json_data, verify=True)  - POST json_data; TLS checked against the Windows cert store (truststore) - verify=False skips it; None without…
+L193    get_public_ip()  - This machine's public IP via api.ipify.org (needs requests)
+L203    get_location_from_ip(ip)  - (city, country) of ip via ipinfo.io (needs requests)
+L214    extract_host_from_url(url)  - netloc of a URL ('https://a.com:8080/x' -> 'a.com:8080'); other input returned unchanged
+L221    is_host_reachable(host, port=80, timeout=5)  - True if a TCP connection to host:port opens within timeout s (host may be a URL)
+L230    img_to_base64(img)  - Convert raw image bytes to a Base64 string for embedding in HTML or JSON.
+L236    base64_to_img(img_base64_str) -> bytes  - Decode a Base64 string back to raw image bytes.
+L242    display_img_from_base64(img_base64_str)  - Display an image in Jupyter Notebook from a Base64 string.
+L250    display_img(img)  - Display raw image bytes inline in a Jupyter notebook.
 ```
 
 ## utils/standalone/adb_utils.py  [needs: cv2, numpy]

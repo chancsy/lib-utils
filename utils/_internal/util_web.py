@@ -8,6 +8,23 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from html.parser import HTMLParser
 
 
+def _truststore_adapter():
+    """A requests HTTPAdapter that verifies TLS against the OS certificate store (truststore), scoped to the
+    session it's mounted on - no global ssl patching. Same approach as tools/portable_apps_manager/_http.py."""
+    import ssl
+    import truststore
+    from requests.adapters import HTTPAdapter
+
+    class _TruststoreAdapter(HTTPAdapter):
+        def init_poolmanager(self, *args, **kwargs):
+            kwargs['ssl_context'] = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            return super().init_poolmanager(*args, **kwargs)
+
+        def proxy_manager_for(self, *args, **kwargs):
+            kwargs['ssl_context'] = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            return super().proxy_manager_for(*args, **kwargs)
+
+    return _TruststoreAdapter()
 
 
 class UtilityWebMixin:
@@ -141,21 +158,33 @@ class UtilityWebMixin:
 
         self.print_same_line_end() if output_type == 'progress' else print(f'{get_summary_line()}')
 
-    # Post text to a Teams incoming webhook (newlines doubled so Teams keeps them)
-    def post_to_teams(self, webhook_url, text):
+    # Post text to a Teams incoming webhook (newlines doubled so Teams keeps them); verify: see send_webhook
+    def post_to_teams(self, webhook_url, text, verify=True):
         text_conditioned_for_teams = str(text).replace('\n', '\n\n')
         jsonData = {
             'text': text_conditioned_for_teams
         }
-        return self.send_webhook(webhook_url, jsonData)
+        return self.send_webhook(webhook_url, jsonData, verify=verify)
 
-    # POST json_data with requests, TLS verification OFF; prints if status isn't 200-202; None without requests
-    def send_webhook(self, webhook_url, json_data):
+    # POST json_data; TLS checked against the Windows cert store (truststore) - verify=False skips it; None without requests
+    def send_webhook(self, webhook_url, json_data, verify=True):
+        # TODO(office test): this used verify=False ("required for corporate proxy"). The office
+        # proxy re-signs HTTPS with a corporate root CA that's in the Windows certificate store but not in
+        # requests' own CA bundle (certifi); truststore makes requests use the Windows store, like browsers do,
+        # so verification should now pass there. Not yet tested on the office network - if a post fails with
+        # CERTIFICATE_VERIFY_FAILED, pass verify=False to get the old behaviour for now.
         if not self.module_exists('requests'):
             return
         import requests
 
-        response = requests.post(webhook_url, json=json_data, verify=False)  # verify=False required for corporate proxy
+        session = requests.Session()
+        if verify:
+            if self.module_exists('truststore', print_error_on_missing=False):
+                session.mount('https://', _truststore_adapter())
+            else:
+                print('send_webhook: truststore not installed - verifying TLS with certifi only, which fails behind '
+                      'a TLS-inspecting proxy. To use the Windows certificate store: pip install truststore')
+        response = session.post(webhook_url, json=json_data, verify=verify)
         if not (response.status_code == 200 or response.status_code == 201 or response.status_code == 202):
             print(f'{response} - Please check')
         return response
