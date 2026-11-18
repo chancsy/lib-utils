@@ -306,14 +306,14 @@ L100    download_file_to_memory(url)  - -> bytes, or None on error (the error is
 L109    download_files(urls, download_dir='.', overwrite=False, parallel_download=True, max_workers=5, output_type='progress', auto_retry_count=1)  - Download urls in threads, retrying failures auto_retry_count times; output_type progress/full/quiet; -> None
 L162    post_to_teams(webhook_url, text, verify=True)  - Post text to a Teams incoming webhook (newlines doubled so Teams keeps them); verify: see send_webhook
 L170    send_webhook(webhook_url, json_data, verify=True)  - POST json_data; TLS checked against the Windows cert store (truststore) - verify=False skips it; None without…
-L193    get_public_ip()  - This machine's public IP via api.ipify.org (needs requests)
-L203    get_location_from_ip(ip)  - (city, country) of ip via ipinfo.io (needs requests)
-L214    extract_host_from_url(url)  - netloc of a URL ('https://a.com:8080/x' -> 'a.com:8080'); other input returned unchanged
-L221    is_host_reachable(host, port=80, timeout=5)  - True if a TCP connection to host:port opens within timeout s (host may be a URL)
-L230    img_to_base64(img)  - Convert raw image bytes to a Base64 string for embedding in HTML or JSON.
-L236    base64_to_img(img_base64_str) -> bytes  - Decode a Base64 string back to raw image bytes.
-L242    display_img_from_base64(img_base64_str)  - Display an image in Jupyter Notebook from a Base64 string.
-L250    display_img(img)  - Display raw image bytes inline in a Jupyter notebook.
+L191    get_public_ip()  - This machine's public IP via api.ipify.org (needs requests)
+L201    get_location_from_ip(ip)  - (city, country) of ip via ipinfo.io (needs requests)
+L212    extract_host_from_url(url)  - netloc of a URL ('https://a.com:8080/x' -> 'a.com:8080'); other input returned unchanged
+L219    is_host_reachable(host, port=80, timeout=5)  - True if a TCP connection to host:port opens within timeout s (host may be a URL)
+L228    img_to_base64(img)  - Convert raw image bytes to a Base64 string for embedding in HTML or JSON.
+L234    base64_to_img(img_base64_str) -> bytes  - Decode a Base64 string back to raw image bytes.
+L240    display_img_from_base64(img_base64_str)  - Display an image in Jupyter Notebook from a Base64 string.
+L248    display_img(img)  - Display raw image bytes inline in a Jupyter notebook.
 ```
 
 ## utils/standalone/adb_utils.py  [needs: cv2, numpy]

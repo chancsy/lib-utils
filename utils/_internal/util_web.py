@@ -168,11 +168,9 @@ class UtilityWebMixin:
 
     # POST json_data; TLS checked against the Windows cert store (truststore) - verify=False skips it; None without requests
     def send_webhook(self, webhook_url, json_data, verify=True):
-        # TODO(office test): this used verify=False ("required for corporate proxy"). The office
-        # proxy re-signs HTTPS with a corporate root CA that's in the Windows certificate store but not in
-        # requests' own CA bundle (certifi); truststore makes requests use the Windows store, like browsers do,
-        # so verification should now pass there. Not yet tested on the office network - if a post fails with
-        # CERTIFICATE_VERIFY_FAILED, pass verify=False to get the old behaviour for now.
+        # Untested: a host the office proxy re-signs with a corporate root CA (truststore should pass it via the
+        # Windows certificate store; certifi alone would fail). None was re-signed when last checked - the Teams
+        # webhook verified even with certifi only. If a post fails with CERTIFICATE_VERIFY_FAILED, pass verify=False.
         if not self.module_exists('requests'):
             return
         import requests
