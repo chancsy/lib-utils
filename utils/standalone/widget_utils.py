@@ -1,5 +1,6 @@
 from ..utilities import *
 from .._internal.util_demo import resolve_demo_input, call_demo_function
+import os
 import re
 utils = UtilityFunctions()
 
@@ -268,6 +269,71 @@ class TabbedTextareaPanel:
         self.css = w.HTML(self._CSS)
 
 
+def _image_from_result(result):
+    """``(data, fmt, size_text)`` when a demo function returned an image, else None.
+
+    Accepts an ``IPython.display.Image`` or raw bytes.  The format is read from the
+    bytes' signature (IPython's ``Image.format`` says 'png' for any unknown data, a BMP
+    included).  A BMP must also carry its own length in its header, so arbitrary bytes
+    that happen to start with ``BM`` are not taken for an image.
+    """
+    import struct
+    try:
+        from IPython.display import Image as _IPyImage
+    except ImportError:
+        _IPyImage = None
+    if _IPyImage is not None and isinstance(result, _IPyImage):
+        data = result.data
+    elif isinstance(result, (bytes, bytearray)):
+        data = result
+    else:
+        return None
+    if not isinstance(data, (bytes, bytearray)) or len(data) < 32:
+        return None
+    data = bytes(data)
+    if data[:8] == b'\x89PNG\r\n\x1a\n':
+        w, h = struct.unpack('>II', data[16:24])
+        return data, 'png', f'PNG {w}x{h}'
+    if data[:2] == b'BM' and struct.unpack('<I', data[2:6])[0] == len(data):
+        w, h = struct.unpack('<ii', data[18:26])
+        return data, 'bmp', f'BMP {w}x{abs(h)}'
+    if data[:6] in (b'GIF87a', b'GIF89a'):
+        w, h = struct.unpack('<HH', data[6:10])
+        return data, 'gif', f'GIF {w}x{h}'
+    if data[:3] == b'\xff\xd8\xff':
+        return data, 'jpeg', 'JPEG'
+    return None
+
+
+_IMAGE_EXTENSIONS = {'png': ('.png',), 'bmp': ('.bmp',), 'gif': ('.gif',), 'jpeg': ('.jpg', '.jpeg')}
+_HIDDEN_CONTROLS_MIN_HEIGHT = '500px'  # output pane height while the controls pane is hidden
+_OUTPUT_MAX_WIDTH = '66.67%'  # the output pane can be dragged up to 2/3 of the row; the controls keep 1/3
+
+
+def _image_save_path(filename, fmt, entry_name=None):
+    """Where the Image tab's Save Image writes an image of format fmt ('png', 'bmp', ...).
+
+    Blank -> ``./<entry name>_<timestamp>.<ext>``; a folder (existing, or ending in a
+    slash) -> that folder with the same name; no extension -> the image's own one
+    added.  Raises ValueError for an extension that doesn't match the image's format,
+    since the bytes are written as they are.  Relative paths are from the cwd.
+    """
+    exts = _IMAGE_EXTENSIONS.get(fmt, (f'.{fmt}',))
+    stem = re.sub(r'[^0-9A-Za-z]+', '_', entry_name or 'image').strip('_') or 'image'
+    default_name = f"{stem}_{utils.get_datetimestamp(date_time_delim='_')}{exts[0]}"
+    filename = (filename or '').strip().strip('"')
+    if not filename:
+        return os.path.join('.', default_name)
+    if filename.endswith(('\\', '/')) or os.path.isdir(filename):
+        return os.path.join(filename, default_name)
+    ext = os.path.splitext(filename)[1].lower()
+    if not ext:
+        return filename + exts[0]
+    if ext not in exts:
+        raise ValueError(f'the image is {fmt.upper()} - use {exts[0]} or leave the extension out')
+    return filename
+
+
 def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = None, title: str = None, no_interface_wrap: bool = True):
     """Build a Jupyter widget GUI driven by a lib_demo_params list.
 
@@ -313,10 +379,20 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
             },                                   #   Target must match "<entry name>.<input name>" exactly.
         }
 
+    A function that returns an image (``IPython.display.Image``, or PNG / BMP / GIF /
+    JPEG bytes) has it shown in the Image tab, which is then selected; the Result tab
+    gets a one-line note instead of the image's text form.  The next click goes back
+    to the Result tab.  Images are shown through an ``ipywidgets.Image``, not
+    ``display()``, which has no cell output to go to from a button click.  A File box
+    and Save Image button above the image write the shown image's bytes to a file (see
+    ``_image_save_path`` for the name rules); an existing file is not overwritten.
+
     Returns:
-        ipywidgets.HBox: ``HBox([output_tab, buttons_panel])`` ready to display.
-        Access ``result.children[0].children[0]`` for the Result textarea and
-        ``.children[1]`` for the Source Code textarea.
+        ipywidgets.HBox: ``HBox([output_tab, strip, buttons_panel])`` ready to display.
+        Buttons overlaid on the tab bars hide/show the buttons panel; the output Tab's
+        lower-right corner can be dragged to widen it (up to 2/3 of the row).
+        The output Tab's children are the Result textarea, the Image tab and the
+        Source Code textarea (titles 'Result', 'Image', 'Source Code').
     """
     import contextlib
     import inspect
@@ -333,8 +409,75 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
     w_tab           = _tab_panel.tab
     w_css           = _tab_panel.css
 
+    # Image tab between Result and Source Code
+    _IMAGE_TAB = 1
+    w_image_note = w.Label('An image returned by a demo function is shown here.')
+    w_image = w.Image(value=b'', format='png')
+    w_image.layout.display    = 'none'
+    w_image.layout.max_width  = '100%'
+    w_image.layout.height     = 'auto'
+    w_image.layout.object_fit = 'contain'
+    _shown_image_entry = {'name': None}  # demo entry whose image is shown: its name is the default file name
+
+    def _save_image():
+        try:
+            path = _image_save_path(w_image_file.value, w_image.format, _shown_image_entry['name'])
+            if os.path.exists(path):
+                raise FileExistsError(f'{path} exists - choose another name')
+            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+            with open(path, 'wb') as f:
+                f.write(w_image.value)
+            w_image_status.value = f'Saved {os.path.abspath(path)}'
+        except Exception as e:
+            w_image_status.value = f'Not saved: {e}'
+
+    w_image_file   = w.Text(value='', width='320px', placeholder='blank = .\\<demo name>_<timestamp>.<format>')
+    w_image_save   = w.Button(description='Save Image', width='100px', cb=lambda _: _save_image())
+    w_image_status = w.Label('')
+    w_image_save_row = w.HBox([w.Label('File: '), w_image_file, w_image_save, w_image_status])
+    w_image_save_row.layout.display = 'none'
+    w_image_box = w.VBox([w_image_note, w_image_save_row, w_image])
+    w_image_box.layout.overflow = 'auto'
+    w_tab.children = (w_output, w_image_box, w_source_output)
+    for i, tab_title in enumerate(('Result', 'Image', 'Source Code')):
+        w_tab.set_title(i, tab_title)
+
+    def _show_image(image, entry_name=None):
+        data, fmt, size_text = image
+        w_image.format = fmt
+        w_image.value  = data
+        w_image.layout.display      = ''
+        w_image_note.layout.display = 'none'
+        w_image_save_row.layout.display = ''
+        w_image_status.value = ''
+        _shown_image_entry['name'] = entry_name
+        w_tab.selected_index = _IMAGE_TAB
+        return f'Image: {size_text}, {len(data) / 1024:.0f} kB - see the Image tab'
+
+    def _set_image(data=None, caption=None, select=False, name=None):
+        """Show image bytes in the Image tab from code, e.g. a live view's frames, without touching the
+        Result tab. data None: only the caption changes. caption: a line above the image (None: none).
+        select: also switch to the Image tab. name: the Save Image default file name stem."""
+        if data is not None:
+            image = _image_from_result(data)
+            if image is None:
+                raise ValueError('data is not PNG / BMP / GIF / JPEG bytes')
+            data, fmt, _ = image
+            if w_image.format != fmt:
+                w_image.format = fmt
+            w_image.value = data
+            w_image.layout.display          = ''
+            w_image_save_row.layout.display = ''
+            _shown_image_entry['name'] = name
+        w_image_note.value          = caption or ''
+        w_image_note.layout.display = '' if caption else 'none'
+        if select:
+            w_tab.selected_index = _IMAGE_TAB
+
     def _demo_button_click(sender, demo_entry, input_bindings):
         function_ref = demo_entry['function']
+        if w_tab.selected_index == _IMAGE_TAB:
+            w_tab.selected_index = 0
 
         # Show source code in the Source Code tab before running.
         # For lambda wrappers, scan the lambda source for the first method name on the instance
@@ -395,7 +538,10 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
             # Comparison is done line-by-line (not substring) so that a short return
             # value like "SOURCEVOLT" is not suppressed just because it appears as a
             # substring inside a comm-log line (e.g. "SER <- SMU4201 : 'SOURCEVOLT\r\n'").
-            if result is not None:
+            image = _image_from_result(result)
+            if image is not None:
+                w_output.value += _show_image(image, demo_entry.get('name'))
+            elif result is not None:
                 printed_delta = w_output.value[len(value_before_call):]
                 result_str = "\n".join(str(item) for item in result) if isinstance(result, list) else str(result)
                 printed_lines = {line.strip() for line in printed_delta.splitlines()}
@@ -527,14 +673,58 @@ def build_lib_demo_widget(instance, lib_demo_params: list, extra_tabs: list = No
         w_buttons_tab = w.Tab(children=tab_contents)
         for i, t in enumerate(tab_titles):
             w_buttons_tab.set_title(i, t)
-        # CSS must appear somewhere in the displayed tree.
-        w_buttons_vbox = w.VBox([w_css, w_buttons_tab])
+        w_buttons_vbox = w.VBox([w_buttons_tab])
     else:
-        # CSS must appear somewhere in the displayed tree.
-        w_buttons_vbox = w.VBox([w_css, w_instr_content])
+        w_buttons_vbox = w.VBox([w_instr_content])
 
-    w_main = w.HBox([w_tab, w_buttons_vbox], width='100%')
+    # Layout as before: the output pane grows into what the controls pane leaves (basis width 0, flex-grow 1).
+    # Its lower-right corner can be dragged (CSS resize sets its width, the flex basis) up to 2/3 of the row;
+    # the controls pane shrinks to fit and scrolls inside itself if a row can't wrap that narrow, so the page
+    # never scrolls sideways. A dragged width lasts until the output is re-rendered. The controls' rows wrap
+    # instead of each label + input box growing its own scrollbar (ipywidgets boxes are overflow: auto).
+    # The hide / show buttons are overlaid (absolute position) on the empty right end of the tab bars, so they
+    # take no width: hide on the controls pane, show (only while hidden) on the output pane.
+    w_tab.add_class('lib-demo-output')
+    w_tab.layout.flex      = '1 0 auto'
+    w_tab.layout.max_width = _OUTPUT_MAX_WIDTH
+    w_buttons_vbox.add_class('lib-demo-controls')
+    w_buttons_vbox.layout.flex      = '0 1 auto'
+    w_buttons_vbox.layout.min_width = '0'
+    w_layout_css = w.HTML('<style>'
+                          '.lib-demo-output { resize: horizontal; overflow: auto; width: 0; }'
+                          '.lib-demo-controls { position: relative; overflow: auto; }'
+                          '.lib-demo-controls .widget-hbox { flex-wrap: wrap; overflow: visible; max-width: 100%; }'
+                          '.lib-demo-controls .widget-hbox > :not(.widget-hbox) { flex-shrink: 0; }'
+                          '.lib-demo-strip { position: relative; overflow: visible !important; }'
+                          '.lib-demo-toggle { position: absolute !important; top: 0; right: 0; z-index: 10; margin: 0 !important; }'
+                          '</style>')
+
+    def _toggle_controls(_=None):
+        hide = w_buttons_vbox.layout.display != 'none'
+        w_buttons_vbox.layout.display = 'none' if hide else ''
+        w_show.layout.display         = '' if hide else 'none'
+        # nothing else sets the row's height once the controls are hidden
+        w_tab.layout.min_height = _HIDDEN_CONTROLS_MIN_HEIGHT if hide else ''
+        # hidden: fill the row and shrink to it even after a drag (a 100% max-width overflows by the Tab's margins)
+        w_tab.layout.max_width  = '' if hide else _OUTPUT_MAX_WIDTH
+        w_tab.layout.flex       = '1 1 auto' if hide else '1 0 auto'
+
+    w_hide = w.Button(description='\u00bb', tooltip='Hide the controls pane', width='28px', cb=_toggle_controls)
+    w_show = w.Button(description='\u00ab', tooltip='Show the controls pane', width='28px', cb=_toggle_controls)
+    for _b in (w_hide, w_show):
+        _b.add_class('lib-demo-toggle')
+    w_show.layout.display = 'none'
+    w_buttons_vbox.children = (*w_buttons_vbox.children, w_hide)
+    # zero-width strip between the panes: holds the CSS (never hidden) and the show button, overlaid leftwards
+    w_strip = w.VBox([w_css, w_layout_css, w_show])
+    w_strip.add_class('lib-demo-strip')
+    w_strip.layout.flex  = '0 0 0px'
+    w_strip.layout.width = '0px'
+
+    w_main = w.HBox([w_tab, w_strip, w_buttons_vbox], width='100%')
     w_main.layout.align_items = 'stretch'
+    w_main._toggle_controls   = _toggle_controls   # hide/show the controls pane from code
+    w_main._set_image         = _set_image         # (data, caption, select, name): Image tab updates from code
     w_main._input_registry    = _input_registry   # expose for external pre-fill
     w_main._build_button_rows = _build_button_rows # closure: (params_list,) → list[HBox]
     w_main._buttons_vbox      = w_instr_content    # live-mutable main-tab buttons VBox

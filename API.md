@@ -559,28 +559,28 @@ L155    prompt_user_password_twice_matching(min_password_len=8) -> str | None  -
 
 ## utils/standalone/widget_utils.py  [needs: IPython, ipywidgets]
 ```
-L11   class Widgets()
-L27     demo()
-L30     default_cb(sender=None)
-L33     enable_widget_group(widget_array)
-L37     disable_widget_group(widget_array)
-L42     print_to_output(output_widget, msg, append=False)  - Show msg in an Output widget (str as text, else rich display); clears it first unless append
-L135  class MultiSelectMoveButtons(select_L_onchange_cb=None, select_R_onchange_cb=None, R_options_onchange_cb=None, sanitize_cb=None, show=False)  - widget class that contains two multi-select widgets, and buttons to move items between the two widgets, move…
-L178    add(sender)
-L186    remove(sender)
-L190    move_up(sender)
-L203    move_down(sender)
-L216    sort_select_R(sender)
-L218    clear_select_R(sender)
-L222  class TabbedTextareaPanel(w, tab_titles='Text', min_width='300px')  - A Tab widget containing one scrollable Textarea per tab.
-L271  build_lib_demo_widget(instance, lib_demo_params, extra_tabs=None, title=None, no_interface_wrap=True)  - Build a Jupyter widget GUI driven by a lib_demo_params list.
-L549  class WidgetStdout(output_widget)  - File-like stdout replacement that writes directly to an ipywidgets widget.
-L579    write(s)
-L587    flush()
-L590    isatty()
-L595  class FileBrowser(start=None, patterns=('*',), on_pick=None, home=None, home_label='Home', skip_dirs=SKIP_DIRS, show_hidden=False, rows=10, …)  - Pick a file by browsing folders, in plain ipywidgets (no extra package).
-L664    browse_to(folder)  - Show `folder`'s subfolders and matching files (ValueError if it isn't a folder or can't be read).
-L690    clear_selection()  - Forget the picked file and unselect the list (the folder stays).
+L12   class Widgets()
+L28     demo()
+L31     default_cb(sender=None)
+L34     enable_widget_group(widget_array)
+L38     disable_widget_group(widget_array)
+L43     print_to_output(output_widget, msg, append=False)  - Show msg in an Output widget (str as text, else rich display); clears it first unless append
+L136  class MultiSelectMoveButtons(select_L_onchange_cb=None, select_R_onchange_cb=None, R_options_onchange_cb=None, sanitize_cb=None, show=False)  - widget class that contains two multi-select widgets, and buttons to move items between the two widgets, move…
+L179    add(sender)
+L187    remove(sender)
+L191    move_up(sender)
+L204    move_down(sender)
+L217    sort_select_R(sender)
+L219    clear_select_R(sender)
+L223  class TabbedTextareaPanel(w, tab_titles='Text', min_width='300px')  - A Tab widget containing one scrollable Textarea per tab.
+L337  build_lib_demo_widget(instance, lib_demo_params, extra_tabs=None, title=None, no_interface_wrap=True)  - Build a Jupyter widget GUI driven by a lib_demo_params list.
+L739  class WidgetStdout(output_widget)  - File-like stdout replacement that writes directly to an ipywidgets widget.
+L769    write(s)
+L777    flush()
+L780    isatty()
+L785  class FileBrowser(start=None, patterns=('*',), on_pick=None, home=None, home_label='Home', skip_dirs=SKIP_DIRS, show_hidden=False, rows=10, …)  - Pick a file by browsing folders, in plain ipywidgets (no extra package).
+L854    browse_to(folder)  - Show `folder`'s subfolders and matching files (ValueError if it isn't a folder or can't be read).
+L880    clear_selection()  - Forget the picked file and unselect the list (the folder stays).
 ```
 
 ## utils/standalone/win_automation_utils.py  [needs: cv2, mss, numpy, pyautogui, pycaw, pygetwindow, pynput, win32gui]
